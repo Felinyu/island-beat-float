@@ -1,0 +1,21 @@
+# Build artifacts
+*.dll
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# Development helpers / reports
+reports/
+*.py
+warnings*.txt
+*.bak*
+*.orig
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
