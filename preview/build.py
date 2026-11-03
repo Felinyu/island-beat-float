@@ -36,7 +36,7 @@ MARGIN = 40      # CSS px of stage-coloured padding around each artboard
 
 # name, css width, css height, crop corner radius (CSS px), output width (px)
 VIEWS = (
-    ("compact", 390, 100, 16, None),
+    ("compact", 385, 100, 16, None),
     ("expanded", 400, 725, 20, None),
     ("hero", 1280, 700, 20, 1600),
 )

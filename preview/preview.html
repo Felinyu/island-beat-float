@@ -5,15 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Island Beat Float - README showcase mockups</title>
 <!--
-  Self-contained showcase mockups for the Island Beat Float README.
+  Showcase mockups for the Island Beat Float README, rebuilt to match the real
+  UI geometry of the 3.1.0 mod (see island-beat-float.wh.cpp).
 
-  No external assets: CSS gradients, inline SVG artwork and system fonts
-  (Segoe UI Variable / Segoe UI, Segoe Fluent Icons for the playback glyphs).
+  Geometry is expressed in the mod's own DIP values (Main.Height = 40,
+  Main.CompactWidth = 154, Main.ExpandedWidth = 360) scaled by 2 CSS px / DIP
+  for the compact artboard and 10/9 CSS px / DIP for the expanded artboard, so
+  the rendered PNGs have the same proportions as the real panel captures in
+  preview/reference/.
 
   Views (query string):
-    ?view=compact    390 x 100   compact taskbar island, circular cover
-    ?view=expanded   400 x 725   floating expanded player card
-    ?view=hero      1280 x 700   wide banner with both states
+    ?view=compact   385 x 100 CSS  -> 770 x 200 px PNG
+    ?view=expanded  400 x 725 CSS  -> 800 x 1450 px PNG
+    ?view=hero     1280 x 700 CSS  -> 1600 x 875 px PNG
     (no view param: every artboard stacked, for manual browsing)
 
   Rendered by preview/build.py with Microsoft Edge headless at
@@ -21,9 +25,8 @@
 -->
 <style>
   :root {
-    --text: #f6f4fb;
-    --muted: rgba(226, 223, 239, 0.62);
-    --green: #6EB85A;
+    --text: #ffffff;
+    --accent-green: #6EB85A;
     --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
     --font-display: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
     --font-icons: "Segoe Fluent Icons", "Segoe MDL2 Assets";
@@ -46,19 +49,22 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* The single-view artboards are anchored at a fixed (40, 40) CSS offset so
+     the screenshot crop is independent of the headless viewport size (Edge
+     reports a viewport a few px wider than --window-size below ~500 px, which
+     would shift a flex-centred artboard). */
   .viewport {
     position: fixed;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   /* Browsing mode: show all artboards stacked. */
   body[data-view="all"] { overflow: auto; }
   body[data-view="all"] .viewport {
     position: static;
+    display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 56px;
     padding: 56px;
     min-height: 100%;
@@ -68,10 +74,13 @@
   body[data-view="expanded"] .stage:not([data-view="expanded"]),
   body[data-view="hero"] .stage:not([data-view="hero"]) { display: none; }
 
+  body[data-view="all"] .stage { position: relative; left: auto; top: auto; }
+
   /* ---------------------------------------------------------------- stage */
   .stage {
-    position: relative;
-    flex: 0 0 auto;
+    position: absolute;
+    left: 40px;
+    top: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,13 +89,16 @@
     border-radius: var(--stage-radius);
     background:
       radial-gradient(150% 130% at 50% 52%, rgba(0, 0, 0, 0) 44%, rgba(0, 0, 0, 0.46) 100%),
-      radial-gradient(100% 140% at 4% -16%, rgba(139, 92, 246, 0.42), rgba(139, 92, 246, 0) 62%),
-      radial-gradient(100% 140% at 102% 116%, rgba(56, 132, 255, 0.32), rgba(56, 132, 255, 0) 64%),
-      radial-gradient(80% 115% at 76% -18%, rgba(236, 72, 153, 0.18), rgba(236, 72, 153, 0) 62%),
+      radial-gradient(100% 145% at 4% -18%, rgba(139, 92, 246, 0.40), rgba(139, 92, 246, 0) 62%),
+      radial-gradient(100% 145% at 102% 118%, rgba(56, 132, 255, 0.30), rgba(56, 132, 255, 0) 64%),
+      radial-gradient(80% 120% at 76% -20%, rgba(236, 72, 153, 0.17), rgba(236, 72, 153, 0) 62%),
       linear-gradient(155deg, #0c0a17 0%, #171323 44%, #0b0f20 100%);
   }
 
-  .stage[data-view="compact"] { width: 390px; height: 100px; --stage-radius: 16px; }
+  /* 385 x 100 CSS: the pill is exactly 2x the real 154 x 40 DIP island. */
+  .stage[data-view="compact"] { width: 385px; height: 100px; --stage-radius: 16px; }
+
+  /* 400 x 725 CSS: visible surface is 360 x 642.22 CSS = 324 x 578 DIP * 10/9. */
   .stage[data-view="expanded"] { width: 400px; height: 725px; --stage-radius: 20px; }
 
   .stage[data-view="hero"] {
@@ -95,10 +107,10 @@
     --stage-radius: 20px;
     background:
       radial-gradient(135% 115% at 50% 50%, rgba(0, 0, 0, 0) 34%, rgba(0, 0, 0, 0.48) 100%),
-      radial-gradient(58% 78% at 26% 44%, rgba(139, 92, 246, 0.34), rgba(139, 92, 246, 0) 66%),
-      radial-gradient(52% 70% at 82% 80%, rgba(56, 132, 255, 0.32), rgba(56, 132, 255, 0) 68%),
-      radial-gradient(50% 74% at 84% 16%, rgba(124, 58, 237, 0.18), rgba(124, 58, 237, 0) 70%),
-      radial-gradient(46% 60% at 58% 2%, rgba(236, 72, 153, 0.13), rgba(236, 72, 153, 0) 70%),
+      radial-gradient(58% 82% at 27% 46%, rgba(139, 92, 246, 0.32), rgba(139, 92, 246, 0) 66%),
+      radial-gradient(52% 74% at 82% 82%, rgba(56, 132, 255, 0.30), rgba(56, 132, 255, 0) 68%),
+      radial-gradient(50% 74% at 84% 16%, rgba(124, 58, 237, 0.17), rgba(124, 58, 237, 0) 70%),
+      radial-gradient(46% 60% at 58% 2%, rgba(236, 72, 153, 0.12), rgba(236, 72, 153, 0) 70%),
       linear-gradient(140deg, #0b0815 0%, #151021 46%, #0a0d1f 100%);
   }
 
@@ -114,15 +126,44 @@
     background-size: 110px 110px;
   }
 
-  /* ------------------------------------------------------------- artwork */
+  /* -------------------------------------------------- compact island pill */
+  /* Real metrics from UpdateRuntimeLayout() at Height = 40 DIP, x2:
+     height 40 -> 80, width 154 -> 308, radius H/2 -> 40,
+     content margins: left cover inset 4 -> 8, top/bottom 4 -> 8, right 10 -> 20,
+     circular cover D = H - 2*4 = 32 -> 64 (concentric with the left cap),
+     text left 40 -> 80, title 12 -> 22.8, artist 10 -> 19,
+     equalizer 5 bars (2.4 wide / 0.75 gap, right inset 10 -> 20). */
+  .pill {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    width: 308px;
+    height: 80px;
+    padding: 0 18px 0 6px;
+    border-radius: 40px;
+    border: 2px solid rgba(255, 255, 255, 0.13);
+    background:
+      radial-gradient(120% 220% at 6% -60%, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 55%),
+      radial-gradient(120% 220% at 96% 150%, rgba(139, 92, 246, 0.20), rgba(139, 92, 246, 0) 62%),
+      linear-gradient(180deg, rgba(56, 54, 68, 0.86) 0%, rgba(36, 35, 46, 0.90) 60%, rgba(30, 29, 39, 0.92) 100%);
+    box-shadow:
+      0 16px 34px -14px rgba(0, 0, 0, 0.85),
+      0 5px 14px -6px rgba(0, 0, 0, 0.50),
+      inset 0 2px 0 rgba(255, 255, 255, 0.11),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.26);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+  }
+
   .cover {
     position: relative;
     flex: 0 0 auto;
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   }
   .cover::after {
     content: "";
@@ -130,19 +171,113 @@
     inset: 0;
     border-radius: 50%;
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-      inset 0 2px 8px rgba(255, 255, 255, 0.10);
+      inset 0 0 0 2px rgba(255, 255, 255, 0.16),
+      inset 0 3px 10px rgba(255, 255, 255, 0.10);
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 8px;
+    width: 160px;
+    min-width: 0;
+    /* XAML centres the two-line text block ~2 DIP higher than CSS line boxes;
+       this matches the reference capture's title/artist baselines. */
+    transform: translateY(-4.5px);
+  }
+
+  .pill .title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22.8px;
+    line-height: 26.2px;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40);
+  }
+  .pill .artist {
+    margin-top: 0;
+    font-size: 19px;
+    line-height: 21.9px;
+    color: rgba(255, 255, 255, 0.72);
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
+  }
+
+  /* 5 equalizer bars, 2.4 x 0.75 DIP geometry, paused fractions and alphas
+     from the mod (0.27/0.43/0.60/0.43/0.27 x 16 DIP indicator height). */
+  .eq {
+    display: flex;
+    align-items: center;
+    gap: 1.5px;
+    height: 32px;
+    margin-left: auto;
+    /* the 18 DIP indicator box is wider than the 15.75 DIP bars: right gap */
+    margin-right: 2.25px;
+  }
+  .eq span {
+    display: block;
+    width: 4.8px;
+    border-radius: 2.4px;
+    background: var(--accent-green);
+  }
+  .eq .b1 { height: 8.64px;  opacity: 0.86; }
+  .eq .b2 { height: 13.76px; opacity: 0.94; }
+  .eq .b3 { height: 19.2px;  opacity: 1; }
+  .eq .b4 { height: 13.76px; opacity: 0.94; }
+  .eq .b5 { height: 8.64px;  opacity: 0.86; }
+
+  /* ------------------------------------------------------ expanded panel */
+  /* Visible surface 324 x 578 DIP -> 360 x 642.22 CSS (10/9).  Inner layout
+     from CalculatePopupFinalLayout() / UpdatePopupXamlVisuals():
+       artwork inset 20 DIP -> 22.22, size 284 -> 315.56, radius 16 -> 17.8
+       content left 38 DIP -> 42.22, width 248 -> 275.56
+       title top 330 -> 366.67 (font 16 -> 17.8), artist top 360 -> 400 (13 -> 14.4)
+       progress top 403 -> 447.78 (h 6 -> 6.67), times top 415 -> 461.11 (11 -> 12.2)
+       transport buttons 52 x 58 -> 57.78 x 64.44 (glyphs 32/38 -> 35.6/42.2)
+       volume track top 530 -> 588.89 (w 192 -> 213.33, h 6 -> 6.67) */
+  .panel {
+    position: relative;
+    z-index: 5;
+    width: 360px;
+    height: 642.22px;
+    border-radius: 51.11px;
+    border: 1.2px solid rgba(255, 255, 255, 0.12);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 20%),
+      radial-gradient(115% 50% at 50% -4%, rgba(139, 92, 246, 0.16), rgba(139, 92, 246, 0) 62%),
+      radial-gradient(95% 38% at 6% 104%, rgba(56, 132, 255, 0.10), rgba(56, 132, 255, 0) 74%),
+      linear-gradient(168deg, rgba(46, 43, 58, 0.94) 0%, rgba(28, 26, 38, 0.95) 46%, rgba(17, 16, 25, 0.96) 100%);
+    box-shadow:
+      0 0 120px -30px rgba(139, 92, 246, 0.40),
+      0 46px 90px -40px rgba(0, 0, 0, 0.90),
+      0 18px 40px -18px rgba(0, 0, 0, 0.60),
+      inset 0 1.2px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1.2px 0 rgba(0, 0, 0, 0.35);
+  }
+  .panel::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 0;
+    height: 1px;
+    border-radius: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
   }
 
   .art-lg {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 20px;
+    position: absolute;
+    left: 22.22px;
+    top: 22.22px;
+    width: 315.56px;
+    height: 315.56px;
+    border-radius: 17.8px;
     overflow: hidden;
-    box-shadow:
-      0 22px 46px -20px rgba(0, 0, 0, 0.85),
-      0 6px 16px -8px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 16px 34px -20px rgba(0, 0, 0, 0.75);
   }
   .art-lg::after {
     content: "";
@@ -150,275 +285,151 @@
     inset: 0;
     border-radius: inherit;
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.20);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
-
   .cover svg, .art-lg svg { display: block; width: 100%; height: 100%; }
 
-  /* --------------------------------------------------------- compact pill */
-  .pill {
-    position: relative;
-    z-index: 5;
+  .panel .title {
+    position: absolute;
+    left: 42.22px;
+    top: 366.67px;
+    width: 275.56px;
+    height: 31.11px;
     display: flex;
     align-items: center;
-    width: 344px;
-    height: 70px;
-    padding: 0 18px 0 4px;
-    border-radius: 35px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 54%),
-      linear-gradient(180deg, rgba(58, 56, 74, 0.87), rgba(33, 32, 44, 0.91));
-    box-shadow:
-      0 18px 34px -14px rgba(0, 0, 0, 0.85),
-      0 6px 14px -6px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(22px) saturate(135%);
-    -webkit-backdrop-filter: blur(22px) saturate(135%);
-  }
-
-  .meta {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 13px;
-    min-width: 0;
-  }
-
-  .title {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: 0.1px;
-    color: var(--text);
-  }
-  .artist { color: var(--muted); }
-
-  .pill .title {
-    font-size: 15px;
-    line-height: 19px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    font-weight: 700;
+    font-size: 17.78px;
+    color: #ffffff;
     white-space: nowrap;
-  }
-  .pill .artist {
-    margin-top: 1px;
-    font-size: 12px;
-    line-height: 16px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-    white-space: nowrap;
-  }
-
-  .eq {
-    display: flex;
-    align-items: flex-end;
-    gap: 3.5px;
-    height: 22px;
-    margin-left: auto;
-  }
-  .eq span {
-    display: block;
-    width: 3.5px;
-    border-radius: 2px;
-    background: var(--green);
-    box-shadow: 0 0 6px rgba(110, 184, 90, 0.45);
-  }
-  .eq .b1 { height: 9px; }
-  .eq .b2 { height: 16px; }
-  .eq .b3 { height: 11px; }
-  .eq .b4 { height: 21px; }
-
-  /* ----------------------------------------------------- expanded panel */
-  .panel {
-    position: relative;
-    z-index: 5;
-    width: 340px;
-    padding: 20px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.11);
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 22%),
-      linear-gradient(168deg, rgba(45, 42, 61, 0.95) 0%, rgba(28, 26, 41, 0.96) 44%, rgba(15, 14, 24, 0.97) 100%);
-    box-shadow:
-      0 0 110px -30px rgba(139, 92, 246, 0.42),
-      0 46px 90px -38px rgba(0, 0, 0, 0.92),
-      0 18px 40px -18px rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.38);
-  }
-  .panel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(130% 56% at 50% -2%, rgba(139, 92, 246, 0.12), rgba(139, 92, 246, 0) 64%),
-      radial-gradient(100% 44% at 6% 102%, rgba(56, 132, 255, 0.10), rgba(56, 132, 255, 0) 74%),
-      radial-gradient(70% 34% at 88% 100%, rgba(236, 72, 153, 0.06), rgba(236, 72, 153, 0) 78%);
-  }
-  .panel::after {
-    content: "";
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    top: 0;
-    height: 1px;
-    border-radius: 1px;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
-  }
-  .panel > * { position: relative; z-index: 1; }
-
-  .panel .title {
-    margin-top: 18px;
-    font-size: 20px;
-    line-height: 24px;
   }
   .panel .artist {
-    margin-top: 5px;
-    font-size: 13px;
-    line-height: 17px;
+    position: absolute;
+    left: 42.22px;
+    top: 400px;
+    width: 275.56px;
+    height: 28.89px;
+    display: flex;
+    align-items: center;
+    font-size: 14.44px;
+    color: rgba(255, 255, 255, 0.784);
+    white-space: nowrap;
   }
 
-  .progress { margin-top: 17px; }
-
   .track {
-    position: relative;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.16);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+    position: absolute;
+    left: 42.22px;
+    top: 447.78px;
+    width: 275.56px;
+    height: 6.67px;
+    border-radius: 3.33px;
+    background: rgba(255, 255, 255, 0.204);
   }
   .track .fill {
     position: absolute;
     inset: 0 auto 0 0;
     width: 0;
     border-radius: inherit;
-    background: linear-gradient(90deg, #cfcbe6, #ffffff);
+    background: linear-gradient(90deg, #c9c4e4, #ffffff);
   }
 
   .times {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 7px;
-    font-size: 10.5px;
-    letter-spacing: 0.3px;
-    color: rgba(229, 226, 240, 0.48);
-  }
-
-  .transport {
+    position: absolute;
+    left: 42.22px;
+    top: 461.11px;
+    width: 275.56px;
+    height: 17.78px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 32px;
-    height: 44px;
-    margin-top: 12px;
+    justify-content: space-between;
+    font-size: 12.22px;
+    letter-spacing: 0.1px;
+    color: rgba(255, 255, 255, 0.784);
   }
 
   .glyph {
-    display: inline-block;
-    font-family: var(--font-icons);
-    font-weight: 400;
-    line-height: 1;
-    color: #ffffff;
-    font-synthesis: none;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-  }
-  .transport .side { font-size: 21px; opacity: 0.95; }
-  .transport .play { font-size: 29px; }
-
-  .volume {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 24px;
-    margin-top: 14px;
+    justify-content: center;
+    font-family: var(--font-icons);
+    font-weight: 400;
+    color: #ffffff;
+    font-synthesis: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   }
-  .volume .glyph {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.72);
-    text-shadow: none;
-  }
-  .volume .glyph.speaker { font-size: 17px; }
 
+  /* Buttons: 52 x 58 DIP at 2/58/114 inside a 168 DIP group centered in the
+     content column (content width 248 -> group left 40 DIP). */
+  .transport { position: absolute; inset: 0; }
+  .transport .btn {
+    position: absolute;
+    top: 494.44px;
+    width: 57.78px;
+    height: 64.44px;
+  }
+  .transport .prev { left: 88.89px; }
+  .transport .play { left: 151.11px; }
+  .transport .next { left: 213.33px; }
+  .transport .prev, .transport .next { font-size: 35.56px; }
+  .transport .play { font-size: 42.22px; }
+
+  /* Volume row: track at cardLeft+46, cardTop+218, width 284-92 DIP. */
+  .volume { position: absolute; inset: 0; }
   .voltrack {
-    position: relative;
-    flex: 1;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.18);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+    position: absolute;
+    left: 73.33px;
+    top: 588.89px;
+    width: 213.33px;
+    height: 6.67px;
+    border-radius: 3.33px;
+    background: rgba(255, 255, 255, 0.314);
   }
   .volfill {
     position: absolute;
     inset: 0 auto 0 0;
-    width: 62%;
+    width: 56%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #c8c4dd, #ffffff);
+    background: rgba(255, 255, 255, 0.91);
   }
-  .volknob {
+  .volume .glyph {
     position: absolute;
-    left: 62%;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ffffff;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.847);
+    text-shadow: none;
+  }
+  .volume .vol-low {
+    left: 41.11px;
+    top: 581.11px;
+    width: 22.22px;
+    height: 22.22px;
+    font-size: 20px;
+  }
+  .volume .vol-high {
+    left: 288.89px;
+    top: 578.89px;
+    width: 30px;
+    height: 26.67px;
+    font-size: 22.22px;
   }
 
   /* ------------------------------------------------------------ hero view */
   .stage[data-view="hero"] .panel {
     position: absolute;
-    left: 150px;
-    top: 50%;
-    width: 420px;
-    padding: 22px;
-    border-radius: 34px;
-    transform: translateY(-50%);
+    left: 170px;
+    top: 28.89px;
   }
-  .stage[data-view="hero"] .panel .art-lg { border-radius: 24px; }
-  .stage[data-view="hero"] .panel .title { margin-top: 20px; font-size: 23px; line-height: 28px; }
-  .stage[data-view="hero"] .panel .artist { margin-top: 5px; font-size: 14px; line-height: 18px; }
-  .stage[data-view="hero"] .progress { margin-top: 19px; }
-  .stage[data-view="hero"] .track { height: 5px; border-radius: 2.5px; }
-  .stage[data-view="hero"] .times { margin-top: 8px; font-size: 11.5px; }
-  .stage[data-view="hero"] .transport { margin-top: 14px; height: 48px; gap: 36px; }
-  .stage[data-view="hero"] .transport .side { font-size: 23px; }
-  .stage[data-view="hero"] .transport .play { font-size: 32px; }
-  .stage[data-view="hero"] .volume { margin-top: 16px; height: 26px; gap: 14px; }
-  .stage[data-view="hero"] .volume .glyph { font-size: 16px; }
-  .stage[data-view="hero"] .volume .glyph.speaker { font-size: 19px; }
-  .stage[data-view="hero"] .voltrack { height: 5px; border-radius: 2.5px; }
-  .stage[data-view="hero"] .volknob { width: 11px; height: 11px; }
-
   .stage[data-view="hero"] .pill {
     position: absolute;
-    right: 150px;
+    right: 170px;
     bottom: 30px;
-    width: 400px;
-    height: 82px;
-    border-radius: 41px;
-    padding: 0 22px 0 5px;
   }
-  .stage[data-view="hero"] .pill .cover { width: 70px; height: 70px; }
-  .stage[data-view="hero"] .pill .title { font-size: 17px; line-height: 21px; }
-  .stage[data-view="hero"] .pill .artist { margin-top: 1px; font-size: 13px; line-height: 17px; }
-  .stage[data-view="hero"] .meta { margin-left: 15px; }
-  .stage[data-view="hero"] .eq { height: 26px; gap: 4px; }
-  .stage[data-view="hero"] .eq span { width: 4px; }
-  .stage[data-view="hero"] .eq .b1 { height: 11px; }
-  .stage[data-view="hero"] .eq .b2 { height: 19px; }
-  .stage[data-view="hero"] .eq .b3 { height: 13px; }
-  .stage[data-view="hero"] .eq .b4 { height: 25px; }
 </style>
 </head>
 <body>
 <div class="viewport">
 
-  <!-- Compact taskbar island: circular cover concentric with the pill cap. -->
+  <!-- Compact taskbar island: 154 x 40 DIP at 2x. Circular cover centred on
+       the pill's left cap centre (H/2, H/2). -->
   <section class="stage" data-view="compact" aria-label="Compact taskbar island">
     <div class="grain" aria-hidden="true"></div>
     <div class="pill">
@@ -432,54 +443,52 @@
         <span class="b2"></span>
         <span class="b3"></span>
         <span class="b4"></span>
+        <span class="b5"></span>
       </div>
     </div>
   </section>
 
-  <!-- Expanded floating player. -->
+  <!-- Expanded floating player: 324 x 578 DIP visible glass surface. -->
   <section class="stage" data-view="expanded" aria-label="Expanded floating player">
     <div class="grain" aria-hidden="true"></div>
     <div class="panel">
       <div class="art-lg" data-art aria-hidden="true"></div>
       <h2 class="title">Island Beat Float</h2>
       <p class="artist">No media playing</p>
-      <div class="progress">
-        <div class="track"><div class="fill"></div></div>
-        <div class="times"><span>0:00</span><span>0:00</span></div>
-      </div>
+      <div class="track"><div class="fill"></div></div>
+      <div class="times"><span>0:00</span><span>0:00</span></div>
       <div class="transport">
-        <span class="glyph side" aria-label="Previous">&#xE892;</span>
-        <span class="glyph play" aria-label="Play">&#xE768;</span>
-        <span class="glyph side" aria-label="Next">&#xE893;</span>
+        <span class="glyph btn prev" aria-label="Previous">&#xEB9E;</span>
+        <span class="glyph btn play" aria-label="Play">&#xE768;</span>
+        <span class="glyph btn next" aria-label="Next">&#xEB9D;</span>
       </div>
       <div class="volume">
-        <span class="glyph mute" aria-label="Mute">&#xE74F;</span>
-        <div class="voltrack"><div class="volfill"></div><div class="volknob"></div></div>
-        <span class="glyph speaker" aria-label="Volume">&#xE767;</span>
+        <span class="glyph vol-low" aria-label="Mute">&#xE992;</span>
+        <div class="voltrack"><div class="volfill"></div></div>
+        <span class="glyph vol-high" aria-label="Volume">&#xE767;</span>
       </div>
     </div>
   </section>
 
-  <!-- Wide banner: expanded card on the left, compact island bottom-right. -->
+  <!-- Wide banner: expanded panel on the left, compact island bottom-right,
+       both sitting on the same baseline. -->
   <section class="stage" data-view="hero" aria-label="Island Beat Float hero banner">
     <div class="grain" aria-hidden="true"></div>
     <div class="panel">
       <div class="art-lg" data-art aria-hidden="true"></div>
       <h2 class="title">Island Beat Float</h2>
       <p class="artist">No media playing</p>
-      <div class="progress">
-        <div class="track"><div class="fill"></div></div>
-        <div class="times"><span>0:00</span><span>0:00</span></div>
-      </div>
+      <div class="track"><div class="fill"></div></div>
+      <div class="times"><span>0:00</span><span>0:00</span></div>
       <div class="transport">
-        <span class="glyph side" aria-label="Previous">&#xE892;</span>
-        <span class="glyph play" aria-label="Play">&#xE768;</span>
-        <span class="glyph side" aria-label="Next">&#xE893;</span>
+        <span class="glyph btn prev" aria-label="Previous">&#xEB9E;</span>
+        <span class="glyph btn play" aria-label="Play">&#xE768;</span>
+        <span class="glyph btn next" aria-label="Next">&#xEB9D;</span>
       </div>
       <div class="volume">
-        <span class="glyph mute" aria-label="Mute">&#xE74F;</span>
-        <div class="voltrack"><div class="volfill"></div><div class="volknob"></div></div>
-        <span class="glyph speaker" aria-label="Volume">&#xE767;</span>
+        <span class="glyph vol-low" aria-label="Mute">&#xE992;</span>
+        <div class="voltrack"><div class="volfill"></div></div>
+        <span class="glyph vol-high" aria-label="Volume">&#xE767;</span>
       </div>
     </div>
     <div class="pill">
@@ -493,6 +502,7 @@
         <span class="b2"></span>
         <span class="b3"></span>
         <span class="b4"></span>
+        <span class="b5"></span>
       </div>
     </div>
   </section>
@@ -506,10 +516,10 @@
   document.body.dataset.view = view;
 
   /*
-   * Abstract mesh-gradient cover art: a few soft colour orbs over a purple
-   * base, a diagonal gloss and a light grain. Generated, never a photo, and
-   * the same artwork is used for the circular compact cover and the rounded
-   * square expanded cover, exactly like the mod does with its artwork.
+   * Abstract mesh-gradient cover art: soft colour orbs over a purple base with
+   * a gloss and a light vignette - generated, never a photo, and the same
+   * artwork is used for the circular compact cover and the rounded-square
+   * expanded cover, exactly like the mod's artwork pipeline.
    */
   function artwork(u) {
     return [
