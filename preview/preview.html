@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Island Beat Float - README showcase mockups</title>
+<!--
+  Self-contained showcase mockups for the Island Beat Float README.
+
+  No external assets: CSS gradients, inline SVG artwork and system fonts
+  (Segoe UI Variable / Segoe UI, Segoe Fluent Icons for the playback glyphs).
+
+  Views (query string):
+    ?view=compact    390 x 100   compact taskbar island, circular cover
+    ?view=expanded   400 x 725   floating expanded player card
+    ?view=hero      1280 x 700   wide banner with both states
+    (no view param: every artboard stacked, for manual browsing)
+
+  Rendered by preview/build.py with Microsoft Edge headless at
+  --force-device-scale-factor=2 and cropped into ../screenshots/*.png.
+-->
+<style>
+  :root {
+    --text: #f6f4fb;
+    --muted: rgba(226, 223, 239, 0.62);
+    --green: #6EB85A;
+    --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-display: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    --font-icons: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+    --stage-radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #08070d;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .viewport {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Browsing mode: show all artboards stacked. */
+  body[data-view="all"] { overflow: auto; }
+  body[data-view="all"] .viewport {
+    position: static;
+    flex-direction: column;
+    gap: 56px;
+    padding: 56px;
+    min-height: 100%;
+  }
+
+  body[data-view="compact"] .stage:not([data-view="compact"]),
+  body[data-view="expanded"] .stage:not([data-view="expanded"]),
+  body[data-view="hero"] .stage:not([data-view="hero"]) { display: none; }
+
+  /* ---------------------------------------------------------------- stage */
+  .stage {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: var(--stage-radius);
+    background:
+      radial-gradient(150% 130% at 50% 52%, rgba(0, 0, 0, 0) 44%, rgba(0, 0, 0, 0.46) 100%),
+      radial-gradient(100% 140% at 4% -16%, rgba(139, 92, 246, 0.42), rgba(139, 92, 246, 0) 62%),
+      radial-gradient(100% 140% at 102% 116%, rgba(56, 132, 255, 0.32), rgba(56, 132, 255, 0) 64%),
+      radial-gradient(80% 115% at 76% -18%, rgba(236, 72, 153, 0.18), rgba(236, 72, 153, 0) 62%),
+      linear-gradient(155deg, #0c0a17 0%, #171323 44%, #0b0f20 100%);
+  }
+
+  .stage[data-view="compact"] { width: 390px; height: 100px; --stage-radius: 16px; }
+  .stage[data-view="expanded"] { width: 400px; height: 725px; --stage-radius: 20px; }
+
+  .stage[data-view="hero"] {
+    width: 1280px;
+    height: 700px;
+    --stage-radius: 20px;
+    background:
+      radial-gradient(135% 115% at 50% 50%, rgba(0, 0, 0, 0) 34%, rgba(0, 0, 0, 0.48) 100%),
+      radial-gradient(58% 78% at 26% 44%, rgba(139, 92, 246, 0.34), rgba(139, 92, 246, 0) 66%),
+      radial-gradient(52% 70% at 82% 80%, rgba(56, 132, 255, 0.32), rgba(56, 132, 255, 0) 68%),
+      radial-gradient(50% 74% at 84% 16%, rgba(124, 58, 237, 0.18), rgba(124, 58, 237, 0) 70%),
+      radial-gradient(46% 60% at 58% 2%, rgba(236, 72, 153, 0.13), rgba(236, 72, 153, 0) 70%),
+      linear-gradient(140deg, #0b0815 0%, #151021 46%, #0a0d1f 100%);
+  }
+
+  /* Fine grain over everything, for a photographic finish. */
+  .grain {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 110px 110px;
+  }
+
+  /* ------------------------------------------------------------- artwork */
+  .cover {
+    position: relative;
+    flex: 0 0 auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.5);
+  }
+  .cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+      inset 0 2px 8px rgba(255, 255, 255, 0.10);
+  }
+
+  .art-lg {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow:
+      0 22px 46px -20px rgba(0, 0, 0, 0.85),
+      0 6px 16px -8px rgba(0, 0, 0, 0.55);
+  }
+  .art-lg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  }
+
+  .cover svg, .art-lg svg { display: block; width: 100%; height: 100%; }
+
+  /* --------------------------------------------------------- compact pill */
+  .pill {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    width: 344px;
+    height: 70px;
+    padding: 0 18px 0 4px;
+    border-radius: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 54%),
+      linear-gradient(180deg, rgba(58, 56, 74, 0.87), rgba(33, 32, 44, 0.91));
+    box-shadow:
+      0 18px 34px -14px rgba(0, 0, 0, 0.85),
+      0 6px 14px -6px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(22px) saturate(135%);
+    -webkit-backdrop-filter: blur(22px) saturate(135%);
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 13px;
+    min-width: 0;
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    color: var(--text);
+  }
+  .artist { color: var(--muted); }
+
+  .pill .title {
+    font-size: 15px;
+    line-height: 19px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+  }
+  .pill .artist {
+    margin-top: 1px;
+    font-size: 12px;
+    line-height: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+  }
+
+  .eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 3.5px;
+    height: 22px;
+    margin-left: auto;
+  }
+  .eq span {
+    display: block;
+    width: 3.5px;
+    border-radius: 2px;
+    background: var(--green);
+    box-shadow: 0 0 6px rgba(110, 184, 90, 0.45);
+  }
+  .eq .b1 { height: 9px; }
+  .eq .b2 { height: 16px; }
+  .eq .b3 { height: 11px; }
+  .eq .b4 { height: 21px; }
+
+  /* ----------------------------------------------------- expanded panel */
+  .panel {
+    position: relative;
+    z-index: 5;
+    width: 340px;
+    padding: 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 22%),
+      linear-gradient(168deg, rgba(45, 42, 61, 0.95) 0%, rgba(28, 26, 41, 0.96) 44%, rgba(15, 14, 24, 0.97) 100%);
+    box-shadow:
+      0 0 110px -30px rgba(139, 92, 246, 0.42),
+      0 46px 90px -38px rgba(0, 0, 0, 0.92),
+      0 18px 40px -18px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.38);
+  }
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(130% 56% at 50% -2%, rgba(139, 92, 246, 0.12), rgba(139, 92, 246, 0) 64%),
+      radial-gradient(100% 44% at 6% 102%, rgba(56, 132, 255, 0.10), rgba(56, 132, 255, 0) 74%),
+      radial-gradient(70% 34% at 88% 100%, rgba(236, 72, 153, 0.06), rgba(236, 72, 153, 0) 78%);
+  }
+  .panel::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    height: 1px;
+    border-radius: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+  }
+  .panel > * { position: relative; z-index: 1; }
+
+  .panel .title {
+    margin-top: 18px;
+    font-size: 20px;
+    line-height: 24px;
+  }
+  .panel .artist {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  .progress { margin-top: 17px; }
+
+  .track {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+  }
+  .track .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #cfcbe6, #ffffff);
+  }
+
+  .times {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 7px;
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+    color: rgba(229, 226, 240, 0.48);
+  }
+
+  .transport {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    height: 44px;
+    margin-top: 12px;
+  }
+
+  .glyph {
+    display: inline-block;
+    font-family: var(--font-icons);
+    font-weight: 400;
+    line-height: 1;
+    color: #ffffff;
+    font-synthesis: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  .transport .side { font-size: 21px; opacity: 0.95; }
+  .transport .play { font-size: 29px; }
+
+  .volume {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 24px;
+    margin-top: 14px;
+  }
+  .volume .glyph {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.72);
+    text-shadow: none;
+  }
+  .volume .glyph.speaker { font-size: 17px; }
+
+  .voltrack {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+  }
+  .volfill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 62%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #c8c4dd, #ffffff);
+  }
+  .volknob {
+    position: absolute;
+    left: 62%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffffff;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+
+  /* ------------------------------------------------------------ hero view */
+  .stage[data-view="hero"] .panel {
+    position: absolute;
+    left: 150px;
+    top: 50%;
+    width: 420px;
+    padding: 22px;
+    border-radius: 34px;
+    transform: translateY(-50%);
+  }
+  .stage[data-view="hero"] .panel .art-lg { border-radius: 24px; }
+  .stage[data-view="hero"] .panel .title { margin-top: 20px; font-size: 23px; line-height: 28px; }
+  .stage[data-view="hero"] .panel .artist { margin-top: 5px; font-size: 14px; line-height: 18px; }
+  .stage[data-view="hero"] .progress { margin-top: 19px; }
+  .stage[data-view="hero"] .track { height: 5px; border-radius: 2.5px; }
+  .stage[data-view="hero"] .times { margin-top: 8px; font-size: 11.5px; }
+  .stage[data-view="hero"] .transport { margin-top: 14px; height: 48px; gap: 36px; }
+  .stage[data-view="hero"] .transport .side { font-size: 23px; }
+  .stage[data-view="hero"] .transport .play { font-size: 32px; }
+  .stage[data-view="hero"] .volume { margin-top: 16px; height: 26px; gap: 14px; }
+  .stage[data-view="hero"] .volume .glyph { font-size: 16px; }
+  .stage[data-view="hero"] .volume .glyph.speaker { font-size: 19px; }
+  .stage[data-view="hero"] .voltrack { height: 5px; border-radius: 2.5px; }
+  .stage[data-view="hero"] .volknob { width: 11px; height: 11px; }
+
+  .stage[data-view="hero"] .pill {
+    position: absolute;
+    right: 150px;
+    bottom: 30px;
+    width: 400px;
+    height: 82px;
+    border-radius: 41px;
+    padding: 0 22px 0 5px;
+  }
+  .stage[data-view="hero"] .pill .cover { width: 70px; height: 70px; }
+  .stage[data-view="hero"] .pill .title { font-size: 17px; line-height: 21px; }
+  .stage[data-view="hero"] .pill .artist { margin-top: 1px; font-size: 13px; line-height: 17px; }
+  .stage[data-view="hero"] .meta { margin-left: 15px; }
+  .stage[data-view="hero"] .eq { height: 26px; gap: 4px; }
+  .stage[data-view="hero"] .eq span { width: 4px; }
+  .stage[data-view="hero"] .eq .b1 { height: 11px; }
+  .stage[data-view="hero"] .eq .b2 { height: 19px; }
+  .stage[data-view="hero"] .eq .b3 { height: 13px; }
+  .stage[data-view="hero"] .eq .b4 { height: 25px; }
+</style>
+</head>
+<body>
+<div class="viewport">
+
+  <!-- Compact taskbar island: circular cover concentric with the pill cap. -->
+  <section class="stage" data-view="compact" aria-label="Compact taskbar island">
+    <div class="grain" aria-hidden="true"></div>
+    <div class="pill">
+      <div class="cover" data-art aria-hidden="true"></div>
+      <div class="meta">
+        <span class="title">Island Beat Float</span>
+        <span class="artist">No media playing</span>
+      </div>
+      <div class="eq" aria-hidden="true">
+        <span class="b1"></span>
+        <span class="b2"></span>
+        <span class="b3"></span>
+        <span class="b4"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Expanded floating player. -->
+  <section class="stage" data-view="expanded" aria-label="Expanded floating player">
+    <div class="grain" aria-hidden="true"></div>
+    <div class="panel">
+      <div class="art-lg" data-art aria-hidden="true"></div>
+      <h2 class="title">Island Beat Float</h2>
+      <p class="artist">No media playing</p>
+      <div class="progress">
+        <div class="track"><div class="fill"></div></div>
+        <div class="times"><span>0:00</span><span>0:00</span></div>
+      </div>
+      <div class="transport">
+        <span class="glyph side" aria-label="Previous">&#xE892;</span>
+        <span class="glyph play" aria-label="Play">&#xE768;</span>
+        <span class="glyph side" aria-label="Next">&#xE893;</span>
+      </div>
+      <div class="volume">
+        <span class="glyph mute" aria-label="Mute">&#xE74F;</span>
+        <div class="voltrack"><div class="volfill"></div><div class="volknob"></div></div>
+        <span class="glyph speaker" aria-label="Volume">&#xE767;</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wide banner: expanded card on the left, compact island bottom-right. -->
+  <section class="stage" data-view="hero" aria-label="Island Beat Float hero banner">
+    <div class="grain" aria-hidden="true"></div>
+    <div class="panel">
+      <div class="art-lg" data-art aria-hidden="true"></div>
+      <h2 class="title">Island Beat Float</h2>
+      <p class="artist">No media playing</p>
+      <div class="progress">
+        <div class="track"><div class="fill"></div></div>
+        <div class="times"><span>0:00</span><span>0:00</span></div>
+      </div>
+      <div class="transport">
+        <span class="glyph side" aria-label="Previous">&#xE892;</span>
+        <span class="glyph play" aria-label="Play">&#xE768;</span>
+        <span class="glyph side" aria-label="Next">&#xE893;</span>
+      </div>
+      <div class="volume">
+        <span class="glyph mute" aria-label="Mute">&#xE74F;</span>
+        <div class="voltrack"><div class="volfill"></div><div class="volknob"></div></div>
+        <span class="glyph speaker" aria-label="Volume">&#xE767;</span>
+      </div>
+    </div>
+    <div class="pill">
+      <div class="cover" data-art aria-hidden="true"></div>
+      <div class="meta">
+        <span class="title">Island Beat Float</span>
+        <span class="artist">No media playing</span>
+      </div>
+      <div class="eq" aria-hidden="true">
+        <span class="b1"></span>
+        <span class="b2"></span>
+        <span class="b3"></span>
+        <span class="b4"></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function () {
+  "use strict";
+
+  var view = new URLSearchParams(window.location.search).get("view") || "all";
+  document.body.dataset.view = view;
+
+  /*
+   * Abstract mesh-gradient cover art: a few soft colour orbs over a purple
+   * base, a diagonal gloss and a light grain. Generated, never a photo, and
+   * the same artwork is used for the circular compact cover and the rounded
+   * square expanded cover, exactly like the mod does with its artwork.
+   */
+  function artwork(u) {
+    return [
+      '<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">',
+      '<defs>',
+      '<linearGradient id="bg' + u + '" x1="4%" y1="0%" x2="96%" y2="100%">',
+      '<stop offset="0%" stop-color="#150a2e"/>',
+      '<stop offset="32%" stop-color="#3a1787"/>',
+      '<stop offset="64%" stop-color="#852a85"/>',
+      '<stop offset="100%" stop-color="#c4520a"/>',
+      '</linearGradient>',
+      '<radialGradient id="o1' + u + '" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0%" stop-color="#ffc078" stop-opacity="0.92"/>',
+      '<stop offset="38%" stop-color="#ff8a4d" stop-opacity="0.55"/>',
+      '<stop offset="72%" stop-color="#ff7a4d" stop-opacity="0.18"/>',
+      '<stop offset="100%" stop-color="#ff7a4d" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<radialGradient id="o2' + u + '" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0%" stop-color="#bda4ff" stop-opacity="0.92"/>',
+      '<stop offset="36%" stop-color="#7c3aed" stop-opacity="0.58"/>',
+      '<stop offset="72%" stop-color="#6d28d9" stop-opacity="0.20"/>',
+      '<stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<radialGradient id="o3' + u + '" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0%" stop-color="#5feef7" stop-opacity="0.85"/>',
+      '<stop offset="38%" stop-color="#22a7e0" stop-opacity="0.50"/>',
+      '<stop offset="74%" stop-color="#0ea5e9" stop-opacity="0.16"/>',
+      '<stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<radialGradient id="o4' + u + '" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0%" stop-color="#ff9db0" stop-opacity="0.80"/>',
+      '<stop offset="38%" stop-color="#e0428f" stop-opacity="0.48"/>',
+      '<stop offset="74%" stop-color="#db2777" stop-opacity="0.16"/>',
+      '<stop offset="100%" stop-color="#db2777" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<radialGradient id="o5' + u + '" cx="50%" cy="50%" r="50%">',
+      '<stop offset="0%" stop-color="#ffe9c9" stop-opacity="0.30"/>',
+      '<stop offset="60%" stop-color="#ffe9c9" stop-opacity="0.06"/>',
+      '<stop offset="100%" stop-color="#ffe9c9" stop-opacity="0"/>',
+      '</radialGradient>',
+      '<linearGradient id="gloss' + u + '" x1="6%" y1="0%" x2="72%" y2="100%">',
+      '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>',
+      '<stop offset="46%" stop-color="#ffffff" stop-opacity="0.02"/>',
+      '<stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>',
+      '</linearGradient>',
+      '<radialGradient id="vig' + u + '" cx="50%" cy="46%" r="76%">',
+      '<stop offset="60%" stop-color="#0a0418" stop-opacity="0"/>',
+      '<stop offset="100%" stop-color="#0a0418" stop-opacity="0.30"/>',
+      '</radialGradient>',
+      '</defs>',
+      '<rect width="300" height="300" fill="url(#bg' + u + ')"/>',
+      '<ellipse cx="66" cy="66" rx="156" ry="134" fill="url(#o1' + u + ')"/>',
+      '<ellipse cx="242" cy="52" rx="158" ry="138" fill="url(#o2' + u + ')"/>',
+      '<ellipse cx="238" cy="254" rx="164" ry="142" fill="url(#o3' + u + ')"/>',
+      '<ellipse cx="60" cy="250" rx="152" ry="134" fill="url(#o4' + u + ')"/>',
+      '<ellipse cx="106" cy="92" rx="104" ry="82" fill="url(#o5' + u + ')"/>',
+      '<rect width="300" height="300" fill="url(#gloss' + u + ')"/>',
+      '<rect width="300" height="300" fill="url(#vig' + u + ')"/>',
+      '</svg>'
+    ].join("");
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-art]"), function (el, i) {
+    el.innerHTML = artwork("a" + i);
+  });
+})();
+</script>
+</body>
+</html>

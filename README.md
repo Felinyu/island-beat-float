@@ -7,7 +7,7 @@
 [![Platform: Windows 11](https://img.shields.io/badge/platform-Windows%2011-0078d4)](#compatibility)
 
 <p align="center">
-  <img src="screenshots/compact.png" width="520" alt="Island Beat Float compact island">
+  <img src="screenshots/hero.png" width="880" alt="Island Beat Float: compact taskbar island and expanded floating player">
 </p>
 
 Island Beat Float puts the current media session into the Windows 11 taskbar as
