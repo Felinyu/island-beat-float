@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.9
+// @version         3.1.10
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -854,8 +854,8 @@ struct RuntimeLayout {
     // of the circular cover, concentric with it and just outside the artwork
     // edge. Only the gap outside the cover and the stroke scale with the
     // island; the cover itself never moves or resizes for the arc.
-    double arcToggleCoverGap = 3.7;
-    double arcToggleStroke = 4.0;
+    double arcToggleCoverGap = 2.7;
+    double arcToggleStroke = 4.5;
     double textMarginX = 8.0;
     double textRightMargin = 4.0;
     double titleFontSize = 12.0;
@@ -1484,6 +1484,7 @@ std::chrono::steady_clock::time_point g_compactArcLastDoubleTap{};
 // redundant layout churn on the every-refresh re-apply path while still
 // recreating the geometry whenever the spec, position or accent colour moves.
 bool g_compactArcGeometryApplied = false;
+bool g_compactArcForceApply = false;
 double g_compactArcAppliedOverlaySize = -1.0;
 double g_compactArcAppliedLeft = 1e9;
 double g_compactArcAppliedTop = 1e9;
@@ -12570,6 +12571,8 @@ void FinishCloseExpandedPopup(HWND hwnd) {
             // visible flash, so only restore interaction here.
             g_playerGrid.Opacity(1.0);
             g_playerGrid.IsHitTestVisible(true);
+            g_compactArcForceApply = true;
+            ApplyCompactArcToggleLayout();
             if (g_compactArtSpinEnabled) {
                 StartCompactCoverSpinLoop();
             }
@@ -16891,8 +16894,8 @@ void StartHoverRenderLoop(double targetScale) {
 // the arc never draws over it. The arc lives in its own transparent hit grid;
 // only ring-band taps are consumed, so taps on the cover itself still open the
 // expanded player. Spinning the art is a RenderTransform only, no layout work.
-constexpr double kCompactArcStartDeg = -40.0;
-constexpr double kCompactArcSweepDeg = 80.0;
+constexpr double kCompactArcStartDeg = -38.5;
+constexpr double kCompactArcSweepDeg = 77.0;
 
 mediax::PathGeometry MakeCompactArcGeometry(double centerX,
                                             double centerY,
@@ -16984,6 +16987,12 @@ void ApplyCompactArcToggleLayout() {
         }
         g_compactArcPath.Stroke(g_compactArcAccentBrush);
 
+        // The taskbar wrapper may have been left transparent or the arc may
+        // have been covered by the closing popup card; always restore the
+        // toggle's own visibility when the layout is (re)applied.
+        g_compactArcToggle.Visibility(Visibility::Visible);
+        g_compactArcToggle.Opacity(1.0);
+
         auto spec = CurrentCompactVisualSpec();
         double stroke = spec.arcToggleStroke;
         double radius = CompactArcRadius(spec);
@@ -17012,8 +17021,10 @@ void ApplyCompactArcToggleLayout() {
         // recovery and theme/accent updates). Re-applying the whole geometry
         // eagerly would churn XAML; only rebuild when something actually moved.
         bool geometryApplied = g_compactArcGeometryApplied;
+        bool forceApply = g_compactArcForceApply;
+        g_compactArcForceApply = false;
         bool unchanged =
-            geometryApplied &&
+            !forceApply && geometryApplied &&
             std::abs(g_compactArcAppliedOverlaySize - overlaySize) < 0.01 &&
             std::abs(g_compactArcAppliedLeft - left) < 0.01 &&
             std::abs(g_compactArcAppliedTop - top) < 0.01 &&
@@ -17909,8 +17920,8 @@ void UpdateRuntimeLayout(HWND hwnd,
     // The arc spin toggle is concentric with the cover and hugs its right
     // edge, so it never touches the cover size. The user picked a 3 DIP gap
     // and a thick 3.7 DIP stroke; both scale with the island.
-    g_layout.arcToggleCoverGap = Clamp(3.7 * scale, 1.9, 5.5);
-    g_layout.arcToggleStroke = Clamp(4.0 * scale, 2.6, 5.4);
+    g_layout.arcToggleCoverGap = Clamp(2.7 * scale, 1.4, 4.0);
+    g_layout.arcToggleStroke = Clamp(4.5 * scale, 2.8, 6.0);
     // The text must start just right of the thicker arc instead of after the
     // bare cover: the arc's outer edge is at artInset + artSize +
     // coverGap + stroke, so the text margin needs coverGap + stroke plus a
