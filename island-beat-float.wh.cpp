@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.0
+// @version         3.1.1
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -840,6 +840,9 @@ struct RuntimeLayout {
     double cornerRadius = 20.0;
     double contentMarginX = 10.0;
     double contentMarginY = 4.0;
+    // Distance from the pill's left/top edge to the circular cover bounds.
+    // (H - D) / 2 puts the cover centre on the left cap centre (H/2, H/2).
+    double artInset = 4.0;
     double artColumnWidth = 30.0;
     double textMarginX = 8.0;
     double titleFontSize = 12.0;
@@ -864,6 +867,7 @@ struct CompactVisualSpec {
     double borderThickness;
     double contentMarginX;
     double contentMarginY;
+    double artInset;
     double artSize;
     double artImageSize;
     double artCornerRadius;
@@ -889,6 +893,7 @@ CompactVisualSpec CompactVisualSpecFrom(RuntimeLayout const& layout) {
         0.75,
         layout.contentMarginX,
         layout.contentMarginY,
+        layout.artInset,
         layout.artSize,
         layout.artImageSize,
         layout.artCornerRadius,
@@ -10754,26 +10759,36 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
     }
     auto art = FindChildByName(g_playerGrid, L"Island_ArtFallback");
     if (!GetElementScreenRect(art, g_popupSourceArtRect)) {
+        // Fallback: circular cover bounds at ((H - D)/2, (H - D)/2).
+        double artInset = g_layout.artInset;
         g_popupSourceArtRect = {
-            g_popupSourceRect.left + PopupDipToPx(10.0, g_taskbarWnd),
-            g_popupSourceRect.top + PopupDipToPx(6.0, g_taskbarWnd),
-            g_popupSourceRect.left + PopupDipToPx(38.0, g_taskbarWnd),
-            g_popupSourceRect.top + PopupDipToPx(34.0, g_taskbarWnd)};
+            g_popupSourceRect.left + PopupDipToPx(artInset, g_taskbarWnd),
+            g_popupSourceRect.top + PopupDipToPx(artInset, g_taskbarWnd),
+            g_popupSourceRect.left +
+                PopupDipToPx(artInset + g_layout.artSize, g_taskbarWnd),
+            g_popupSourceRect.top +
+                PopupDipToPx(artInset + g_layout.artSize, g_taskbarWnd)};
     }
+    double textColumnLeftDip =
+        g_layout.artInset + g_layout.artSize + g_layout.textMarginX;
     auto title = FindChildByName(g_playerGrid, L"Island_Title");
     if (!GetElementScreenRect(title, g_popupSourceTitleRect)) {
         g_popupSourceTitleRect = {
-            g_popupSourceRect.left + PopupDipToPx(48.0, g_taskbarWnd),
+            g_popupSourceRect.left +
+                PopupDipToPx(textColumnLeftDip, g_taskbarWnd),
             g_popupSourceRect.top + PopupDipToPx(5.0, g_taskbarWnd),
-            g_popupSourceRect.right - PopupDipToPx(10.0, g_taskbarWnd),
+            g_popupSourceRect.right -
+                PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd),
             g_popupSourceRect.top + PopupDipToPx(22.0, g_taskbarWnd)};
     }
     auto artist = FindChildByName(g_playerGrid, L"Island_CompactArtist");
     if (!GetElementScreenRect(artist, g_popupSourceArtistRect)) {
         g_popupSourceArtistRect = {
-            g_popupSourceRect.left + PopupDipToPx(48.0, g_taskbarWnd),
+            g_popupSourceRect.left +
+                PopupDipToPx(textColumnLeftDip, g_taskbarWnd),
             g_popupSourceRect.top + PopupDipToPx(21.0, g_taskbarWnd),
-            g_popupSourceRect.right - PopupDipToPx(10.0, g_taskbarWnd),
+            g_popupSourceRect.right -
+                PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd),
             g_popupSourceRect.bottom - PopupDipToPx(4.0, g_taskbarWnd)};
     }
 
@@ -11452,9 +11467,12 @@ void ResetCompactTextAnimationVisuals() {
 }
 
 double CompactTextClipWidthFallback() {
+    // The content row starts at artInset on the left and the right content
+    // margin on the right; subtract the circle column, the text margins and a
+    // small allowance for the auto-sized playback indicator column.
     double width = g_layout.compactWidth -
-                   (g_layout.contentMarginX * 2.0 + g_layout.artColumnWidth +
-                    g_layout.textMarginX * 2.0 + 4.0);
+                   (g_layout.artInset + g_layout.contentMarginX +
+                    g_layout.artColumnWidth + g_layout.textMarginX * 2.0 + 4.0);
     return std::max(1.0, width);
 }
 
@@ -16714,7 +16732,9 @@ void ApplyExpandedState() {
     ReadDefaultOutputVolume(g_popupSystemVolume);
 
     if (auto contentFe = FindChildByName(g_playerGrid, L"Island_Content")) {
-        contentFe.Margin({spec.contentMarginX, spec.contentMarginY,
+        // Same concentric-cover layout as BuildIslandGrid: art starts at
+        // (H - D)/2 from the pill's left/top edge.
+        contentFe.Margin({spec.artInset, spec.contentMarginY,
                           spec.contentMarginX, spec.contentMarginY});
         if (auto content = contentFe.try_as<Grid>()) {
             if (content.ColumnDefinitions().Size() > 0) {
@@ -17456,7 +17476,17 @@ void UpdateRuntimeLayout(HWND hwnd,
     // this keeps the placeholder and stroke layers matching the circular clip.
     g_layout.artCornerRadius = g_layout.artSize * 0.5;
     g_layout.cornerRadius = Clamp(compactHeight * 0.50, 12.0, 36.0);
-    g_layout.artColumnWidth = g_layout.artImageSize;
+    // The cover must be concentric with the pill's left rounded end cap, whose
+    // centre is (H/2, H/2) from the pill's left/top edge. With a circle
+    // diameter D its bounds therefore start at ((H - D)/2, (H - D)/2) - this
+    // inset is independent of the horizontal content padding, so the cover is
+    // not pushed right by the text margin and the text still starts after the
+    // circle plus the existing gap.
+    g_layout.artInset = std::max(0.0, (compactHeight - g_layout.artSize) * 0.5);
+    // The art column is exactly the circle: the +2 DIP image overscan lives
+    // inside the clipped art host, not in the grid column, so the column cannot
+    // add a half-overscan offset to the cover position.
+    g_layout.artColumnWidth = g_layout.artSize;
     // Slightly wider text area so normal artist names display in full
     // (the ellipsis remains only as a fallback for very long names).
     g_layout.textMarginX = Clamp(4.0 * scale, 2.0, 6.0);
@@ -17514,8 +17544,11 @@ Grid BuildIslandGrid() {
     Grid content;
     content.Name(L"Island_Content");
     content.IsHitTestVisible(false);
-    content.Margin({spec.contentMarginX, spec.contentMarginY,
-                    spec.contentMarginX, spec.contentMarginY});
+    // Left inset is (H - D)/2 so the circular cover is concentric with the
+    // pill's left cap; vertical inset keeps the cover on the pill's centre
+    // line; the right side keeps the regular content padding.
+    content.Margin({spec.artInset, spec.contentMarginY, spec.contentMarginX,
+                    spec.contentMarginY});
     controls::Canvas::SetZIndex(content, 1);
 
     ColumnDefinition artCol;

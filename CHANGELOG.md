@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.1
+
+- The compact artwork circle is now concentric with the pill's left rounded end
+  cap. Its bounds start at ((H - D) / 2, (H - D) / 2) from the pill's left/top
+  edge (H = island height, D = cover diameter), so the cover shares the cap
+  centre (H/2, H/2) instead of being pushed right by the padded content box; the
+  text column still starts after the circle plus the usual gap.
+
 ## 3.1.0
 
 UI and personalisation update.
