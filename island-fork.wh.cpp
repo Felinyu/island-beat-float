@@ -1135,7 +1135,6 @@ void ClearPopupBackdropOverlayHandoffCache() {
 }
 
 
-
 std::mutex g_popupOverlayWgcMutex;
 std::atomic<bool> g_popupOverlayWgcRendering{false};
 struct PopupOverlayWgcRenderParameters {
@@ -1669,9 +1668,6 @@ bool IsLiquidGlassMaterial() {
     return g_settings.material == L"liquid_glass";
 }
 
-bool IsBlurredGlassMaterial() {
-    return g_settings.material == L"acrylic" || IsLiquidGlassMaterial();
-}
 
 winrt::Windows::UI::Color IslandBackgroundColor() {
     bool dark = IsDarkModeApprox();
@@ -2229,13 +2225,6 @@ bool LooksLikeBrowserMediaSource(std::wstring const& source) {
            lower.find(L"safari") != std::wstring::npos;
 }
 
-std::wstring MediaContentKey(MediaState const& state) {
-    if (!state.hasSession) {
-        return L"";
-    }
-    return MediaIdentityKey(state) + L"\n" +
-           std::to_wstring(MediaThumbFingerprint(state.thumbnailBytes));
-}
 
 std::wstring MediaTrackKey(MediaState const& state) {
     if (!state.hasSession) {
@@ -3399,16 +3388,6 @@ bool ClickResolvedScreenPointForWindow(
     return succeeded;
 }
 
-bool ClickScreenPointForWindow(HWND window, POINT point) {
-    return ClickResolvedScreenPointForWindow(
-        window, [point](POINT* resolvedPoint) {
-            if (!resolvedPoint) {
-                return false;
-            }
-            *resolvedPoint = point;
-            return true;
-        });
-}
 
 // One process-table snapshot is reused across window enumeration and the media
 // thread. Previously every Is*ProcessId call created a full Toolhelp snapshot,
@@ -4179,129 +4158,6 @@ void ApplyOptimisticFavoriteToggle();
 void SetCompactPlaybackIndicatorState(bool playing);
 void ResetMediaProgressUiForTrackNavigation();
 
-bool TryInvokeNeteasePlayerButton(MediaTransportCommand command) {
-    auto window = FindNeteaseCloudMusicWindow();
-    if (!window.hwnd) {
-        return false;
-    }
-
-    RECT windowRect{};
-    GetWindowRect(window.hwnd, &windowRect);
-    IUIAutomation* automation = nullptr;
-    IUIAutomationElement* root = nullptr;
-    IUIAutomationCondition* condition = nullptr;
-    IUIAutomationElementArray* elements = nullptr;
-    HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                      CLSCTX_INPROC_SERVER,
-                                      IID_PPV_ARGS(&automation));
-    if (SUCCEEDED(result)) {
-        result = automation->ElementFromHandle(window.hwnd, &root);
-    }
-    if (SUCCEEDED(result)) {
-        result = automation->CreateTrueCondition(&condition);
-    }
-    if (SUCCEEDED(result)) {
-        result = root->FindAll(TreeScope_Descendants, condition, &elements);
-    }
-
-    IUIAutomationElement* target = nullptr;
-    if (SUCCEEDED(result) && elements) {
-        int count = 0;
-        elements->get_Length(&count);
-        for (int i = 0; i < count; ++i) {
-            IUIAutomationElement* element = nullptr;
-            if (FAILED(elements->GetElement(i, &element)) || !element) {
-                continue;
-            }
-            BSTR idRaw = nullptr;
-            BSTR nameRaw = nullptr;
-            RECT rect{};
-            element->get_CurrentAutomationId(&idRaw);
-            element->get_CurrentName(&nameRaw);
-            element->get_CurrentBoundingRectangle(&rect);
-            std::wstring id = idRaw ? idRaw : L"";
-            std::wstring name = nameRaw ? nameRaw : L"";
-            SysFreeString(idRaw);
-            SysFreeString(nameRaw);
-
-            bool matches = false;
-            if (command == MediaTransportCommand::TogglePlayPause) {
-                matches =
-                    EqualsInsensitive(id, L"btn_pc_minibar_play") ||
-                    EqualsInsensitive(name, L"play") ||
-                    EqualsInsensitive(name, L"pause");
-            } else if (command == MediaTransportCommand::Previous) {
-                matches = EqualsInsensitive(name, L"pre");
-            } else if (command == MediaTransportCommand::Next) {
-                matches = EqualsInsensitive(name, L"next");
-            }
-            bool bottom =
-                rect.bottom <= windowRect.bottom + 2 &&
-                rect.top >= windowRect.bottom - 220;
-            if (matches &&
-                (bottom ||
-                 EqualsInsensitive(id, L"btn_pc_minibar_play") ||
-                 EqualsInsensitive(name, L"pre") ||
-                 EqualsInsensitive(name, L"next"))) {
-                target = element;
-                break;
-            }
-            element->Release();
-        }
-    }
-
-    if (elements) {
-        elements->Release();
-    }
-    if (condition) {
-        condition->Release();
-    }
-    if (root) {
-        root->Release();
-    }
-
-    bool succeeded = false;
-    IUnknown* unknown = nullptr;
-    IUIAutomationInvokePattern* invoke = nullptr;
-    if (target &&
-        SUCCEEDED(target->GetCurrentPattern(UIA_InvokePatternId,
-                                            &unknown)) &&
-        unknown &&
-        SUCCEEDED(unknown->QueryInterface(IID_PPV_ARGS(&invoke)))) {
-        succeeded = SUCCEEDED(invoke->Invoke());
-    }
-    if (invoke) {
-        invoke->Release();
-    }
-    if (unknown) {
-        unknown->Release();
-        unknown = nullptr;
-    }
-    if (target && !succeeded) {
-        IUIAutomationLegacyIAccessiblePattern* legacy = nullptr;
-        if (SUCCEEDED(target->GetCurrentPattern(
-                UIA_LegacyIAccessiblePatternId, &unknown)) &&
-            unknown &&
-            SUCCEEDED(unknown->QueryInterface(
-                IID_PPV_ARGS(&legacy)))) {
-            succeeded = SUCCEEDED(legacy->DoDefaultAction());
-        }
-        if (legacy) {
-            legacy->Release();
-        }
-        if (unknown) {
-            unknown->Release();
-        }
-    }
-
-    if (target) {
-        target->Release();
-    }
-    if (automation) {
-        automation->Release();
-    }
-    return succeeded;
-}
 
 bool TrySeekNeteaseCloudMusic(double ratio) {
     auto window = FindNeteaseCloudMusicWindow();
@@ -4429,247 +4285,6 @@ bool LooksLikeNeteaseFavoriteControl(std::wstring const& automationId,
            combined.find(L"红心") != std::wstring::npos;
 }
 
-bool FindNeteaseFavoriteControl(IUIAutomation** automationResult,
-                                IUIAutomationElement** elementResult,
-                                bool* isFavorite,
-                                bool* favoriteStateKnown) {
-    if (automationResult) {
-        *automationResult = nullptr;
-    }
-    if (elementResult) {
-        *elementResult = nullptr;
-    }
-    if (isFavorite) {
-        *isFavorite = false;
-    }
-    if (favoriteStateKnown) {
-        *favoriteStateKnown = false;
-    }
-
-    auto window = FindNeteaseCloudMusicWindow();
-    RECT windowRect{};
-    if (!window.hwnd || !GetWindowRect(window.hwnd, &windowRect) ||
-        windowRect.bottom <= windowRect.top) {
-        return false;
-    }
-
-    IUIAutomation* automation = nullptr;
-    IUIAutomationElement* root = nullptr;
-    IUIAutomationCondition* trueCondition = nullptr;
-    IUIAutomationElementArray* elements = nullptr;
-    HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                      CLSCTX_INPROC_SERVER,
-                                      IID_PPV_ARGS(&automation));
-    if (SUCCEEDED(result)) {
-        result = automation->ElementFromHandle(window.hwnd, &root);
-    }
-    if (SUCCEEDED(result)) {
-        result = automation->CreateTrueCondition(&trueCondition);
-    }
-    if (SUCCEEDED(result)) {
-        result = root->FindAll(TreeScope_Descendants, trueCondition,
-                               &elements);
-    }
-
-    IUIAutomationElement* best = nullptr;
-    std::wstring bestName;
-    int bestScore = INT_MIN;
-    if (SUCCEEDED(result) && elements) {
-        int count = 0;
-        elements->get_Length(&count);
-        for (int i = 0; i < count; ++i) {
-            IUIAutomationElement* element = nullptr;
-            if (FAILED(elements->GetElement(i, &element)) || !element) {
-                continue;
-            }
-
-            BOOL offscreen = TRUE;
-            RECT rect{};
-            BSTR automationIdRaw = nullptr;
-            BSTR nameRaw = nullptr;
-            element->get_CurrentIsOffscreen(&offscreen);
-            element->get_CurrentBoundingRectangle(&rect);
-            element->get_CurrentAutomationId(&automationIdRaw);
-            element->get_CurrentName(&nameRaw);
-            std::wstring automationId =
-                automationIdRaw ? automationIdRaw : L"";
-            std::wstring name = nameRaw ? nameRaw : L"";
-            SysFreeString(automationIdRaw);
-            SysFreeString(nameRaw);
-
-            bool exactHeart =
-                EqualsInsensitive(name, L"like") ||
-                EqualsInsensitive(name, L"dislike");
-            bool inBottomPlayer =
-                rect.right > rect.left &&
-                rect.bottom > rect.top &&
-                rect.left >= windowRect.left &&
-                rect.right <= windowRect.right + 2 &&
-                rect.top >= windowRect.bottom - 190 &&
-                rect.bottom <= windowRect.bottom + 2;
-            if ((!inBottomPlayer && !exactHeart) ||
-                !LooksLikeNeteaseFavoriteControl(automationId, name)) {
-                element->Release();
-                continue;
-            }
-
-            IUnknown* toggleUnknown = nullptr;
-            IUnknown* invokeUnknown = nullptr;
-            IUnknown* legacyUnknown = nullptr;
-            bool actionable =
-                SUCCEEDED(element->GetCurrentPattern(
-                    UIA_TogglePatternId, &toggleUnknown)) ||
-                SUCCEEDED(element->GetCurrentPattern(
-                    UIA_InvokePatternId, &invokeUnknown)) ||
-                SUCCEEDED(element->GetCurrentPattern(
-                    UIA_LegacyIAccessiblePatternId, &legacyUnknown));
-            if (toggleUnknown) {
-                toggleUnknown->Release();
-            }
-            if (invokeUnknown) {
-                invokeUnknown->Release();
-            }
-            if (legacyUnknown) {
-                legacyUnknown->Release();
-            }
-            if (!actionable) {
-                element->Release();
-                continue;
-            }
-
-            int score = 0;
-            score += ContainsInsensitive(automationId, L"like") ? 8 : 0;
-            score += ContainsInsensitive(automationId, L"favorite") ? 8 : 0;
-            score += ContainsInsensitive(automationId, L"heart") ? 8 : 0;
-            score += name.find(L"喜欢") != std::wstring::npos ? 6 : 0;
-            score += name.find(L"收藏") != std::wstring::npos ? 5 : 0;
-            score += rect.top >= windowRect.bottom - 110 ? 4 : 0;
-            if (score > bestScore) {
-                if (best) {
-                    best->Release();
-                }
-                best = element;
-                bestName = std::move(name);
-                bestScore = score;
-            } else {
-                element->Release();
-            }
-        }
-    }
-
-    if (elements) {
-        elements->Release();
-    }
-    if (trueCondition) {
-        trueCondition->Release();
-    }
-    if (root) {
-        root->Release();
-    }
-
-    bool stateKnown = false;
-    bool stateValue = false;
-    if (best) {
-        IUnknown* unknown = nullptr;
-        IUIAutomationTogglePattern* toggle = nullptr;
-        if (SUCCEEDED(best->GetCurrentPattern(UIA_TogglePatternId,
-                                              &unknown)) &&
-            unknown &&
-            SUCCEEDED(unknown->QueryInterface(IID_PPV_ARGS(&toggle)))) {
-            ToggleState toggleState = ToggleState_Indeterminate;
-            if (SUCCEEDED(toggle->get_CurrentToggleState(&toggleState)) &&
-                toggleState != ToggleState_Indeterminate) {
-                stateKnown = true;
-                stateValue = toggleState == ToggleState_On;
-            }
-        }
-        if (toggle) {
-            toggle->Release();
-        }
-        if (unknown) {
-            unknown->Release();
-        }
-        if (!stateKnown &&
-            (EqualsInsensitive(bestName, L"like") ||
-             EqualsInsensitive(bestName, L"dislike"))) {
-            stateKnown = true;
-            // NetEase exposes "dislike" for the outline-heart action and
-            // "like" for the filled-heart state.
-            stateValue = EqualsInsensitive(bestName, L"like");
-        }
-    }
-
-    if (!best) {
-        if (automation) {
-            automation->Release();
-        }
-        return false;
-    }
-
-    if (isFavorite) {
-        *isFavorite = stateValue;
-    }
-    if (favoriteStateKnown) {
-        *favoriteStateKnown = stateKnown;
-    }
-    if (elementResult) {
-        *elementResult = best;
-    } else {
-        best->Release();
-    }
-    if (automationResult) {
-        *automationResult = automation;
-    } else if (automation) {
-        automation->Release();
-    }
-    return true;
-}
-
-bool TryGetNeteaseFavoriteState(bool* isFavorite) {
-    IUIAutomation* automation = nullptr;
-    IUIAutomationElement* element = nullptr;
-    bool stateValue = false;
-    bool found = false;
-    auto window = FindNeteaseCloudMusicWindow();
-    HWND renderWidget = window.hwnd
-                            ? FindNeteaseRenderWidgetWindow(window.hwnd)
-                            : nullptr;
-    RECT client{};
-    POINT point{};
-    if (window.hwnd && renderWidget &&
-        GetClientRect(renderWidget, &client) &&
-        client.right > client.left && client.bottom > client.top) {
-        point.x = client.left + ScaleNeteasePixel(window.hwnd, 247);
-        point.y = client.bottom - ScaleNeteasePixel(window.hwnd, 40);
-        if (ClientToScreen(renderWidget, &point) &&
-            SUCCEEDED(CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                       CLSCTX_INPROC_SERVER,
-                                       IID_PPV_ARGS(&automation))) &&
-            SUCCEEDED(automation->ElementFromPoint(point, &element)) &&
-            element) {
-            BSTR nameRaw = nullptr;
-            if (SUCCEEDED(element->get_CurrentName(&nameRaw))) {
-                std::wstring name = nameRaw ? nameRaw : L"";
-                if (EqualsInsensitive(name, L"like") ||
-                    EqualsInsensitive(name, L"dislike")) {
-                    stateValue = EqualsInsensitive(name, L"like");
-                    found = true;
-                }
-            }
-            SysFreeString(nameRaw);
-        }
-    }
-    if (element) {
-        element->Release();
-    }
-    if (automation) {
-        automation->Release();
-    }
-    if (isFavorite) {
-        *isFavorite = found && stateValue;
-    }
-    return found;
-}
 
 bool TryToggleNeteaseFavorite() {
     auto window = FindNeteaseCloudMusicWindow();
@@ -6837,10 +6452,6 @@ constexpr UINT kTaskbarLayoutMonitorIntervalMs = 600;
 constexpr int kPopupBackdropOverlayRefreshMs = 90;
 constexpr int kPopupBackdropOverlayMaxCaptureSize = 320;
 
-double SmoothStep(double value) {
-    value = Clamp(value, 0.0, 1.0);
-    return value * value * (3.0 - 2.0 * value);
-}
 
 double SmootherStep(double value) {
     value = Clamp(value, 0.0, 1.0);
@@ -6969,12 +6580,6 @@ double PopupClosingShellOpacity(double progress) {
     return 1.0;
 }
 
-double PopupClosingCompactRevealOpacity(double progress) {
-    if (!g_popupClosing) {
-        return 0.0;
-    }
-    return 1.0 - SmootherStep(Clamp(progress / 0.18, 0.0, 1.0));
-}
 
 double PopupClosingTextOpacity(double progress) {
     // Title and artist belong to both compact and expanded layouts. Keep them
@@ -7059,18 +6664,6 @@ int PopupBackdropFallbackCaptureScale() {
 float PopupBackdropWgcBlurStdDev() {
     return static_cast<float>(Clamp(g_settings.backdropWgcBlurStdDev, 14, 22));
 }
-float PopupBackdropWgcEffectiveBlurStdDev() {
-    float stdDev = PopupBackdropWgcBlurStdDev();
-    if (IsLiquidGlassMaterial()) {
-        return Clamp(stdDev * 0.28f, 3.5f, 5.2f);
-    }
-
-    return stdDev;
-}
-float PopupBackdropWgcLiquidRefractionBlurStdDev() {
-    float stdDev = PopupBackdropWgcBlurStdDev();
-    return Clamp(stdDev * 0.10f, 1.2f, 2.2f);
-}
 int PopupBackdropPadding() {
     return PopupSurfaceGap();
 }
@@ -7078,8 +6671,6 @@ constexpr int kPopupCardHeight = 246;
 constexpr int kPopupCompactCardHeight = 154;
 constexpr int kPopupCompactMinimumCardWidth = 320;
 constexpr int kPopupCardInnerPadding = 18;
-constexpr int kPopupTextTopPadding = 13;
-constexpr int kPopupTextLineGap = 24;
 constexpr int kPopupTimeTextHeight = 16;
 // G2-style popup radius family. Windhawk's UWP XAML surface does not expose
 // a true squircle clip here, so keep the visual language consistent by routing
@@ -7199,176 +6790,6 @@ int PopupCompactFinalHeight() {
     return kPopupCompactCardHeight + kPopupHostShadowMargin * 2;
 }
 
-#if 0  // Disabled: media applications must never be restored automatically.
-bool ProcessMatchesMediaSource(DWORD processId,
-                               std::wstring const& sourceAppUserModelId) {
-    if (!processId || sourceAppUserModelId.empty() ||
-        processId == GetCurrentProcessId()) {
-        return false;
-    }
-
-    HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
-                                 processId);
-    if (!process) {
-        return false;
-    }
-
-    bool matches = false;
-    UINT32 appIdLength = 0;
-    LONG appIdResult = GetApplicationUserModelId(process, &appIdLength, nullptr);
-    if (appIdResult == ERROR_INSUFFICIENT_BUFFER && appIdLength > 1) {
-        std::wstring appId(appIdLength, L'\0');
-        if (GetApplicationUserModelId(process, &appIdLength, appId.data()) ==
-            ERROR_SUCCESS) {
-            appId.resize(wcslen(appId.c_str()));
-            matches = EqualsInsensitive(appId, sourceAppUserModelId);
-        }
-    }
-
-    if (!matches) {
-        std::wstring imagePath(32768, L'\0');
-        DWORD imagePathLength = static_cast<DWORD>(imagePath.size());
-        if (QueryFullProcessImageNameW(process, 0, imagePath.data(),
-                                       &imagePathLength)) {
-            imagePath.resize(imagePathLength);
-            size_t slash = imagePath.find_last_of(L"\\/");
-            std::wstring executableName =
-                slash == std::wstring::npos ? imagePath
-                                            : imagePath.substr(slash + 1);
-            matches = EqualsInsensitive(executableName,
-                                        sourceAppUserModelId);
-        }
-    }
-
-    CloseHandle(process);
-    return matches;
-}
-
-bool WindowBelongsToMediaSource(HWND hwnd,
-                                std::wstring const& sourceAppUserModelId) {
-    DWORD processId = 0;
-    GetWindowThreadProcessId(hwnd, &processId);
-    if (ProcessMatchesMediaSource(processId, sourceAppUserModelId)) {
-        return true;
-    }
-
-    // Packaged apps are often hosted by ApplicationFrameHost. In that case
-    // the child CoreWindow owns the media app's actual process identity.
-    struct ChildSearch {
-        std::wstring const* source;
-        bool matched = false;
-    } childSearch{&sourceAppUserModelId};
-    EnumChildWindows(
-        hwnd,
-        [](HWND child, LPARAM param) -> BOOL {
-            auto search = reinterpret_cast<ChildSearch*>(param);
-            DWORD childProcessId = 0;
-            GetWindowThreadProcessId(child, &childProcessId);
-            if (ProcessMatchesMediaSource(childProcessId, *search->source)) {
-                search->matched = true;
-                return FALSE;
-            }
-            return TRUE;
-        },
-        reinterpret_cast<LPARAM>(&childSearch));
-    return childSearch.matched;
-}
-
-HWND FindMediaSourceWindow(std::wstring const& sourceAppUserModelId) {
-    if (IsNeteaseCloudMusicSource(sourceAppUserModelId)) {
-        return FindNeteaseCloudMusicWindow().hwnd;
-    }
-    if (IsBilibiliSource(sourceAppUserModelId)) {
-        return FindBilibiliWindow();
-    }
-
-    struct WindowSearch {
-        std::wstring const* source;
-        HWND best = nullptr;
-        long long bestScore = -1;
-    } search{&sourceAppUserModelId};
-    EnumWindows(
-        [](HWND hwnd, LPARAM param) -> BOOL {
-            auto result = reinterpret_cast<WindowSearch*>(param);
-            if (!IsWindowVisible(hwnd) || hwnd == g_expandedPopup ||
-                hwnd == g_popupXamlChild ||
-                !WindowBelongsToMediaSource(hwnd, *result->source)) {
-                return TRUE;
-            }
-
-            BOOL cloaked = FALSE;
-            if (SUCCEEDED(DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &cloaked,
-                                                sizeof(cloaked))) &&
-                cloaked) {
-                return TRUE;
-            }
-            RECT rect{};
-            if (!GetWindowRect(hwnd, &rect)) {
-                return TRUE;
-            }
-            long long width = std::max<LONG>(rect.right - rect.left, 0);
-            long long height = std::max<LONG>(rect.bottom - rect.top, 0);
-            long long score = width * height;
-            if (!IsIconic(hwnd)) {
-                score += 1000000000LL;
-            }
-            if (GetWindowTextLengthW(hwnd) > 0) {
-                score += 100000000LL;
-            }
-            if (score > result->bestScore) {
-                result->bestScore = score;
-                result->best = hwnd;
-            }
-            return TRUE;
-        },
-        reinterpret_cast<LPARAM>(&search));
-    return search.best;
-}
-
-bool ActivateWindowFromUserClick(HWND hwnd) {
-    if (!hwnd || !IsWindow(hwnd)) {
-        return false;
-    }
-    if (IsIconic(hwnd)) {
-        ShowWindowAsync(hwnd, SW_RESTORE);
-    } else {
-        ShowWindowAsync(hwnd, SW_SHOW);
-    }
-
-    DWORD currentThread = GetCurrentThreadId();
-    DWORD targetThread = GetWindowThreadProcessId(hwnd, nullptr);
-    bool attached = targetThread && targetThread != currentThread &&
-                    AttachThreadInput(currentThread, targetThread, TRUE);
-    BringWindowToTop(hwnd);
-    bool activated = SetForegroundWindow(hwnd) != FALSE;
-    if (attached) {
-        AttachThreadInput(currentThread, targetThread, FALSE);
-    }
-    return activated || GetForegroundWindow() == hwnd;
-}
-
-void ActivateCurrentMediaSource() {
-    MediaState state = SnapshotMedia();
-    if (!state.hasSession ||
-        IsDefaultMediaSource(state.sourceAppUserModelId)) {
-        return;
-    }
-
-    HWND appWindow = FindMediaSourceWindow(state.sourceAppUserModelId);
-    if (ActivateWindowFromUserClick(appWindow)) {
-        return;
-    }
-
-    // If a packaged app has no normal top-level window yet, activate its
-    // registered AppsFolder entry instead of silently doing nothing.
-    if (state.sourceAppUserModelId.find(L'!') != std::wstring::npos) {
-        std::wstring appsFolderTarget =
-            L"shell:AppsFolder\\" + state.sourceAppUserModelId;
-        ShellExecuteW(nullptr, L"open", appsFolderTarget.c_str(), nullptr,
-                      nullptr, SW_SHOWNORMAL);
-    }
-}
-#endif
 
 winrt::Windows::UI::Color PopupControlCardColor() {
     bool dark = IsDarkModeApprox();
@@ -7491,25 +6912,6 @@ void RunMediaTransportCommand(MediaTransportCommand command) {
     });
 }
 
-void ToggleCurrentFavorite() {
-    MediaState state = SnapshotMedia();
-    if (!g_mediaThreadRunning.load()) {
-        return;
-    }
-    if (IsNeteaseCloudMusicSource(state.sourceAppUserModelId)) {
-        ApplyOptimisticFavoriteToggle();
-        g_neteaseFavoriteToggleRequested = true;
-    } else if (IsBilibiliSource(state.sourceAppUserModelId)) {
-        if (!state.canFavorite) {
-            return;
-        }
-        ApplyOptimisticFavoriteToggle();
-        g_bilibiliFavoriteRequested = true;
-    } else {
-        return;
-    }
-    g_mediaCommandCv.notify_one();
-}
 
 mediax::Brush PopupTextForegroundBrush(winrt::Windows::UI::Color color,
                                        double edgeFadeAmount) {
@@ -7715,30 +7117,6 @@ mediax::Brush PopupBackdropCardTintBrush() {
                        0xFF, 0xFF, 0xFF));
 }
 
-double PopupPanelCoverOpacityFactor() {
-    if (IsLiquidGlassMaterial()) {
-        return IsDarkModeApprox() ? 0.30 : 0.36;
-    }
-
-    // The stronger light-mode white tint can hide the album color wash too much.
-    // Boost only the light-mode cover-wash opacity; keep dark mode unchanged.
-    return IsDarkModeApprox() ? 0.44 : 0.58;
-}
-
-mediax::Brush PopupSurfaceBrush() {
-    if (UseOverlayPopupBackdropMaterial()) {
-        // Keep an almost transparent neutral underlay below the native blur.
-        // It is visually negligible once WGC has produced a frame, but avoids
-        // exposing a fully transparent hole during the very first capture.
-        return IsDarkModeApprox()
-                   ? Brush(Color(0x08, 0x20, 0x20, 0x24))
-                   : Brush(Color(0x0A, 0xFF, 0xFF, 0xFF));
-    }
-    // C version: extend the compact island material to the expanded surface.
-    // This keeps compact->expanded transitions visually consistent and avoids
-    // mixing DWM backdrop, XAML Acrylic, and extra tint layers.
-    return IslandBackgroundBrush();
-}
 
 mediax::Brush PopupSurfaceStrokeBrush() {
     if (UseOverlayPopupBackdropMaterial()) {
@@ -8448,22 +7826,6 @@ winrt::hstring PopupTransportGlyph(Border const& surface,
                    : winrt::hstring(L"\uE768");
 }
 
-shapes::Polygon MakeAppleTriangle(double left, double top,
-                                  double width, double height,
-                                  bool pointsRight) {
-    shapes::Polygon triangle;
-    if (pointsRight) {
-        triangle.Points().Append({static_cast<float>(left), static_cast<float>(top)});
-        triangle.Points().Append({static_cast<float>(left), static_cast<float>(top + height)});
-        triangle.Points().Append({static_cast<float>(left + width), static_cast<float>(top + height * 0.5)});
-    } else {
-        triangle.Points().Append({static_cast<float>(left + width), static_cast<float>(top)});
-        triangle.Points().Append({static_cast<float>(left + width), static_cast<float>(top + height)});
-        triangle.Points().Append({static_cast<float>(left), static_cast<float>(top + height * 0.5)});
-    }
-    triangle.IsHitTestVisible(false);
-    return triangle;
-}
 
 imaging::BitmapImage EmbeddedIconBitmap(uint8_t const* data, size_t size) {
     imaging::BitmapImage bitmap;
@@ -8494,81 +7856,6 @@ controls::Image MakeEmbeddedIconImage(wchar_t const* name,
     return image;
 }
 
-Grid MakeAppleTransportIcon(std::wstring_view name) {
-    Grid root;
-    root.Width(52.0);
-    root.Height(46.0);
-    root.IsHitTestVisible(false);
-    if (name == L"Popup_Prev" || name == L"Popup_Next") {
-        bool right = name == L"Popup_Next";
-        auto image = MakeEmbeddedIconImage(
-            L"Apple_TransportImage",
-            right ? apple_media_icons::forward : apple_media_icons::backward,
-            right ? apple_media_icons::forward_size
-                  : apple_media_icons::backward_size);
-        image.Width(48.0);
-        image.Height(42.0);
-        root.Children().Append(image);
-    } else {
-        auto play = MakeEmbeddedIconImage(
-            L"Apple_PlayImage", apple_media_icons::play,
-            apple_media_icons::play_size);
-        play.Width(42.0);
-        play.Height(42.0);
-        root.Children().Append(play);
-        auto pause = MakeEmbeddedIconImage(
-            L"Apple_PauseImage", apple_media_icons::pause,
-            apple_media_icons::pause_size);
-        pause.Width(42.0);
-        pause.Height(42.0);
-        root.Children().Append(pause);
-    }
-    return root;
-}
-
-void ApplyAppleTransportIcon(Grid const& root, bool playing,
-                             mediax::Brush const& foreground) {
-    for (auto const& child : root.Children()) {
-        auto fe = child.try_as<FrameworkElement>();
-        if (!fe) continue;
-        std::wstring name(fe.Name());
-        bool visible = true;
-        if (name == L"Apple_PlayImage") visible = !playing;
-        if (name == L"Apple_PauseImage") visible = playing;
-        fe.Visibility(visible ? Visibility::Visible : Visibility::Collapsed);
-        if (auto polygon = child.try_as<shapes::Polygon>()) {
-            polygon.Fill(foreground);
-        } else if (auto border = child.try_as<Border>()) {
-            border.Background(foreground);
-        }
-    }
-}
-
-Grid MakeAppleVolumeIcon(bool loud) {
-    Grid root;
-    root.Width(loud ? 27.0 : 20.0);
-    root.Height(24.0);
-    root.IsHitTestVisible(false);
-    auto image = MakeEmbeddedIconImage(
-        loud ? L"Apple_VolumeHighImage" : L"Apple_VolumeLowImage",
-        loud ? apple_media_icons::volume_high : apple_media_icons::volume_low,
-        loud ? apple_media_icons::volume_high_size
-             : apple_media_icons::volume_low_size);
-    image.Width(loud ? 27.0 : 20.0);
-    image.Height(24.0);
-    root.Children().Append(image);
-    return root;
-}
-
-void ApplyAppleVolumeIcon(Grid const& root, mediax::Brush const& brush) {
-    for (auto const& child : root.Children()) {
-        if (auto polygon = child.try_as<shapes::Polygon>()) {
-            polygon.Fill(brush);
-        } else if (auto path = child.try_as<shapes::Path>()) {
-            path.Stroke(brush);
-        }
-    }
-}
 
 void UpdatePopupTransportButtonGlyph(Border const& surface,
                                      bool playing,
@@ -8580,18 +7867,6 @@ void UpdatePopupTransportButtonGlyph(Border const& surface,
     }
 }
 
-Thickness PopupTransportOpticalMargin(Border const& surface) {
-    std::wstring name(surface.Name());
-    if (name == L"Popup_Prev") {
-        return {2.0, 1.0, -2.0, -1.0};
-    }
-    if (name == L"Popup_Next") {
-        return {-2.0, 1.0, 2.0, -1.0};
-    }
-    // A triangle's optical center is slightly to the right of its bounding
-    // box center. Pause remains centered by the same small baseline lift.
-    return {1.2, 1.0, -1.2, -1.0};
-}
 
 void ApplyOptimisticPlaybackToggle() {
     struct PlaybackUiState {
@@ -9457,55 +8732,6 @@ bool InitializePopupXamlHost(HWND hwnd) {
         artHost.Children().Append(artFade);
         artHost.Children().Append(art);
         artFrame.Child(artHost);
-#if 0  // Disabled together with media-source window activation.
-        artFrame.PointerPressed(
-            [](auto const& sender, input::PointerRoutedEventArgs const& args) {
-                try {
-                    auto frame = sender.template try_as<UIElement>();
-                    auto point = args.GetCurrentPoint(frame);
-                    g_popupArtClickArmed =
-                        g_expanded && !g_popupClosing &&
-                        !g_popupRestingCompact &&
-                        g_popupLifecycleState == PopupLifecycleState::Open &&
-                        point.Properties().IsLeftButtonPressed();
-                    if (g_popupArtClickArmed) {
-                        args.Handled(true);
-                    }
-                } catch (...) {
-                    g_popupArtClickArmed = false;
-                }
-            });
-        artFrame.PointerReleased(
-            [](auto const& sender, input::PointerRoutedEventArgs const& args) {
-                try {
-                    bool armed = g_popupArtClickArmed;
-                    g_popupArtClickArmed = false;
-                    auto frame = sender.template try_as<UIElement>();
-                    auto point = args.GetCurrentPoint(frame);
-                    if (!armed || !g_expanded || g_popupClosing ||
-                        g_popupRestingCompact ||
-                        g_popupLifecycleState != PopupLifecycleState::Open ||
-                        point.Properties().PointerUpdateKind() !=
-                            winrt::Windows::UI::Input::PointerUpdateKind::
-                                LeftButtonReleased) {
-                        return;
-                    }
-                    args.Handled(true);
-                    BeginCloseExpandedPopup();
-                    ActivateCurrentMediaSource();
-                } catch (...) {
-                    g_popupArtClickArmed = false;
-                }
-            });
-        artFrame.PointerExited(
-            [](auto const&, input::PointerRoutedEventArgs const&) {
-                g_popupArtClickArmed = false;
-            });
-        artFrame.PointerCanceled(
-            [](auto const&, input::PointerRoutedEventArgs const&) {
-                g_popupArtClickArmed = false;
-            });
-#endif
         canvas.Children().Append(artFrame);
 
         auto makePopupTextFade = [](bool leftEdge) {
@@ -11061,10 +10287,6 @@ bool TaskbarPopupOpensDown(RECT const& taskbarRect,
     return taskbarCenter <= monitorCenter;
 }
 
-void IslandDebugAppend(const wchar_t* line) {
-    std::wofstream f(L"C:\\Users\\ASUS\\Documents\\Codex\\2026-08-12\\ni-h\\work\\island-debug.log", std::ios::app);
-    if (f) f << line << std::endl;
-}
 
 void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
     auto compactSpec = CurrentCompactVisualSpec();
@@ -11174,25 +10396,6 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
             centerY - indicatorHeight / 2 + indicatorHeight};
     }
 
-    // TEMP DIAG: record the compact geometry the popup will render from.
-    static double s_diagLastCompactW = -1.0;
-    static int s_diagLastArtW = -1;
-    static int s_diagLastSrcW = -1;
-    int artW = (int)(g_popupSourceArtistRect.right - g_popupSourceArtistRect.left);
-    int srcW = (int)(g_popupSourceRect.right - g_popupSourceRect.left);
-    if (g_layout.compactWidth != s_diagLastCompactW ||
-        artW != s_diagLastArtW || srcW != s_diagLastSrcW) {
-        s_diagLastCompactW = g_layout.compactWidth;
-        s_diagLastArtW = artW;
-        s_diagLastSrcW = srcW;
-        wchar_t buf[256];
-        swprintf_s(buf, 256,
-                   L"cap taskbarH=%.1f compactW=%.1f srcW=%d artW=%d titleW=%d",
-                   g_layout.taskbarHeightDip, g_layout.compactWidth,
-                   srcW, artW,
-                   (int)(g_popupSourceTitleRect.right - g_popupSourceTitleRect.left));
-        IslandDebugAppend(buf);
-    }
 
     if (refreshSourceOnly) {
         return;
@@ -12817,65 +12020,6 @@ bool IsTaskbarCurrentlyAutoHidden() {
     return visible <= PopupDipToPx(3.0, g_taskbarWnd);
 }
 
-bool AnyWindowCoversTaskbarMonitor() {
-    if (!g_taskbarWnd || !IsWindow(g_taskbarWnd)) {
-        return false;
-    }
-    HMONITOR monitor =
-        MonitorFromWindow(g_taskbarWnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO monitorInfo{sizeof(monitorInfo)};
-    if (!monitor || !GetMonitorInfoW(monitor, &monitorInfo)) {
-        return false;
-    }
-
-    struct CoverContext {
-        bool found = false;
-        RECT monitor{};
-    } context{false, monitorInfo.rcMonitor};
-
-    EnumWindows(
-        [](HWND hwnd, LPARAM param) -> BOOL {
-            auto& ctx = *reinterpret_cast<CoverContext*>(param);
-            if (!IsWindowVisible(hwnd) || hwnd == g_taskbarWnd) {
-                return TRUE;
-            }
-            // Never treat our own surfaces or the desktop (Progman/WorkerW)
-            // as a covering app: Progman always spans the monitor, so counting
-            // it would make every auto-hide look like a fullscreen cover.
-            if (hwnd == g_expandedPopup || hwnd == g_popupToggleHitWindow ||
-                hwnd == g_popupBackdropOverlay) {
-                return TRUE;
-            }
-            wchar_t className[128]{};
-            if (GetClassNameW(hwnd, className, 128) > 0) {
-                if (wcscmp(className, L"Progman") == 0 ||
-                    wcscmp(className, L"WorkerW") == 0 ||
-                    wcscmp(className, L"SHELLDLL_DefView") == 0) {
-                    return TRUE;
-                }
-            }
-            BOOL cloaked = FALSE;
-            if (SUCCEEDED(DwmGetWindowAttribute(
-                    hwnd, DWMWA_CLOAKED, &cloaked, sizeof(cloaked))) &&
-                cloaked) {
-                return TRUE;
-            }
-            RECT rect{};
-            if (!GetWindowRect(hwnd, &rect)) {
-                return TRUE;
-            }
-            if (rect.left <= ctx.monitor.left &&
-                rect.top <= ctx.monitor.top &&
-                rect.right >= ctx.monitor.right &&
-                rect.bottom >= ctx.monitor.bottom) {
-                ctx.found = true;
-                return FALSE;
-            }
-            return TRUE;
-        },
-        reinterpret_cast<LPARAM>(&context));
-    return context.found;
-}
 
 bool TaskbarFullyShown() {
     if (!g_taskbarWnd || !IsWindow(g_taskbarWnd)) {
@@ -13094,15 +12238,6 @@ void KeepPopupOnTop() {
 }
 
 std::chrono::steady_clock::time_point g_lastTopmostGuardTime{};
-void KeepPopupOnTopThrottled() {
-    auto now = std::chrono::steady_clock::now();
-    if (g_lastTopmostGuardTime.time_since_epoch().count() != 0 &&
-        now - g_lastTopmostGuardTime < std::chrono::milliseconds(300)) {
-        return;
-    }
-    g_lastTopmostGuardTime = now;
-    KeepPopupOnTop();
-}
 
 LRESULT CALLBACK TaskbarVisibilitySubclassProc(
     HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
@@ -18258,10 +17393,6 @@ void CALLBACK OnTaskbarLayoutTimer(HWND, UINT, UINT_PTR timerId, DWORD) {
             std::abs(g_layout.taskbarHeightDip - oldTaskbarHeight) > 0.75;
 
         if (layoutChanged || taskbarDirectionChanged) {
-            wchar_t buf[256];
-            swprintf_s(buf, 256, L"layoutChanged taskbarH=%.1f compactW=%.1f",
-                       g_layout.taskbarHeightDip, g_layout.compactWidth);
-            IslandDebugAppend(buf);
             ApplyExpandedState();
             try {
                 g_playerGrid.UpdateLayout();
