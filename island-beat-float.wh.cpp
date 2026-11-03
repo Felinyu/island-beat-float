@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.15
+// @version         3.1.16
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1051,6 +1051,21 @@ std::wstring g_neteaseProgressTrackId;
 uint64_t g_neteaseProgressSourceWriteTimeTicks = 0;
 int64_t g_neteaseEstimatedPositionTicks = 0;
 std::chrono::steady_clock::time_point g_neteaseProgressSampleTime{};
+// NetEase GSMTC timeline recalibration reference. NetEase often exposes no (or
+// a frozen) GSMTC timeline, so the reference is only trusted while it is
+// actually advancing; a frozen reference is ignored instead of dragging the
+// estimate back to 0.
+std::chrono::steady_clock::time_point g_neteaseLastGsmtcReferenceChange{};
+int64_t g_neteaseLastGsmtcReferencePositionTicks = -1;
+int g_neteaseStaleZeroGsmtcSamples = 0;
+int64_t g_neteaseLastRecalibrationPositionTicks = -1;
+std::chrono::steady_clock::time_point g_neteaseLastRecalibrationLog{};
+// NetEase seek hand-off: keep the just-committed position visible until the
+// provider/estimator catches up (or the hold expires), so a seek never snaps
+// back to the pre-seek position on the next poll.
+int64_t g_neteaseSeekHoldTargetTicks = 0;
+std::wstring g_neteaseSeekHoldTrackKey;
+std::chrono::steady_clock::time_point g_neteaseSeekHoldUntil{};
 
 bool IsModActive() {
     return g_modActive.load() && !g_unloading.load();
@@ -2498,6 +2513,8 @@ MediaState SnapshotMediaWithTimestamp(
     return g_media;
 }
 
+bool IsNeteaseCloudMusicSource(std::wstring const& sourceAppUserModelId);
+
 void SetMedia(MediaState&& state) {
     std::lock_guard lock(g_mediaMutex);
     auto now = std::chrono::steady_clock::now();
@@ -2568,6 +2585,34 @@ void SetMedia(MediaState&& state) {
         }
     }
 
+    // NetEase seek hold: after an in-island seek the committed position is
+    // published immediately; keep the displayed position pinned to it until the
+    // provider (or the local estimator) reports a matching position. The
+    // anti-stale-backward correction below must not undo a backward seek.
+    bool neteaseSeekHoldActive = false;
+    if (g_neteaseSeekHoldUntil.time_since_epoch().count() != 0 &&
+        state.hasSession &&
+        IsNeteaseCloudMusicSource(state.sourceAppUserModelId)) {
+        bool sameHoldTrack = g_neteaseSeekHoldTrackKey.empty() ||
+                             g_neteaseSeekHoldTrackKey == MediaTrackKey(state);
+        if (now < g_neteaseSeekHoldUntil && sameHoldTrack) {
+            int64_t targetTicks = std::clamp<int64_t>(
+                g_neteaseSeekHoldTargetTicks, 0, state.durationTicks);
+            int64_t tolerance =
+                std::max<int64_t>(15000000LL, state.durationTicks / 200);
+            if (std::abs(state.positionTicks - targetTicks) <= tolerance) {
+                g_neteaseSeekHoldUntil = {};
+                g_neteaseSeekHoldTrackKey.clear();
+            } else {
+                state.positionTicks = targetTicks;
+                neteaseSeekHoldActive = true;
+            }
+        } else {
+            g_neteaseSeekHoldUntil = {};
+            g_neteaseSeekHoldTrackKey.clear();
+        }
+    }
+
     bool sameMedia = g_media.hasSession && state.hasSession &&
                      !currentKey.empty() && currentKey == nextKey &&
                      state.durationTicks > 0 &&
@@ -2599,7 +2644,7 @@ void SetMedia(MediaState&& state) {
         }
     }
 
-    if (sameMedia && state.isPlaying) {
+    if (sameMedia && state.isPlaying && !neteaseSeekHoldActive) {
         int64_t estimatedTicks = g_media.positionTicks;
         if (g_media.isPlaying &&
             g_mediaStateTimestamp.time_since_epoch().count() != 0) {
@@ -4499,8 +4544,68 @@ bool TryToggleNeteaseFavorite() {
     return succeeded;
 }
 
-int64_t EstimateNeteasePositionTicks(NeteaseTrackMetadata const& metadata,
-                                     bool isPlaying) {
+// NetEase's GSMTC session is only useful as a *recalibration reference*: its
+// timeline is often absent or frozen, so the estimator trusts it only while it
+// is actually advancing (see EstimateNeteasePositionTicks).
+struct NeteaseGsmtcProgressReference {
+    bool valid = false;
+    int64_t positionTicks = 0;
+    int64_t durationTicks = 0;
+    bool isPlaying = false;
+};
+
+bool ReadNeteaseGsmtcProgressReference(
+    gsm::GlobalSystemMediaTransportControlsSessionManager const& manager,
+    NeteaseGsmtcProgressReference* reference) {
+    if (!reference) {
+        return false;
+    }
+    reference->valid = false;
+    if (!manager) {
+        return false;
+    }
+
+    try {
+        for (auto const& session : manager.GetSessions()) {
+            std::wstring source;
+            try {
+                source = std::wstring(session.SourceAppUserModelId());
+            } catch (...) {
+                continue;
+            }
+            if (_wcsicmp(source.c_str(), L"cloudmusic.exe") != 0) {
+                continue;
+            }
+            try {
+                auto playback = session.GetPlaybackInfo();
+                reference->isPlaying =
+                    playback.PlaybackStatus() ==
+                    gsm::
+                        GlobalSystemMediaTransportControlsSessionPlaybackStatus::
+                            Playing;
+                auto timeline = session.GetTimelineProperties();
+                int64_t start = timeline.StartTime().count();
+                int64_t end = timeline.EndTime().count();
+                int64_t position = timeline.Position().count();
+                if (end > start) {
+                    reference->durationTicks = end - start;
+                    reference->positionTicks = std::clamp<int64_t>(
+                        position - start, 0, reference->durationTicks);
+                    reference->valid = true;
+                }
+            } catch (...) {
+            }
+            break;
+        }
+    } catch (...) {
+    }
+    return reference->valid;
+}
+
+int64_t EstimateNeteasePositionTicks(
+    NeteaseTrackMetadata const& metadata,
+    bool isPlaying,
+    NeteaseGsmtcProgressReference const* reference = nullptr) {
     auto now = std::chrono::steady_clock::now();
     // NetEase can update the visible title before its local metadata id. The
     // estimator must reset on either signal; otherwise it keeps accumulating
@@ -4533,7 +4638,13 @@ int64_t EstimateNeteasePositionTicks(NeteaseTrackMetadata const& metadata,
                 nowFileTime.dwLowDateTime;
             if (nowTicks >= metadata.sourceWriteTimeTicks) {
                 uint64_t ageTicks = nowTicks - metadata.sourceWriteTimeTicks;
-                if (ageTicks <= static_cast<uint64_t>(std::max<int64_t>(
+                // Only seed from the file timestamp when it is recent enough to
+                // belong to this track's start. A stale timestamp (e.g. the
+                // previous song's queue update) must never make a brand-new
+                // track inherit the old elapsed position.
+                constexpr uint64_t kMaxSeedAgeTicks = 100000000ULL;  // 10 s
+                if (ageTicks <= kMaxSeedAgeTicks &&
+                    ageTicks <= static_cast<uint64_t>(std::max<int64_t>(
                                     metadata.durationTicks, 0))) {
                     g_neteaseEstimatedPositionTicks =
                         static_cast<int64_t>(ageTicks);
@@ -4548,6 +4659,70 @@ int64_t EstimateNeteasePositionTicks(NeteaseTrackMetadata const& metadata,
                 .count();
     }
 
+    // Recalibrate against the freshest external sample (NetEase's GSMTC
+    // timeline) when it is actually moving. This is the drift fix: the local
+    // estimate is seeded once per track and then only accumulates, so any
+    // missed start/seek/pause gap would otherwise persist forever.
+    if (reference && reference->valid && isPlaying) {
+        int64_t referencePosition =
+            std::clamp<int64_t>(reference->positionTicks, 0,
+                                std::max<int64_t>(reference->durationTicks, 0));
+        bool durationMatches =
+            metadata.durationTicks <= 0 ||
+            std::abs(reference->durationTicks - metadata.durationTicks) <=
+                25000000LL;  // 2.5 s
+        bool referenceMoved = reference->positionTicks !=
+                              g_neteaseLastGsmtcReferencePositionTicks;
+        if (referenceMoved) {
+            g_neteaseLastGsmtcReferencePositionTicks = reference->positionTicks;
+            g_neteaseLastGsmtcReferenceChange = now;
+        }
+        bool referenceFresh =
+            g_neteaseLastGsmtcReferenceChange.time_since_epoch().count() != 0 &&
+            now - g_neteaseLastGsmtcReferenceChange < std::chrono::seconds(3);
+
+        // A frozen zero timeline is the common NetEase GSMTC failure mode.
+        // Reject it after a couple of samples instead of dragging the bar to 0.
+        if (referencePosition == 0 &&
+            g_neteaseEstimatedPositionTicks > 3 * 10000000LL) {
+            ++g_neteaseStaleZeroGsmtcSamples;
+        } else {
+            g_neteaseStaleZeroGsmtcSamples = 0;
+        }
+
+        if (durationMatches && referenceFresh &&
+            g_neteaseStaleZeroGsmtcSamples < 2) {
+            int64_t delta = referencePosition - g_neteaseEstimatedPositionTicks;
+            constexpr int64_t kDriftToleranceTicks = 1500000LL;  // 1.5 s
+            bool behind = delta > kDriftToleranceTicks;
+            bool ahead = delta < -kDriftToleranceTicks && referenceMoved;
+            if (behind || ahead) {
+                g_neteaseEstimatedPositionTicks = referencePosition;
+                g_neteaseProgressSampleTime = now;
+                if (std::abs(delta) > 2500000LL &&
+                    (g_neteaseLastRecalibrationLog.time_since_epoch().count() ==
+                         0 ||
+                     now - g_neteaseLastRecalibrationLog >
+                         std::chrono::seconds(5))) {
+                    g_neteaseLastRecalibrationLog = now;
+                    g_neteaseLastRecalibrationPositionTicks = referencePosition;
+                    Wh_Log(
+                        L"Island: NetEase progress recalibrated est=%lld "
+                        L"reference=%lld duration=%lld delta=%lld",
+                        static_cast<long long>(g_neteaseEstimatedPositionTicks -
+                                               delta),
+                        static_cast<long long>(referencePosition),
+                        static_cast<long long>(reference->durationTicks),
+                        static_cast<long long>(delta));
+                }
+            }
+        }
+    } else if (!reference || !reference->valid) {
+        g_neteaseLastGsmtcReferencePositionTicks = -1;
+        g_neteaseLastGsmtcReferenceChange = {};
+        g_neteaseStaleZeroGsmtcSamples = 0;
+    }
+
     g_neteaseProgressSampleTime = now;
     g_neteaseEstimatedPositionTicks =
         std::clamp<int64_t>(g_neteaseEstimatedPositionTicks, 0,
@@ -4555,7 +4730,24 @@ int64_t EstimateNeteasePositionTicks(NeteaseTrackMetadata const& metadata,
     return g_neteaseEstimatedPositionTicks;
 }
 
-bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
+// Drop every buffered NetEase progress sample and restart estimation from 0.
+// Called whenever the displayed NetEase track changes (app-side or island-side)
+// so the previous song's position can never leak into the new one. Clearing the
+// identity also makes the next estimator call treat the track as new.
+void ResetNeteaseProgressTracking() {
+    g_neteaseProgressTrackId.clear();
+    g_neteaseProgressSourceWriteTimeTicks = 0;
+    g_neteaseEstimatedPositionTicks = 0;
+    g_neteaseProgressSampleTime = std::chrono::steady_clock::now();
+    g_neteaseLastGsmtcReferencePositionTicks = -1;
+    g_neteaseLastGsmtcReferenceChange = {};
+    g_neteaseStaleZeroGsmtcSamples = 0;
+}
+
+bool TryReadNeteaseCloudMusicState(
+    MediaState* state,
+    bool requireActive,
+    NeteaseGsmtcProgressReference const* reference = nullptr) {
     if (!state) {
         return false;
     }
@@ -4585,8 +4777,13 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
         fallback.title = std::move(metadata.title);
         fallback.artist = std::move(metadata.artist);
         fallback.durationTicks = metadata.durationTicks;
+        if (fallback.durationTicks <= 0 && reference && reference->valid) {
+            // The local queue JSON can lack a duration; the GSMTC reference
+            // still gives us the track length for the progress bar.
+            fallback.durationTicks = reference->durationTicks;
+        }
         fallback.positionTicks =
-            EstimateNeteasePositionTicks(metadata, isPlaying);
+            EstimateNeteasePositionTicks(metadata, isPlaying, reference);
         fallback.canSeek = fallback.durationTicks > 0;
         fallback.thumbnailBytes = ReadNeteaseCachedArtwork(metadata.artworkUrl);
         if (fallback.thumbnailBytes.empty()) {
@@ -4596,6 +4793,14 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
     } else {
         fallback.title = window.title.substr(0, separator);
         fallback.artist = window.title.substr(separator + 3);
+        if (reference && reference->valid) {
+            // Local metadata is unavailable: keep a usable duration/position
+            // from the GSMTC reference instead of showing a dead progress bar.
+            fallback.durationTicks = reference->durationTicks;
+            fallback.positionTicks = reference->positionTicks;
+            fallback.isPlaying = isPlaying || reference->isPlaying;
+            fallback.canSeek = fallback.durationTicks > 0;
+        }
     }
     MediaState previous = SnapshotMedia();
     bool sameTrack =
@@ -4771,9 +4976,15 @@ void RefreshMediaState(
     MediaState previous = SnapshotMedia();
     bool neteaseWasCurrent =
         IsNeteaseCloudMusicSource(previous.sourceAppUserModelId);
+    // Read NetEase's GSMTC timeline as a recalibration reference. It is used
+    // only when it is actually advancing, so a frozen/zero NetEase timeline
+    // cannot drag the locally estimated position backwards.
+    NeteaseGsmtcProgressReference neteaseReference;
+    ReadNeteaseGsmtcProgressReference(manager, &neteaseReference);
     // Once NetEase is the active source, keep its paused state instead of
     // discarding it and falling back to a stale "playing" GSMTC session.
-    bool haveState = TryReadNeteaseCloudMusicState(&state, !neteaseWasCurrent);
+    bool haveState = TryReadNeteaseCloudMusicState(&state, !neteaseWasCurrent,
+                                                   &neteaseReference);
     if (!haveState) {
         try {
             auto session = CurrentSessionFromManager(manager);
@@ -4834,10 +5045,39 @@ void RefreshMediaState(
     }
 
     if (!haveState) {
-        haveState = TryReadNeteaseCloudMusicState(&state, false);
+        haveState =
+            TryReadNeteaseCloudMusicState(&state, false, &neteaseReference);
     }
     if (!haveState) {
         state = CreateDefaultMediaState();
+    }
+
+    // NetEase track-change guard (the long-standing sync bug): when a song is
+    // switched INSIDE the NetEase app (not through the island), the previous
+    // track's estimated position used to stay in the snapshot and "continue"
+    // on the new song. Detect any displayed-track change here and hard-reset
+    // the NetEase progress tracker + this snapshot's position before it is
+    // published, so both app-side and island-side switches start at 0:00.
+    if (haveState && IsNeteaseCloudMusicSource(state.sourceAppUserModelId) &&
+        previous.hasSession &&
+        IsNeteaseCloudMusicSource(previous.sourceAppUserModelId)) {
+        std::wstring previousTrack = MediaTrackKey(previous);
+        std::wstring nextTrack = MediaTrackKey(state);
+        bool trackChanged = !previousTrack.empty() && !nextTrack.empty() &&
+                            previousTrack != nextTrack;
+        if (trackChanged) {
+            ResetNeteaseProgressTracking();
+            state.positionTicks = 0;
+            state.timelineStartTicks = 0;
+            g_mediaProgressResetKey.clear();
+            g_mediaProgressResetStarted = std::chrono::steady_clock::now();
+            g_mediaProgressResetUntil =
+                g_mediaProgressResetStarted + std::chrono::milliseconds(1500);
+            Wh_Log(
+                L"Island: NetEase track change -> progress reset (old=%s "
+                L"new=%s)",
+                previousTrack.c_str(), nextTrack.c_str());
+        }
     }
     SetMedia(std::move(state));
 }
@@ -12044,6 +12284,10 @@ void ResetMediaProgressUiForTrackNavigation() {
         g_mediaNavigationOldTrackKey = std::move(oldTrackKey);
         g_mediaNavigationHoldUntil = now + std::chrono::seconds(4);
     }
+    // Island-initiated next/prev: drop the previous song's buffered NetEase
+    // estimate immediately so the new track always starts at 0:00 and then
+    // tracks from a fresh sample.
+    ResetNeteaseProgressTracking();
     g_mediaProgressResetKey.clear();
     g_mediaProgressResetStarted = now;
     g_mediaProgressResetUntil = now + std::chrono::milliseconds(1500);
@@ -17619,9 +17863,26 @@ void MediaThreadProc() {
         if (neteaseSeekRatio >= 0.0) {
             if (TrySeekNeteaseCloudMusic(neteaseSeekRatio)) {
                 MediaState state = SnapshotMedia();
-                g_neteaseEstimatedPositionTicks = static_cast<int64_t>(
-                    std::llround(state.durationTicks * neteaseSeekRatio));
-                g_neteaseProgressSampleTime = std::chrono::steady_clock::now();
+                if (state.hasSession && state.durationTicks > 0) {
+                    int64_t targetTicks = std::clamp<int64_t>(
+                        static_cast<int64_t>(std::llround(state.durationTicks *
+                                                          neteaseSeekRatio)),
+                        0, state.durationTicks);
+                    // Re-seed the local estimator at the committed position and
+                    // publish it immediately, then hold it until the provider/
+                    // estimator catches up (below). Without the hold the next
+                    // poll's anti-stale correction could snap the bar back.
+                    g_neteaseEstimatedPositionTicks = targetTicks;
+                    g_neteaseProgressSampleTime =
+                        std::chrono::steady_clock::now();
+                    g_neteaseSeekHoldTargetTicks = targetTicks;
+                    g_neteaseSeekHoldTrackKey = MediaTrackKey(state);
+                    g_neteaseSeekHoldUntil = std::chrono::steady_clock::now() +
+                                             std::chrono::milliseconds(2500);
+                    state.positionTicks = targetTicks;
+                    state.timelineStartTicks = 0;
+                    SetMedia(std::move(state));
+                }
             }
             g_mediaRefreshRequested = true;
         }
@@ -17660,10 +17921,15 @@ void MediaThreadProc() {
         auto now = std::chrono::steady_clock::now();
         // GSMTC events already trigger instant refreshes, so the fallback poll
         // only exists for providers that don't emit reliable events (mostly
-        // NetEase's title/local-data path). 250 ms is plenty for that path and
-        // avoids the previous 60 ms process-table and audio-session churn.
+        // NetEase's title/local-data path). While NetEase is the active source
+        // (or is running) poll at 500 ms so app-side track changes/position are
+        // picked up quickly instead of inheriting the previous song's progress.
+        MediaState pollSnapshot = SnapshotMedia();
+        bool neteasePollActive =
+            IsNeteaseCloudMusicSource(pollSnapshot.sourceAppUserModelId) ||
+            IsNeteaseCloudMusicRunning();
         std::chrono::milliseconds fallbackPollInterval =
-            IsNeteaseCloudMusicRunning()
+            neteasePollActive
                 ? std::chrono::milliseconds(500)
                 : (IsBilibiliRunning() ? std::chrono::milliseconds(500)
                                        : std::chrono::milliseconds(30000));
