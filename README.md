@@ -21,6 +21,12 @@ smoothly back into the compact island when it closes.
 - **Compact taskbar island** - artwork, title, artist and progress in one slim
   pill, with seven placement positions (near the tray, around the clock, or at
   either taskbar edge).
+- **Circular compact cover** - the collapsed artwork is clipped to a circle
+  whose diameter follows the island's inner height, so its curvature lines up
+  with the pill's rounded ends; the expanded cover stays a rounded square.
+- **Idle state and accent colour** - an optional default cover image plus
+  fallback title/artist shown before a media session starts, and an accent that
+  either follows the album artwork palette or uses a fixed custom colour.
 - **Expanded floating player** - large artwork, seekable progress, transport
   controls, album-colour wash, optional single-card layout and a fluid
   open/close morph.
@@ -59,8 +65,9 @@ Disabling the mod restores the native taskbar clock content.
 
 All options are grouped in the settings page: **Placement**, **Size and
 margins**, **Expanded player**, **Appearance**, **Artwork**, **Animation** and
-**Advanced**. Highlights include island position/height/width, expanded panel
-width and layout, material and Liquid Glass options, album wash, artwork mode,
+**Advanced**. Highlights include island position, height (28-72 DIP) and width,
+expanded panel width and layout, material and Liquid Glass options, album wash,
+artwork mode, default cover image and idle title/artist, accent colour mode,
 hover/animation speed and advanced backdrop/capture options. The mod
 description is localized for English and Chinese.
 

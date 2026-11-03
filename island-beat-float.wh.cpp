@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.0.0
+// @version         3.1.0
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -38,6 +38,14 @@ expanded panel morphs back into the compact island when it closes.
 - **Artwork pipeline** - uses the media session artwork; for low-resolution
   browser/video thumbnails it can generate a mesh-gradient or flame artwork
   instead, and it extracts an adaptive palette for accents and the album wash.
+- **Circular compact cover** - the collapsed artwork is clipped to a circle
+  whose diameter matches the island's inner height, so its curvature lines up
+  with the pill's rounded ends; the expanded cover stays a rounded square.
+- **Idle state** - an optional default cover image, title and artist are shown
+  before a media session starts (or while nothing is playing).
+- **Accent colour** - the compact equalizer bars, expanded playback indicator
+  and progress glow either follow the album artwork palette or use a custom
+  accent colour.
 - **Taskbar-position aware** - the island follows the taskbar when it moves,
   stays anchored above it, adapts the expand direction, and raises only the
   expanded panel above shell surfaces such as the Start menu.
@@ -53,10 +61,11 @@ expanded panel morphs back into the compact island when it closes.
 
 All visual and behavioural knobs are in the mod settings (grouped as placement,
 size and margins, expanded player, appearance, artwork, animation, advanced):
-island position/height/width, margins, expanded panel width and layout,
-spacing/shadow, button style, material and Liquid Glass options, album wash,
-artwork mode, hover and animation speeds, and advanced backdrop/capture
-options. Settings are English; a Chinese translation is planned.
+island position, height (28-72 DIP) and width, margins, expanded panel width
+and layout, spacing/shadow, button style, material and Liquid Glass options,
+album wash, artwork mode, default cover image and idle title/artist, accent
+colour mode, hover and animation speeds, and advanced backdrop/capture options.
+Settings are English; a Chinese translation is planned.
 
 ## Installation
 
@@ -91,12 +100,14 @@ Island Beat Float 把当前媒体会话放进 Windows 11 任务栏，变成一�
 
 主要功能：7 种任务栏位置；展开面板的液态玻璃/亚克力/纯色/类 Mica 材质与专辑
 渐变；封面自适应调色板与专辑色氛围；低分辨率视频封面可改用网格渐变/火焰封面；
-跟随任务栏位置与展开方向；悬停与展开动画可调速（含慢动作预览）；支持网易云音乐
-和哔哩哔哩集成；多显示器任务栏适配。
+折叠态封面为与胶囊曲率一致的圆形，展开态保持圆角方形；无媒体时可显示自定义默认
+封面、歌名与歌手；均衡器与进度条高光可跟随封面取色或使用自定义强调色；岛屿高度
+支持 28-72 DIP 调节；跟随任务栏位置与展开方向；悬停与展开动画可调速（含慢动作
+预览）；支持网易云音乐和哔哩哔哩集成；多显示器任务栏适配。
 
 设置项按「位置 / 尺寸与边距 / 展开面板 / 外观 / 封面 / 动画 / 高级」分组，可调
 岛屿位置、高度、宽度、展开面板宽度与布局、材质、液态玻璃参数、专辑氛围、封面
-模式、悬停与动画速度等。
+模式、默认封面与空闲文案、强调色模式、悬停与动画速度等。
 
 本项目基于 usho 的 **Island Media Controls**（MIT 协议）修改而来，使用 MIT 协议
 开源，详见 `LICENSE`。
@@ -121,7 +132,7 @@ Island Beat Float 把当前媒体会话放进 Windows 11 任务栏，变成一�
     $name: Hide the island when no media is playing
   - Height: 40
     $name: Island height (DIP)
-    $description: Height of the compact island on the taskbar.
+    $description: Height of the compact island on the taskbar, from 28 to 72 DIP; the circular cover and the compact layout scale with it.
   - CompactWidth: 169
     $name: Island width (DIP)
     $description: Width of the compact island; ignored when "Auto size to taskbar" adapts it to tall taskbars.
@@ -180,6 +191,24 @@ Island Beat Float 把当前媒体会话放进 Windows 11 任务栏，变成一�
     - "browser_original": "Browser thumbnail"
     - "mesh_gradient": "Mesh gradient"
     - "energy_flame": "Flame"
+  - DefaultCoverImage: ""
+    $name: Default cover image
+    $description: Optional path to an image file shown as the cover while no media session is active. Leave empty to use the built-in placeholder.
+  - DefaultTitle: "Island Beat Float"
+    $name: Idle title
+    $description: Title shown on the compact island and the expanded player while no media session is active.
+  - DefaultArtist: "No media playing"
+    $name: Idle artist
+    $description: Artist line shown on the compact island and the expanded player while no media session is active.
+  - AccentColorMode: "artwork"
+    $name: Accent colour mode
+    $description: Follow the current album artwork palette or use a fixed custom accent colour.
+    $options:
+    - "artwork": "Follow album artwork"
+    - "custom": "Custom colour"
+  - AccentColor: "#6EB85A"
+    $name: Custom accent colour
+    $description: Hex RGB colour in RRGGBB or AARRGGBB form, used when the accent colour mode is custom; invalid values fall back to following the album artwork.
   - HoverScale: 106
     $name: Hover scale (%)
     $description: Size of the island while the pointer is over it (100 = no scaling).
@@ -775,6 +804,13 @@ struct Settings {
     std::wstring popupButtonStyle = L"fluent_bold";
     std::wstring popupBackdropCoverEffect = L"dark_only";
     std::wstring artworkAbstractMode = L"browser_original";
+    std::wstring defaultCoverImage;
+    std::wstring defaultTitle = L"Island Beat Float";
+    std::wstring defaultArtist = L"No media playing";
+    std::wstring accentColorMode = L"artwork";
+    std::wstring accentColor = L"#6EB85A";
+    winrt::Windows::UI::Color customAccentColor{0xFF, 0x6E, 0xB8, 0x5A};
+    bool hasCustomAccent = false;
     int height = 40;
     int marginLeft = 4;
     int marginRight = 4;
@@ -1866,6 +1902,80 @@ std::wstring GetStringSetting(const wchar_t* key, const wchar_t* fallback) {
 }
 
 // ===== Settings =====
+// Compact island height bounds. Kept in one place so the settings page, the
+// runtime layout maths and the safety clamps always agree.
+constexpr int kCompactHeightMin = 28;
+constexpr int kCompactHeightMax = 72;
+
+// Parses "#RRGGBB" or "#AARRGGBB" (the leading '#' is optional). Returns false
+// for any other length or a non-hex character.
+bool ParseAccentColorHex(std::wstring_view text,
+                         winrt::Windows::UI::Color& out) {
+    while (!text.empty() && iswspace(text.front())) {
+        text.remove_prefix(1);
+    }
+    while (!text.empty() && iswspace(text.back())) {
+        text.remove_suffix(1);
+    }
+    if (!text.empty() && text.front() == L'#') {
+        text.remove_prefix(1);
+    }
+    if (text.size() != 6 && text.size() != 8) {
+        return false;
+    }
+
+    auto hexDigit = [](wchar_t ch) -> int {
+        if (ch >= L'0' && ch <= L'9') {
+            return ch - L'0';
+        }
+        if (ch >= L'a' && ch <= L'f') {
+            return ch - L'a' + 10;
+        }
+        if (ch >= L'A' && ch <= L'F') {
+            return ch - L'A' + 10;
+        }
+        return -1;
+    };
+
+    uint32_t value = 0;
+    for (wchar_t ch : text) {
+        int digit = hexDigit(ch);
+        if (digit < 0) {
+            return false;
+        }
+        value = (value << 4) | static_cast<uint32_t>(digit);
+    }
+    if (text.size() == 6) {
+        value |= 0xFF000000u;
+    }
+    out = Color(static_cast<BYTE>(value >> 24), static_cast<BYTE>(value >> 16),
+                static_cast<BYTE>(value >> 8), static_cast<BYTE>(value));
+    return true;
+}
+
+// True when the user selected a valid custom accent colour. Every accent
+// consumer falls back to the artwork-derived colour when this returns false.
+bool CustomAccentColor(winrt::Windows::UI::Color& out) {
+    if (g_settings.accentColorMode != L"custom" ||
+        !g_settings.hasCustomAccent) {
+        return false;
+    }
+    out = g_settings.customAccentColor;
+    return true;
+}
+
+// Idle-state (no media session) text. Empty settings fall back to the built-in
+// wording so the island never shows a blank line.
+std::wstring DefaultIdleTitle() {
+    return g_settings.defaultTitle.empty() ? std::wstring(L"No media")
+                                           : g_settings.defaultTitle;
+}
+
+std::wstring DefaultIdleArtist() {
+    return g_settings.defaultArtist.empty() ? std::wstring(L"No media playing")
+                                            : g_settings.defaultArtist;
+}
+
 constexpr int kSettingsMigrationVersion = 1;
 constexpr wchar_t kMigrateMicaLikeMaterialValue[] =
     L"MigrateMicaLikeMaterialToAcrylic";
@@ -1929,7 +2039,35 @@ Settings ReadSettings() {
         settings.artworkAbstractMode != L"energy_flame") {
         settings.artworkAbstractMode = L"browser_original";
     }
-    settings.height = Clamp(Wh_GetIntSetting(L"Main.Height"), 32, 56);
+    settings.defaultCoverImage =
+        GetStringSetting(L"Main.DefaultCoverImage", L"");
+    settings.defaultTitle =
+        GetStringSetting(L"Main.DefaultTitle", L"Island Beat Float");
+    if (settings.defaultTitle.empty()) {
+        settings.defaultTitle = L"Island Beat Float";
+    }
+    settings.defaultArtist =
+        GetStringSetting(L"Main.DefaultArtist", L"No media playing");
+    if (settings.defaultArtist.empty()) {
+        settings.defaultArtist = L"No media playing";
+    }
+    settings.accentColorMode =
+        GetStringSetting(L"Main.AccentColorMode", L"artwork");
+    settings.accentColor = GetStringSetting(L"Main.AccentColor", L"#6EB85A");
+    if (settings.accentColorMode != L"artwork" &&
+        settings.accentColorMode != L"custom") {
+        settings.accentColorMode = L"artwork";
+    }
+    // A malformed custom colour must never leave the island with an unusable
+    // accent: fall back to the artwork-derived behaviour instead.
+    settings.hasCustomAccent =
+        settings.accentColorMode == L"custom" &&
+        ParseAccentColorHex(settings.accentColor, settings.customAccentColor);
+    if (!settings.hasCustomAccent) {
+        settings.accentColorMode = L"artwork";
+    }
+    settings.height = Clamp(Wh_GetIntSetting(L"Main.Height"), kCompactHeightMin,
+                            kCompactHeightMax);
     settings.marginLeft = Clamp(Wh_GetIntSetting(L"Main.MarginLeft"), 0, 48);
     settings.marginRight = Clamp(Wh_GetIntSetting(L"Main.MarginRight"), 0, 48);
     settings.hideWhenNoMedia = Wh_GetIntSetting(L"Main.HideWhenNoMedia") != 0;
@@ -5301,7 +5439,13 @@ std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(
         return {};
     }
 
+    // The generated idle cover follows the accent colour setting so a custom
+    // accent also tints the no-media placeholder.
     auto accent = DefaultPopupAccentColor();
+    winrt::Windows::UI::Color customAccent;
+    if (CustomAccentColor(customAccent)) {
+        accent = customAccent;
+    }
     std::vector<BYTE> pixels(static_cast<size_t>(size) * size * 4);
     double denom = size > 1 ? static_cast<double>(size - 1) : 1.0;
     for (UINT y = 0; y < size; ++y) {
@@ -5389,6 +5533,84 @@ bool GetArtworkDimensions(std::vector<uint8_t> const& bytes,
     if (stream)
         stream->Release();
     return SUCCEEDED(hr) && width > 0 && height > 0;
+}
+
+// Reads a user-selected image file into memory. The size is capped so a huge
+// file can never stall the taskbar UI thread; WIC validates the payload later.
+std::vector<uint8_t> ReadImageFileBytes(std::wstring const& path) {
+    std::vector<uint8_t> bytes;
+    if (path.empty()) {
+        return bytes;
+    }
+
+    HANDLE file =
+        CreateFileW(path.c_str(), GENERIC_READ,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return bytes;
+    }
+
+    LARGE_INTEGER fileSize{};
+    if (GetFileSizeEx(file, &fileSize) && fileSize.QuadPart > 0 &&
+        fileSize.QuadPart <= 16 * 1024 * 1024) {
+        bytes.resize(static_cast<size_t>(fileSize.QuadPart));
+        DWORD read = 0;
+        if (!ReadFile(file, bytes.data(), static_cast<DWORD>(bytes.size()),
+                      &read, nullptr) ||
+            read != static_cast<DWORD>(bytes.size())) {
+            bytes.clear();
+        }
+    }
+    CloseHandle(file);
+    return bytes;
+}
+
+// Loads Main.DefaultCoverImage once per path / last-write-time and validates it
+// with the same WIC decoder that the artwork pipeline uses. Returns an empty
+// vector when the setting is empty, the file is missing or the payload is not a
+// decodable image, so callers keep the built-in placeholder in that case.
+std::vector<uint8_t> LoadDefaultCoverImageBytes() {
+    static std::wstring s_cachedPath;
+    static ULONGLONG s_cachedWriteTime = 0;
+    static std::vector<uint8_t> s_cachedBytes;
+
+    std::wstring const& path = g_settings.defaultCoverImage;
+    if (path.empty()) {
+        s_cachedPath.clear();
+        s_cachedWriteTime = 0;
+        s_cachedBytes.clear();
+        return {};
+    }
+
+    WIN32_FILE_ATTRIBUTE_DATA attributes{};
+    if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard,
+                              &attributes)) {
+        s_cachedPath.clear();
+        s_cachedWriteTime = 0;
+        s_cachedBytes.clear();
+        return {};
+    }
+
+    ULONGLONG writeTime =
+        (static_cast<ULONGLONG>(attributes.ftLastWriteTime.dwHighDateTime)
+         << 32) |
+        attributes.ftLastWriteTime.dwLowDateTime;
+    if (path == s_cachedPath && writeTime == s_cachedWriteTime) {
+        return s_cachedBytes;
+    }
+
+    s_cachedPath = path;
+    s_cachedWriteTime = writeTime;
+    s_cachedBytes = ReadImageFileBytes(path);
+    if (!s_cachedBytes.empty()) {
+        UINT width = 0;
+        UINT height = 0;
+        if (!GetArtworkDimensions(s_cachedBytes, width, height)) {
+            s_cachedBytes.clear();
+        }
+    }
+    return s_cachedBytes;
 }
 
 bool ShouldUseAbstractArtworkForDisplay(std::vector<uint8_t> const& bytes) {
@@ -6397,11 +6619,22 @@ winrt::Windows::UI::Color LerpColor(winrt::Windows::UI::Color const& from,
 }
 
 winrt::Windows::UI::Color PopupTargetAccentColor() {
+    winrt::Windows::UI::Color custom;
+    if (CustomAccentColor(custom)) {
+        return custom;
+    }
     return g_popupAccentColorValid ? g_popupAccentColor
                                    : DefaultPopupAccentColor();
 }
 
 winrt::Windows::UI::Color PopupAccentColor() {
+    // A valid custom accent is authoritative: the compact bars, the popup
+    // playback indicator and every accent-derived progress layer use it
+    // directly instead of the artwork palette.
+    winrt::Windows::UI::Color custom;
+    if (CustomAccentColor(custom)) {
+        return custom;
+    }
     return g_popupDisplayedAccentColorValid ? g_popupDisplayedAccentColor
                                             : PopupTargetAccentColor();
 }
@@ -6606,7 +6839,14 @@ std::wstring FormatMediaTime(int64_t ticks) {
 }
 
 void UpdatePopupAlbumBitmap(MediaState const& state) {
-    uint64_t hash = ThumbnailHash(state.thumbnailBytes);
+    // CPU-rendered popup fallback: the default cover also fills the idle state
+    // here so both rendering paths stay visually consistent.
+    std::vector<uint8_t> bytes = state.thumbnailBytes;
+    if (bytes.empty() && !state.hasSession) {
+        bytes = LoadDefaultCoverImageBytes();
+    }
+
+    uint64_t hash = ThumbnailHash(bytes);
     if (hash == g_popupThumbnailHash) {
         return;
     }
@@ -6617,7 +6857,7 @@ void UpdatePopupAlbumBitmap(MediaState const& state) {
         g_popupAlbumBitmap = nullptr;
     }
     if (hash) {
-        g_popupAlbumBitmap = DecodeAlbumBitmap(state.thumbnailBytes, 256);
+        g_popupAlbumBitmap = DecodeAlbumBitmap(bytes, 256);
     }
 }
 
@@ -6658,6 +6898,35 @@ void ApplyElementClip(FrameworkElement const& element,
         element.Clip(clip);
     } catch (...) {
     }
+}
+
+void ApplyElementCircularClip(FrameworkElement const& element,
+                              double diameter) {
+    if (!element || diameter <= 0.0) {
+        return;
+    }
+    double size = std::max(1.0, diameter);
+    try {
+        // XAML only accepts a RectangleGeometry for UIElement.Clip, so a real
+        // circle needs a composition geometric clip (the same technique the
+        // expanded panel artwork uses). Corner radius = half the square size
+        // makes the rounded rectangle geometry exactly circular.
+        auto visual =
+            hosting::ElementCompositionPreview::GetElementVisual(element);
+        auto compositor = visual.Compositor();
+        auto geometry = compositor.CreateRoundedRectangleGeometry();
+        float sizeF = static_cast<float>(size);
+        geometry.Size({sizeF, sizeF});
+        float radius = sizeF * 0.5f;
+        geometry.CornerRadius({radius, radius});
+        visual.Clip(compositor.CreateGeometricClip(geometry));
+        return;
+    } catch (...) {
+    }
+
+    // Last-resort fallback: a rectangular clip still keeps the artwork inside
+    // its slot if the compositor path is unavailable.
+    ApplyElementClip(element, size, size);
 }
 
 void ApplyElementClipWithPadding(FrameworkElement const& element,
@@ -7911,15 +8180,18 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
                     artistScreen.bottom - popupScreen.top};
     HGDIOBJ oldFont = SelectObject(dc, titleFont);
     SetTextColor(dc, primary);
-    std::wstring title = state.hasSession ? state.title : L"No media";
+    std::wstring title = state.hasSession ? state.title : DefaultIdleTitle();
     DrawTextW(dc, title.c_str(), -1, &titleRect,
               DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
 
     SelectObject(dc, artistFont);
     SetTextColor(dc, secondary);
-    std::wstring artist = state.artist.empty()
-                              ? (state.isPlaying ? L"Playing" : L"Paused")
-                              : state.artist;
+    std::wstring artist =
+        !state.hasSession
+            ? DefaultIdleArtist()
+            : (state.artist.empty()
+                   ? std::wstring(state.isPlaying ? L"Playing" : L"Paused")
+                   : state.artist);
     DrawTextW(dc, artist.c_str(), -1, &artistRect,
               DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS);
 
@@ -10882,7 +11154,7 @@ void StartCompactProgressRenderLoop() {
 }
 
 double CompactPlaybackIndicatorHeight() {
-    return Clamp(g_layout.playbackIndicatorHeight, 10.0, 20.0);
+    return Clamp(g_layout.playbackIndicatorHeight, 10.0, 24.0);
 }
 
 winrt::Windows::UI::Color CompactPlaybackReadableAccent(
@@ -11054,7 +11326,19 @@ void StartCompactPlaybackIndicatorRenderLoop() {
 void UpdateCompactPlaybackIndicatorAccent(
     std::vector<uint8_t> const& artworkBytes,
     bool immediate) {
-    uint64_t artworkHash = ThumbnailHash(artworkBytes);
+    winrt::Windows::UI::Color customAccent;
+    bool customMode = CustomAccentColor(customAccent);
+
+    // A custom accent has its own synthetic key so switching the colour (or
+    // switching back to artwork mode) retriggers the transition even when the
+    // playing artwork did not change.
+    uint64_t artworkHash =
+        customMode ? (0xA11CE00000000000ULL |
+                      (static_cast<uint64_t>(customAccent.A) << 24) |
+                      (static_cast<uint64_t>(customAccent.R) << 16) |
+                      (static_cast<uint64_t>(customAccent.G) << 8) |
+                      static_cast<uint64_t>(customAccent.B))
+                   : ThumbnailHash(artworkBytes);
     if (IsDarkModeApprox()) {
         artworkHash ^= 0x9E3779B97F4A7C15ULL;
     }
@@ -11062,9 +11346,14 @@ void UpdateCompactPlaybackIndicatorAccent(
         return;
     }
 
-    auto nextColor = CompactPlaybackReadableAccent(
-        artworkBytes.empty() ? DefaultPopupAccentColor()
-                             : ExtractAlbumAccentColor(artworkBytes));
+    // Custom accents are used verbatim; the readability tuning is only meant
+    // for artwork-derived colours, which can be muted or too dark.
+    auto nextColor =
+        customMode
+            ? customAccent
+            : CompactPlaybackReadableAccent(
+                  artworkBytes.empty() ? DefaultPopupAccentColor()
+                                       : ExtractAlbumAccentColor(artworkBytes));
     bool firstColor = g_compactPlaybackAccentThumbnailHash == UINT64_MAX;
     g_compactPlaybackAccentThumbnailHash = artworkHash;
 
@@ -11731,11 +12020,14 @@ void RefreshPopupTextOnly() {
         MediaState state = SnapshotMedia();
         winrt::hstring nextTitle = state.hasSession
                                        ? winrt::hstring(state.title)
-                                       : winrt::hstring(L"No media");
+                                       : winrt::hstring(DefaultIdleTitle());
         winrt::hstring nextArtist =
-            state.artist.empty() ? (state.isPlaying ? winrt::hstring(L"Playing")
-                                                    : winrt::hstring(L"Paused"))
-                                 : winrt::hstring(state.artist);
+            !state.hasSession
+                ? winrt::hstring(DefaultIdleArtist())
+                : (state.artist.empty()
+                       ? (state.isPlaying ? winrt::hstring(L"Playing")
+                                          : winrt::hstring(L"Paused"))
+                       : winrt::hstring(state.artist));
         g_popupXamlTitle.Text(nextTitle);
         g_popupXamlArtist.Text(nextArtist);
         if (g_popupXamlOutgoingTitle) {
@@ -16476,7 +16768,7 @@ void ApplyExpandedState() {
     if (auto artHostFe = FindChildByName(g_playerGrid, L"Island_ArtHost")) {
         artHostFe.Width(g_layout.artSize);
         artHostFe.Height(g_layout.artSize);
-        ApplyElementClip(artHostFe, g_layout.artSize, g_layout.artSize);
+        ApplyElementCircularClip(artHostFe, g_layout.artSize);
     }
     if (auto placeholderFe =
             FindChildByName(g_playerGrid, L"Island_ArtPlaceholder")) {
@@ -17119,49 +17411,65 @@ void UpdateRuntimeLayout(HWND hwnd,
     double compactWidth = static_cast<double>(g_settings.compactWidth);
     if (g_settings.autoSizeToTaskbar) {
         // Use the detected *visual* height, not the outer Shell_TrayWnd height.
-        // For smaller themed taskbars, never enlarge beyond the user's configured
-        // Height/CompactWidth; for genuinely tall taskbars, allow moderate growth.
-        // The taller bar also gets a wider island so a normal artist name has
-        // room to display completely (the ellipsis remains only for very long
-        // names).
-        double autoHeight = Clamp(taskbarHeight - 8.0, 28.0, 46.0);
+        // The taskbar's usable inner height is the hard ceiling and the
+        // configured Height is the target: compact/themed taskbars shrink the
+        // island to fit, while genuinely tall taskbars may grow it all the way
+        // to the widened 28..72 DIP range. The taller bar also gets a wider
+        // island so normal artist names display in full (the ellipsis remains
+        // only for very long names).
+        double maxFitHeight =
+            Clamp(taskbarHeight - 8.0, static_cast<double>(kCompactHeightMin),
+                  static_cast<double>(kCompactHeightMax));
+        bool tallTaskbar = taskbarHeight > 50.0;
+        double autoHeight =
+            tallTaskbar ? maxFitHeight : std::min(maxFitHeight, 46.0);
+        compactHeight =
+            std::min(static_cast<double>(g_settings.height), autoHeight);
+
         double autoScale = autoHeight / 40.0;
         double autoWidth = Clamp(230.0 * autoScale, 112.0, 280.0);
-
-        if (taskbarHeight <= 50.0) {
-            compactHeight =
-                std::min(static_cast<double>(g_settings.height), autoHeight);
-            compactWidth = std::min(
+        if (tallTaskbar) {
+            compactWidth = std::max(
                 static_cast<double>(g_settings.compactWidth), autoWidth);
         } else {
-            compactHeight = autoHeight;
-            compactWidth = autoWidth;
+            compactWidth = std::min(
+                static_cast<double>(g_settings.compactWidth), autoWidth);
         }
     }
 
-    double scale = Clamp(compactHeight / 40.0, 0.68, 1.20);
+    // Scale text and controls with the island, but clamp the factor so very
+    // small and very large heights stay legible without overflowing the pill.
+    double scale = Clamp(compactHeight / 40.0, 0.68, 1.50);
     g_layout.compactHeight = compactHeight;
     g_layout.compactWidth = compactWidth;
-    g_layout.artSize = Clamp(compactHeight - 12.0, 18.0, 34.0);
+    g_layout.contentMarginX = Clamp(10.0 * scale, 6.0, 14.0);
+    g_layout.contentMarginY = Clamp(4.0 * scale, 2.0, 6.0);
+    // The compact cover is a circle whose diameter equals the island's inner
+    // content height, so its curvature matches the pill's rounded cap radius.
+    // The image keeps a 2 DIP overscan clipped by the circular geometry, which
+    // avoids a hard anti-aliased edge on the cover bounds.
+    double innerHeight =
+        std::max(16.0, compactHeight - g_layout.contentMarginY * 2.0);
+    g_layout.artSize = innerHeight;
     g_layout.artImageSize = g_layout.artSize + 2.0;
-    g_layout.artCornerRadius = Clamp(g_layout.artSize * 0.29, 5.0, 10.0);
-    g_layout.cornerRadius = Clamp(compactHeight * 0.50, 12.0, 23.0);
-    g_layout.contentMarginX = Clamp(10.0 * scale, 6.0, 12.0);
-    g_layout.contentMarginY = Clamp(4.0 * scale, 2.0, 5.0);
+    // A Border with corner radius = half its size renders exactly as a circle;
+    // this keeps the placeholder and stroke layers matching the circular clip.
+    g_layout.artCornerRadius = g_layout.artSize * 0.5;
+    g_layout.cornerRadius = Clamp(compactHeight * 0.50, 12.0, 36.0);
     g_layout.artColumnWidth = g_layout.artImageSize;
     // Slightly wider text area so normal artist names display in full
     // (the ellipsis remains only as a fallback for very long names).
     g_layout.textMarginX = Clamp(4.0 * scale, 2.0, 6.0);
-    g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 13.5);
-    g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 11.5);
-    g_layout.progressWidth = Clamp(74.0 * scale, 42.0, 92.0);
-    g_layout.progressHeight = Clamp(4.0 * scale, 2.5, 5.0);
-    g_layout.progressMarginLeft = Clamp(8.0 * scale, 4.0, 10.0);
-    g_layout.playbackIndicatorWidth = Clamp(18.0 * scale, 13.0, 21.0);
-    g_layout.playbackIndicatorHeight = Clamp(16.0 * scale, 11.0, 19.0);
-    g_layout.playbackIndicatorMarginLeft = Clamp(2.0 * scale, 1.0, 3.0);
-    g_layout.playbackBarWidth = Clamp(2.4 * scale, 1.7, 2.8);
-    g_layout.playbackBarGap = Clamp(0.75 * scale, 0.45, 0.95);
+    g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
+    g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 13.5);
+    g_layout.progressWidth = Clamp(74.0 * scale, 42.0, 110.0);
+    g_layout.progressHeight = Clamp(4.0 * scale, 2.5, 6.0);
+    g_layout.progressMarginLeft = Clamp(8.0 * scale, 4.0, 12.0);
+    g_layout.playbackIndicatorWidth = Clamp(18.0 * scale, 13.0, 24.0);
+    g_layout.playbackIndicatorHeight = Clamp(16.0 * scale, 11.0, 24.0);
+    g_layout.playbackIndicatorMarginLeft = Clamp(2.0 * scale, 1.0, 4.0);
+    g_layout.playbackBarWidth = Clamp(2.4 * scale, 1.7, 3.6);
+    g_layout.playbackBarGap = Clamp(0.75 * scale, 0.45, 1.2);
 }
 
 Grid BuildIslandGrid() {
@@ -17242,7 +17550,7 @@ Grid BuildIslandGrid() {
     artHost.Name(L"Island_ArtHost");
     artHost.Width(g_layout.artSize);
     artHost.Height(g_layout.artSize);
-    ApplyElementClip(artHost, g_layout.artSize, g_layout.artSize);
+    ApplyElementCircularClip(artHost, g_layout.artSize);
     artShell.Children().Append(artHost);
 
     Border artPlaceholder;
@@ -17252,7 +17560,14 @@ Grid BuildIslandGrid() {
     artPlaceholder.CornerRadius(
         {g_layout.artCornerRadius, g_layout.artCornerRadius,
          g_layout.artCornerRadius, g_layout.artCornerRadius});
-    artPlaceholder.Background(Brush(Color(0xFF, 0x4F, 0x7D, 0xE8)));
+    // The generated idle cover follows a custom accent colour; the default
+    // accent keeps the stock blue placeholder.
+    auto placeholderAccent = DefaultPopupAccentColor();
+    winrt::Windows::UI::Color customAccent;
+    if (CustomAccentColor(customAccent)) {
+        placeholderAccent = customAccent;
+    }
+    artPlaceholder.Background(Brush(placeholderAccent));
     artPlaceholder.BorderThickness({0, 0, 0, 0});
     artPlaceholder.IsHitTestVisible(false);
     artHost.Children().Append(artPlaceholder);
@@ -17708,7 +18023,22 @@ void UpdatePlayerContents() {
         std::vector<uint8_t> displayThumbnailBytes =
             CreateDisplayAlbumCoverBytesCached(visualThumbnailBytes,
                                                state.sourceAppUserModelId);
-        UpdateCompactPlaybackIndicatorAccent(displayThumbnailBytes,
+        // Main.DefaultCoverImage is the idle cover: it only fills in while no
+        // media session exists, and a real session always wins once it starts.
+        std::vector<uint8_t> defaultCoverBytes;
+        bool useDefaultCoverArt = false;
+        if (!state.hasSession) {
+            defaultCoverBytes = LoadDefaultCoverImageBytes();
+            useDefaultCoverArt = !defaultCoverBytes.empty();
+        }
+        // Artwork-mode accents can also come from the idle cover, so the bars
+        // already match the shown image before the first track starts.
+        std::vector<uint8_t> const& compactAccentSourceBytes =
+            !displayThumbnailBytes.empty()
+                ? displayThumbnailBytes
+                : (useDefaultCoverArt ? defaultCoverBytes
+                                      : visualThumbnailBytes);
+        UpdateCompactPlaybackIndicatorAccent(compactAccentSourceBytes,
                                              forceImmediateAccent);
         bool useGeneratedBlurCover =
             LooksLikeBrowserMediaSource(state.sourceAppUserModelId) &&
@@ -17745,11 +18075,13 @@ void UpdatePlayerContents() {
         };
 
         std::wstring compactTitle =
-            state.hasSession ? state.title : std::wstring(L"No media");
+            state.hasSession ? state.title : DefaultIdleTitle();
         std::wstring compactArtist =
-            state.artist.empty()
-                ? std::wstring(state.isPlaying ? L"Playing" : L"Paused")
-                : state.artist;
+            !state.hasSession
+                ? DefaultIdleArtist()
+                : (state.artist.empty()
+                       ? std::wstring(state.isPlaying ? L"Playing" : L"Paused")
+                       : state.artist);
         // Artwork can be refreshed repeatedly while the media item itself hasn't
         // changed (especially for browser-backed sessions). Text motion must be
         // keyed to text metadata only: including the thumbnail hash restarted the
@@ -17813,6 +18145,11 @@ void UpdatePlayerContents() {
         }
         bool compactArtChanged = false;
         uint64_t compactArtHash = displayThumbnailHash;
+        std::vector<uint8_t> const* compactArtBytes = &displayThumbnailBytes;
+        if (useDefaultCoverArt) {
+            compactArtHash = ThumbnailHash(defaultCoverBytes);
+            compactArtBytes = &defaultCoverBytes;
+        }
         if (auto imageFe = FindChildByName(g_playerGrid, L"Island_AlbumArt")) {
             if (auto image = imageFe.try_as<Image>()) {
                 if (!g_compactAlbumArtImage) {
@@ -17830,7 +18167,7 @@ void UpdatePlayerContents() {
                                 oldSource != nullptr ? 1.0 : 0.0);
                         }
                         if (compactArtHash) {
-                            image.Source(makeBitmap(displayThumbnailBytes));
+                            image.Source(makeBitmap(*compactArtBytes));
                         } else {
                             image.Source(nullptr);
                         }
@@ -17860,11 +18197,16 @@ void UpdatePlayerContents() {
                 g_popupPendingContentRefresh = true;
             } else {
                 std::vector<uint8_t> const& accentSourceBytes =
-                    displayThumbnailBytes.empty() ? visualThumbnailBytes
-                                                  : displayThumbnailBytes;
+                    !displayThumbnailBytes.empty()
+                        ? displayThumbnailBytes
+                        : (useDefaultCoverArt ? defaultCoverBytes
+                                              : visualThumbnailBytes);
                 uint64_t accentHash = displayThumbnailHash != 0
                                           ? displayThumbnailHash
                                           : visualThumbnailHash;
+                if (accentHash == 0 && !accentSourceBytes.empty()) {
+                    accentHash = ThumbnailHash(accentSourceBytes);
+                }
                 bool accentChanged = accentHash != g_popupAccentThumbnailHash;
                 if (accentChanged) {
                     winrt::Windows::UI::Color nextAccent =
@@ -17895,12 +18237,14 @@ void UpdatePlayerContents() {
                 ApplyPopupXamlTheme();
                 winrt::hstring nextPopupTitle =
                     state.hasSession ? winrt::hstring(state.title)
-                                     : winrt::hstring(L"No media");
+                                     : winrt::hstring(DefaultIdleTitle());
                 winrt::hstring nextPopupArtist =
-                    state.artist.empty()
-                        ? (state.isPlaying ? winrt::hstring(L"Playing")
-                                           : winrt::hstring(L"Paused"))
-                        : winrt::hstring(state.artist);
+                    !state.hasSession
+                        ? winrt::hstring(DefaultIdleArtist())
+                        : (state.artist.empty()
+                               ? (state.isPlaying ? winrt::hstring(L"Playing")
+                                                  : winrt::hstring(L"Paused"))
+                               : winrt::hstring(state.artist));
                 bool popupTextChanged =
                     g_popupXamlTitle && g_popupXamlArtist &&
                     (g_popupXamlTitle.Text() != nextPopupTitle ||
@@ -17983,6 +18327,9 @@ void UpdatePlayerContents() {
                 uint64_t popupHash = displayThumbnailHash != 0
                                          ? displayThumbnailHash
                                          : visualThumbnailHash;
+                if (popupHash == 0 && useDefaultCoverArt) {
+                    popupHash = ThumbnailHash(defaultCoverBytes);
+                }
                 bool useBackdropCover = PopupBackdropCoverEffectEnabled();
                 if (popupHash != g_popupXamlThumbnailHash ||
                     g_popupXamlThumbnailMaterial != g_settings.material ||
@@ -18023,43 +18370,87 @@ void UpdatePlayerContents() {
                         }
 
                         if (visualThumbnailBytes.empty()) {
-                            auto placeholderArtBytes =
-                                CreatePlaceholderAlbumCoverBytes(128);
-                            auto placeholderG2ArtBytes =
-                                CreatePopupG2AlbumCoverBytes(
-                                    placeholderArtBytes);
-                            auto placeholderPanelBytes =
-                                CreatePlaceholderAlbumCoverBytes(20);
-                            auto placeholderBackdropBytes =
-                                CreatePlaceholderAlbumCoverBytes(
-                                    20, true,
-                                    g_settings.compact || g_taskbarAtTop,
-                                    false);
-                            auto const& popupArtBytes =
-                                placeholderG2ArtBytes.empty()
-                                    ? placeholderArtBytes
-                                    : placeholderG2ArtBytes;
-                            if (!popupArtBytes.empty()) {
-                                g_popupXamlArt.Source(
-                                    makeBitmap(popupArtBytes));
-                            } else {
-                                g_popupXamlArt.Source(nullptr);
-                            }
-                            if (g_popupXamlBackdropCover) {
-                                if (useBackdropCover &&
-                                    !placeholderBackdropBytes.empty()) {
-                                    g_popupXamlBackdropCover.Source(
-                                        makeBitmap(placeholderBackdropBytes));
-                                } else {
-                                    g_popupXamlBackdropCover.Source(nullptr);
+                            if (useDefaultCoverArt) {
+                                // Idle: use the configured default cover in
+                                // both the artwork and the wash/card covers.
+                                auto idleArtBytes =
+                                    CreatePopupG2AlbumCoverBytes(
+                                        defaultCoverBytes);
+                                auto const& idleArt = idleArtBytes.empty()
+                                                          ? defaultCoverBytes
+                                                          : idleArtBytes;
+                                g_popupXamlArt.Source(makeBitmap(idleArt));
+                                if (g_popupXamlBackdropCover) {
+                                    if (useBackdropCover) {
+                                        auto idleBackdropBytes =
+                                            CreateLowDetailAlbumCoverBytes(
+                                                defaultCoverBytes, true,
+                                                g_settings.compact ||
+                                                    g_taskbarAtTop,
+                                                false);
+                                        auto const& idleBackdrop =
+                                            idleBackdropBytes.empty()
+                                                ? defaultCoverBytes
+                                                : idleBackdropBytes;
+                                        g_popupXamlBackdropCover.Source(
+                                            makeBitmap(idleBackdrop));
+                                    } else {
+                                        g_popupXamlBackdropCover.Source(
+                                            nullptr);
+                                    }
                                 }
-                            }
-                            if (g_popupXamlPanelCover) {
-                                if (!placeholderPanelBytes.empty()) {
+                                if (g_popupXamlPanelCover) {
+                                    auto idlePanelBytes =
+                                        CreateLowDetailAlbumCoverBytes(
+                                            defaultCoverBytes);
+                                    auto const& idlePanel =
+                                        idlePanelBytes.empty()
+                                            ? defaultCoverBytes
+                                            : idlePanelBytes;
                                     g_popupXamlPanelCover.Source(
-                                        makeBitmap(placeholderPanelBytes));
+                                        makeBitmap(idlePanel));
+                                }
+                            } else {
+                                auto placeholderArtBytes =
+                                    CreatePlaceholderAlbumCoverBytes(128);
+                                auto placeholderG2ArtBytes =
+                                    CreatePopupG2AlbumCoverBytes(
+                                        placeholderArtBytes);
+                                auto placeholderPanelBytes =
+                                    CreatePlaceholderAlbumCoverBytes(20);
+                                auto placeholderBackdropBytes =
+                                    CreatePlaceholderAlbumCoverBytes(
+                                        20, true,
+                                        g_settings.compact || g_taskbarAtTop,
+                                        false);
+                                auto const& popupArtBytes =
+                                    placeholderG2ArtBytes.empty()
+                                        ? placeholderArtBytes
+                                        : placeholderG2ArtBytes;
+                                if (!popupArtBytes.empty()) {
+                                    g_popupXamlArt.Source(
+                                        makeBitmap(popupArtBytes));
                                 } else {
-                                    g_popupXamlPanelCover.Source(nullptr);
+                                    g_popupXamlArt.Source(nullptr);
+                                }
+                                if (g_popupXamlBackdropCover) {
+                                    if (useBackdropCover &&
+                                        !placeholderBackdropBytes.empty()) {
+                                        g_popupXamlBackdropCover.Source(
+                                            makeBitmap(
+                                                placeholderBackdropBytes));
+                                    } else {
+                                        g_popupXamlBackdropCover.Source(
+                                            nullptr);
+                                    }
+                                }
+                                if (g_popupXamlPanelCover) {
+                                    if (!placeholderPanelBytes.empty()) {
+                                        g_popupXamlPanelCover.Source(
+                                            makeBitmap(placeholderPanelBytes));
+                                    } else {
+                                        g_popupXamlPanelCover.Source(nullptr);
+                                    }
                                 }
                             }
                         } else {
