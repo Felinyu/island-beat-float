@@ -1,10 +1,11 @@
 // ==WindhawkMod==
-// @id              island-media-controls-fork
-// @name            Island Media Controls - Fork
-// @description     Dynamic island-like media controls for the Windows 11 taskbar.
-// @version         2.5.26
-// @author          usho
-// @github          https://github.com/usho-lear
+// @id              island-beat-float
+// @name            Island Beat Float
+// @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
+// @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
+// @version         3.0.0
+// @author          Felinyu
+// @github          https://github.com/Felinyu
 // @license         MIT
 // @include         explorer.exe
 // @architecture    x86-64
@@ -13,129 +14,92 @@
 
 // ==WindhawkModReadme==
 /*
-# Island Media Controls
+# Island Beat Float
 
-Bring the current media session into the Windows 11 taskbar as a compact,
-clickable island. It shows the active track, artist, artwork, playback state,
-and progress, then expands into a larger player with seek, previous,
-play/pause, and next controls.
+**Dynamic Island style floating music controller for Windows.**
 
-## Preview
-
-| Dark mode | Light mode |
-| :---: | :---: |
-| ![Island Media Controls in dark mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/dark-mode.gif) | ![Island Media Controls in light mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/light-mode.gif) |
-
-## What's new
-
-- **Taskbar-layer tracking:** Whenever the shell reorders the taskbar (hide
-  or show), the compact island is re-anchored directly above it, so it can
-  never be pressed under the taskbar and never floats over a fullscreen app.
-- **Wider island on tall taskbars:** Tall taskbars now get a wider compact
-  island so normal artist names display completely (the ellipsis remains
-  only as a fallback for very long names).
-- **Artist name stays complete after expand/collapse:** The compact width is
-  no longer capped back to the user's CompactWidth after the taskbar layout
-  settles, so a name that was fully visible before opening the card remains
-  fully visible after collapsing it again.
-- **Wider text column for artist names:** The compact island now targets a
-  ~170px text column so normal artist names render in full without ellipsis;
-  the island widens accordingly while album art and controls keep their size.
-- **Island layer fixed to the taskbar:** The compact island is now anchored
-  directly above the taskbar whenever it is shown or the foreground changes,
-  so it can never float over a fullscreen app and never gets pressed under
-  the taskbar. Only the expanded card is lifted above the Start menu.
-- **Compact island stays in the taskbar:** Opening the Start menu no longer
-  lifts the resting compact island above the menu - only the expanded card
-  is raised over shell surfaces. No more "island rides up with the Start
-  menu".
-- **Reverted the win-event hooks:** Back to the 2.5.15 foreground-driven
-  topmost logic (the hook-based approach pressed the island down).
-- **Wider artist text:** The compact text area is a little wider, so normal
-  artist names display completely; the ellipsis remains only for very long
-  names.
-- **Zero-delay topmost:** The instant any app takes the foreground, the
-  taskbar (and its owned island) is put back at the top of the topmost band,
-  so a fullscreen app can never visibly cover them before the auto-hide
-  kicks in.
-- **No fullscreen z-order race:** The island only re-asserts its layer when a
-  shell surface (taskbar, Start menu) takes the foreground. App foreground
-  changes no longer touch z-order, so entering fullscreen can't flip the
-  taskbar above the island.
-- **Follow fixed at the root:** The ride-down now tracks either the taskbar
-  or its XAML bridge when it moves, and the resting island re-renders at the
-  live position each tick. The island also shows on the first upward movement,
-  so it rises together with the taskbar instead of appearing at the end.
-- **Title ellipsis restored:** Long video titles now end with an ellipsis
-  inside the card instead of overflowing its bounds. The island also lifts
-  above the Start menu once per foreground change without periodic poking.
-- **Owner-based z-order:** The island, click target and blur surface are owned
-  by the taskbar (which is WS_EX_TOPMOST), so Windows itself enforces "never
-  below the taskbar". No foreground pokes, no periodic topmost re-assertion,
-  no taskbar dragging, no fullscreen flash.
-- **Frame-level 1:1 follow:** While closing or resting as the compact island,
-  every 8 ms tick re-anchors to the native island element's current screen
-  rect, so the island rides down AND up together with the taskbar in every
-  hide mode (window move, XAML bridge move, or transform-only hide).
-- **No late show:** The resting island reappears the moment the native island
-  is back on screen, at its live position, instead of waiting for the taskbar
-  to fully settle and then appearing late.
-- **Stale popup text fixed:** Closing now syncs the popup's title/artist to
-  the island's current text before the morph, and text is never ellipsized,
-  eliminating the artist-name flash.
-- **Pixel-perfect geometry:** Closing re-targets the native island's current
-  real geometry and keeps fractional DIP coordinates, so text and artwork
-  shrink in sync and no longer shift a pixel at handoff.
-- **No text reflow:** Compact text no longer uses ellipsis trimming, so the
-  "ellipsis then full text" flash is gone.
-- **Gaussian blur restored:** The liquid-glass popup keeps its live Gaussian
-  backdrop blur while expanded, and only switches to the solid compact recipe
-  at the very end of the collapse so the handoff still matches the island.
-- **Performance:** Adaptive media polling, cached process/audio probes, and
-  cached artwork generation cut background CPU work dramatically without
-  changing how the island looks or behaves.
-- **Safer installer:** New build/install scripts back up the previous version,
-  verify the new DLL actually loads in Explorer, and roll back on failure.
-- **Liquid Glass refinements:** The material now uses a smoother edge-following
-  refraction band and stronger light-mode backdrop/control tint.
-- **Safer capture startup:** Borderless capture authorization is now bounded
-  and cleanly stopped before the mod unloads.
-- **Thread-safe live blur:** Capture rendering now uses a taskbar-thread
-  snapshot and serializes GPU presentation without blocking popup animation.
-- **Better light-mode visibility:** Liquid Glass now keeps the album-art
-  background wash enabled in light mode so the expanded surface remains legible.
-- **Current tuned defaults:** New installs now default to the tuned Liquid
-  Glass setup, Fluent bold controls, updated popup spacing, and the current
-  shadow depth while keeping browser thumbnails as the default artwork mode.
-- **Taskbar-aware expansion:** The expanded player adapts its opening direction,
-  layout, and artwork wash to the taskbar position.
-- **More cohesive morphing:** The compact island, artwork, progress bar, and
-  playback controls animate together during expand and collapse.
+Island Beat Float puts the current media session into the Windows 11 taskbar as
+a compact, clickable island. It shows the artwork, title, artist, playback state
+and progress at a glance; click it and the island expands into a floating player
+with a seekable progress bar and previous / play-pause / next controls. The
+expanded panel morphs back into the compact island when it closes.
 
 ## Features
 
-- **Taskbar placement:** Put the island near the tray, clock, or taskbar edge,
-  with automatic sizing for different taskbar heights.
-- **Compact media glance:** See artwork, title, artist, playback state, and
-  progress without opening the full player.
-- **Expanded player:** Open a larger player with artwork, seekable progress,
-  transport buttons, album-color wash, and optional compact expanded layout.
-- **Taskbar-position awareness:** When the taskbar moves, the popup direction,
-  layout, and background wash update to match.
-- **Multiple materials:** Choose Mica-like, Solid, Acrylic, or Liquid Glass
-  styling for the compact and expanded surfaces.
-- **Artwork options:** Keep browser thumbnails as-is, or replace low-resolution
-  video thumbnails with generated mesh-gradient or flame artwork.
-- **Animation controls:** Tune hover scale, smoothing, and popup animation speed
-  for normal use or slow-motion preview.
+- **Compact taskbar island** - artwork, title, artist, playback indicator and
+  progress in one slim pill, placed near the tray, the clock or either taskbar
+  edge (seven positions).
+- **Expanded floating player** - large artwork, seekable progress bar, transport
+  buttons, album-colour wash, optional single-card layout, and a smooth
+  open/close morph that hands off to the compact island.
+- **Materials** - Mica-like, solid, acrylic/glass and Liquid Glass, with an
+  album gradient option, adjustable corner radius and an optional screen-capture
+  exclusion for the expanded panel.
+- **Artwork pipeline** - uses the media session artwork; for low-resolution
+  browser/video thumbnails it can generate a mesh-gradient or flame artwork
+  instead, and it extracts an adaptive palette for accents and the album wash.
+- **Taskbar-position aware** - the island follows the taskbar when it moves,
+  stays anchored above it, adapts the expand direction, and raises only the
+  expanded panel above shell surfaces such as the Start menu.
+- **Animations** - hover scale and smoothing, spring-based panel animation and a
+  slow-motion preview speed.
+- **Music app integrations** - NetEase Cloud Music (playback state, seek,
+  favourite, artwork) and Bilibili (now-playing metadata) are supported in
+  addition to the standard Windows media sessions.
+- **Multi-monitor friendly** - per-taskbar placement and popup positioning, with
+  the island following the taskbar it lives on.
 
-## Material previews
+## Settings
 
-| Material | Dark mode | Light mode |
-| :--- | :---: | :---: |
-| **Mica-like** | ![Mica-like material in dark mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/mica-dark.png) | ![Mica-like material in light mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/mica-light.png) |
-| **Acrylic** | ![Acrylic material in dark mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/acrylic-dark.png) | ![Acrylic material in light mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/acrylic-light.png) |
-| **Liquid Glass** | ![Liquid Glass material in dark mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/liquid-glass-dark.png) | ![Liquid Glass material in light mode](https://raw.githubusercontent.com/usho-lear/island-media-controls/main/previews/materials/liquid-glass-light.png) |
+All visual and behavioural knobs are in the mod settings (grouped as placement,
+size and margins, expanded player, appearance, artwork, animation, advanced):
+island position/height/width, margins, expanded panel width and layout,
+spacing/shadow, button style, material and Liquid Glass options, album wash,
+artwork mode, hover and animation speeds, and advanced backdrop/capture
+options. Settings are English; a Chinese translation is planned.
+
+## Installation
+
+1. Install [Windhawk](https://windhawk.net/).
+2. Open Windhawk → **Mods** → **Create a New Mod**.
+3. Use `island-beat-float` as the mod identifier and paste the contents of
+   `island-beat-float.wh.cpp`.
+4. Compile, install and enable the mod, then restart Explorer.
+
+The mod replaces the taskbar clock icon content on each taskbar and injects the
+compact island next to it; disabling the mod restores the native elements.
+
+## Compatibility
+
+Windows 11 only. Tested on Windows 11 26H2 (build 26300). The mod hooks internal
+taskbar symbols, so a future Windows update may require an updated version.
+
+## Credits and license
+
+Based on **Island Media Controls** by [usho](https://github.com/usho-lear),
+licensed under the MIT license; this fork is a heavily modified version with a
+new name, reworked layout/animation pipeline, material system, artwork pipeline
+and music-app integrations. MIT licensed - see `LICENSE`.
+
+# 中文说明
+
+**动态岛风格的 Windows 悬浮音乐控制器。**
+
+Island Beat Float 把当前媒体会话放进 Windows 11 任务栏，变成一个可点击的小岛：
+显示封面、歌名、歌手、播放状态和进度；点击后小岛展开为悬浮播放器，带可拖动的
+进度条和上一首/播放暂停/下一首按钮，关闭时再收拢回任务栏小岛。
+
+主要功能：7 种任务栏位置；展开面板的液态玻璃/亚克力/纯色/类 Mica 材质与专辑
+渐变；封面自适应调色板与专辑色氛围；低分辨率视频封面可改用网格渐变/火焰封面；
+跟随任务栏位置与展开方向；悬停与展开动画可调速（含慢动作预览）；支持网易云音乐
+和哔哩哔哩集成；多显示器任务栏适配。
+
+设置项按「位置 / 尺寸与边距 / 展开面板 / 外观 / 封面 / 动画 / 高级」分组，可调
+岛屿位置、高度、宽度、展开面板宽度与布局、材质、液态玻璃参数、专辑氛围、封面
+模式、悬停与动画速度等。
+
+本项目基于 usho 的 **Island Media Controls**（MIT 协议）修改而来，使用 MIT 协议
+开源，详见 `LICENSE`。
 */
 // ==/WindhawkModReadme==
 
@@ -289,16 +253,24 @@ play/pause, and next controls.
 // that attribute, which breaks winrt::guid_of<T>. Use explicit GUID constants
 // and raw QueryInterface instead.
 static constexpr GUID kIID_IGraphicsCaptureItemInterop{
-    0x3628E81B, 0x3CAC, 0x4C60,
+    0x3628E81B,
+    0x3CAC,
+    0x4C60,
     {0xB7, 0xF4, 0x23, 0xCE, 0x0E, 0x0C, 0x33, 0x56}};
 static constexpr GUID kIID_IDirect3DDxgiInterfaceAccess{
-    0xA9B3D012, 0x3DF2, 0x4EE3,
+    0xA9B3D012,
+    0x3DF2,
+    0x4EE3,
     {0xB8, 0xD1, 0x86, 0x95, 0xF4, 0x57, 0xD3, 0xC1}};
 static constexpr GUID kIID_IGraphicsCaptureItem{
-    0x79C3F95B, 0x31F7, 0x4EC2,
+    0x79C3F95B,
+    0x31F7,
+    0x4EC2,
     {0xA4, 0x64, 0x63, 0x2E, 0xF5, 0xD3, 0x07, 0x60}};
 static constexpr GUID kCLSID_MMDeviceEnumerator{
-    0xBCDE0395, 0xE52F, 0x467C,
+    0xBCDE0395,
+    0xE52F,
+    0x467C,
     {0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E}};
 
 struct IGraphicsCaptureItemInterop : ::IUnknown {
@@ -311,8 +283,7 @@ struct IGraphicsCaptureItemInterop : ::IUnknown {
 };
 
 struct IDirect3DDxgiInterfaceAccess : ::IUnknown {
-    virtual HRESULT __stdcall GetInterface(REFIID iid,
-                                           void** p) = 0;
+    virtual HRESULT __stdcall GetInterface(REFIID iid, void** p) = 0;
 };
 
 extern "C" HRESULT __stdcall CreateDirect3D11DeviceFromDXGIDevice(
@@ -394,16 +365,17 @@ enum GRAPHICS_EFFECT_PROPERTY_MAPPING {
 
 struct __declspec(novtable) IGraphicsEffectD2D1Interop : IUnknown {
     virtual HRESULT STDMETHODCALLTYPE GetEffectId(GUID* id) = 0;
-    virtual HRESULT STDMETHODCALLTYPE GetNamedPropertyMapping(
-        LPCWSTR name, UINT* index,
-        GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping) = 0;
+    virtual HRESULT STDMETHODCALLTYPE
+    GetNamedPropertyMapping(LPCWSTR name,
+                            UINT* index,
+                            GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetPropertyCount(UINT* count) = 0;
-    virtual HRESULT STDMETHODCALLTYPE GetProperty(
-        UINT index,
-        winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>**
-            value) = 0;
-    virtual HRESULT STDMETHODCALLTYPE GetSource(
-        UINT index, IGraphicsEffectSource** source) = 0;
+    virtual HRESULT STDMETHODCALLTYPE
+    GetProperty(UINT index,
+                winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>**
+                    value) = 0;
+    virtual HRESULT STDMETHODCALLTYPE
+    GetSource(UINT index, IGraphicsEffectSource** source) = 0;
     virtual HRESULT STDMETHODCALLTYPE GetSourceCount(UINT* count) = 0;
 };
 }  // namespace ABI::Windows::Graphics::Effects
@@ -411,7 +383,9 @@ struct __declspec(novtable) IGraphicsEffectD2D1Interop : IUnknown {
 template <>
 inline constexpr winrt::guid winrt::impl::guid_v<
     ABI::Windows::Graphics::Effects::IGraphicsEffectD2D1Interop>{
-    0x2FC57384, 0xA068, 0x44D7,
+    0x2FC57384,
+    0xA068,
+    0x44D7,
     {0xA3, 0x31, 0x30, 0x98, 0x2F, 0xCF, 0x71, 0x77}};
 
 template <>
@@ -439,14 +413,6 @@ namespace capture = winrt::Windows::Graphics::Capture;
 namespace directx = winrt::Windows::Graphics::DirectX;
 namespace direct3d11 = winrt::Windows::Graphics::DirectX::Direct3D11;
 
-using xaml::FrameworkElement;
-using xaml::GridLength;
-using xaml::GridUnitType;
-using xaml::HorizontalAlignment;
-using xaml::Thickness;
-using xaml::UIElement;
-using xaml::VerticalAlignment;
-using xaml::Visibility;
 using controls::Border;
 using controls::Button;
 using controls::ColumnDefinition;
@@ -455,11 +421,19 @@ using controls::Image;
 using controls::ProgressBar;
 using controls::StackPanel;
 using controls::TextBlock;
-using mediax::SolidColorBrush;
 using mediax::ScaleTransform;
+using mediax::SolidColorBrush;
 using mediax::TransformGroup;
 using mediax::TranslateTransform;
 using mediax::VisualTreeHelper;
+using xaml::FrameworkElement;
+using xaml::GridLength;
+using xaml::GridUnitType;
+using xaml::HorizontalAlignment;
+using xaml::Thickness;
+using xaml::UIElement;
+using xaml::VerticalAlignment;
+using xaml::Visibility;
 
 // ===== Implementation (anonymous namespace) =====
 namespace {
@@ -487,16 +461,19 @@ struct ImmediateGaussianEffect
     winrt::hstring effectName = L"ImmediateGaussianBlur";
 
     HRESULT STDMETHODCALLTYPE GetEffectId(GUID* id) noexcept override {
-        if (!id) return E_INVALIDARG;
+        if (!id)
+            return E_INVALIDARG;
         *id = CLSID_D2D1GaussianBlur;
         return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE GetNamedPropertyMapping(
-        LPCWSTR name, UINT* index,
-        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping)
-        noexcept override {
-        if (!name || !index || !mapping) return E_INVALIDARG;
+        LPCWSTR name,
+        UINT* index,
+        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING*
+            mapping) noexcept override {
+        if (!name || !index || !mapping)
+            return E_INVALIDARG;
         std::wstring_view property{name};
         if (property == L"BlurAmount") {
             *index = D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION;
@@ -513,38 +490,43 @@ struct ImmediateGaussianEffect
     }
 
     HRESULT STDMETHODCALLTYPE GetPropertyCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = 3;
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE GetProperty(
-        UINT index,
-        winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>** value)
-        noexcept override {
-        if (!value) return E_INVALIDARG;
+    HRESULT STDMETHODCALLTYPE
+    GetProperty(UINT index,
+                winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>**
+                    value) noexcept override {
+        if (!value)
+            return E_INVALIDARG;
         try {
             using winrt::Windows::Foundation::PropertyValue;
             switch (index) {
                 case D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION:
-                    *value = PropertyValue::CreateSingle(BlurAmount)
-                                 .as<winrt::impl::abi_t<
-                                     winrt::Windows::Foundation::IPropertyValue>>()
-                                 .detach();
+                    *value =
+                        PropertyValue::CreateSingle(BlurAmount)
+                            .as<winrt::impl::abi_t<
+                                winrt::Windows::Foundation::IPropertyValue>>()
+                            .detach();
                     return S_OK;
                 case D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION:
-                    *value = PropertyValue::CreateUInt32(
-                                 static_cast<uint32_t>(Optimization))
-                                 .as<winrt::impl::abi_t<
-                                     winrt::Windows::Foundation::IPropertyValue>>()
-                                 .detach();
+                    *value =
+                        PropertyValue::CreateUInt32(
+                            static_cast<uint32_t>(Optimization))
+                            .as<winrt::impl::abi_t<
+                                winrt::Windows::Foundation::IPropertyValue>>()
+                            .detach();
                     return S_OK;
                 case D2D1_GAUSSIANBLUR_PROP_BORDER_MODE:
-                    *value = PropertyValue::CreateUInt32(
-                                 static_cast<uint32_t>(BorderMode))
-                                 .as<winrt::impl::abi_t<
-                                     winrt::Windows::Foundation::IPropertyValue>>()
-                                 .detach();
+                    *value =
+                        PropertyValue::CreateUInt32(
+                            static_cast<uint32_t>(BorderMode))
+                            .as<winrt::impl::abi_t<
+                                winrt::Windows::Foundation::IPropertyValue>>()
+                            .detach();
                     return S_OK;
                 default:
                     return E_BOUNDS;
@@ -554,17 +536,21 @@ struct ImmediateGaussianEffect
         }
     }
 
-    HRESULT STDMETHODCALLTYPE GetSource(
-        UINT index, abi_graphics_effects::IGraphicsEffectSource** source)
-        noexcept override {
-        if (!source) return E_INVALIDARG;
-        if (index != 0 || !Source) return E_BOUNDS;
+    HRESULT STDMETHODCALLTYPE
+    GetSource(UINT index,
+              abi_graphics_effects::IGraphicsEffectSource** source) noexcept
+        override {
+        if (!source)
+            return E_INVALIDARG;
+        if (index != 0 || !Source)
+            return E_BOUNDS;
         winrt::copy_to_abi(Source, *reinterpret_cast<void**>(source));
         return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE GetSourceCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = 1;
         return S_OK;
     }
@@ -582,14 +568,16 @@ struct ImmediateFloodEffect
     winrt::hstring effectName = L"DownAeroTint";
 
     HRESULT STDMETHODCALLTYPE GetEffectId(GUID* id) noexcept override {
-        if (!id) return E_INVALIDARG;
+        if (!id)
+            return E_INVALIDARG;
         *id = CLSID_D2D1Flood;
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE GetNamedPropertyMapping(
-        LPCWSTR name, UINT* index,
-        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping)
-        noexcept override {
+        LPCWSTR name,
+        UINT* index,
+        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING*
+            mapping) noexcept override {
         if (!name || !index || !mapping ||
             std::wstring_view{name} != L"Color") {
             return E_INVALIDARG;
@@ -600,34 +588,40 @@ struct ImmediateFloodEffect
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE GetPropertyCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = 1;
         return S_OK;
     }
-    HRESULT STDMETHODCALLTYPE GetProperty(
-        UINT index,
-        winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>** value)
-        noexcept override {
-        if (!value) return E_INVALIDARG;
-        if (index != D2D1_FLOOD_PROP_COLOR) return E_BOUNDS;
+    HRESULT STDMETHODCALLTYPE
+    GetProperty(UINT index,
+                winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>**
+                    value) noexcept override {
+        if (!value)
+            return E_INVALIDARG;
+        if (index != D2D1_FLOOD_PROP_COLOR)
+            return E_BOUNDS;
         try {
-            *value = winrt::Windows::Foundation::PropertyValue::CreateSingleArray(
-                         {Tint.R / 255.0f, Tint.G / 255.0f,
-                          Tint.B / 255.0f, Tint.A / 255.0f})
-                         .as<winrt::impl::abi_t<
-                             winrt::Windows::Foundation::IPropertyValue>>()
-                         .detach();
+            *value =
+                winrt::Windows::Foundation::PropertyValue::CreateSingleArray(
+                    {Tint.R / 255.0f, Tint.G / 255.0f, Tint.B / 255.0f,
+                     Tint.A / 255.0f})
+                    .as<winrt::impl::abi_t<
+                        winrt::Windows::Foundation::IPropertyValue>>()
+                    .detach();
             return S_OK;
         } catch (...) {
             return winrt::to_hresult();
         }
     }
-    HRESULT STDMETHODCALLTYPE GetSource(
-        UINT, abi_graphics_effects::IGraphicsEffectSource**) noexcept override {
+    HRESULT STDMETHODCALLTYPE
+    GetSource(UINT,
+              abi_graphics_effects::IGraphicsEffectSource**) noexcept override {
         return E_BOUNDS;
     }
     HRESULT STDMETHODCALLTYPE GetSourceCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = 0;
         return S_OK;
     }
@@ -645,16 +639,17 @@ struct ImmediateCompositeEffect
     winrt::hstring effectName = L"DownAeroComposite";
 
     HRESULT STDMETHODCALLTYPE GetEffectId(GUID* id) noexcept override {
-        if (!id) return E_INVALIDARG;
+        if (!id)
+            return E_INVALIDARG;
         *id = CLSID_D2D1Composite;
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE GetNamedPropertyMapping(
-        LPCWSTR name, UINT* index,
-        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING* mapping)
-        noexcept override {
-        if (!name || !index || !mapping ||
-            std::wstring_view{name} != L"Mode") {
+        LPCWSTR name,
+        UINT* index,
+        abi_graphics_effects::GRAPHICS_EFFECT_PROPERTY_MAPPING*
+            mapping) noexcept override {
+        if (!name || !index || !mapping || std::wstring_view{name} != L"Mode") {
             return E_INVALIDARG;
         }
         *index = D2D1_COMPOSITE_PROP_MODE;
@@ -663,16 +658,19 @@ struct ImmediateCompositeEffect
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE GetPropertyCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = 1;
         return S_OK;
     }
-    HRESULT STDMETHODCALLTYPE GetProperty(
-        UINT index,
-        winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>** value)
-        noexcept override {
-        if (!value) return E_INVALIDARG;
-        if (index != D2D1_COMPOSITE_PROP_MODE) return E_BOUNDS;
+    HRESULT STDMETHODCALLTYPE
+    GetProperty(UINT index,
+                winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>**
+                    value) noexcept override {
+        if (!value)
+            return E_INVALIDARG;
+        if (index != D2D1_COMPOSITE_PROP_MODE)
+            return E_BOUNDS;
         try {
             *value = winrt::Windows::Foundation::PropertyValue::CreateUInt32(
                          static_cast<uint32_t>(Mode))
@@ -684,10 +682,12 @@ struct ImmediateCompositeEffect
             return winrt::to_hresult();
         }
     }
-    HRESULT STDMETHODCALLTYPE GetSource(
-        UINT index, abi_graphics_effects::IGraphicsEffectSource** source)
-        noexcept override {
-        if (!source) return E_INVALIDARG;
+    HRESULT STDMETHODCALLTYPE
+    GetSource(UINT index,
+              abi_graphics_effects::IGraphicsEffectSource** source) noexcept
+        override {
+        if (!source)
+            return E_INVALIDARG;
         try {
             winrt::copy_to_abi(Sources.at(index),
                                *reinterpret_cast<void**>(source));
@@ -697,7 +697,8 @@ struct ImmediateCompositeEffect
         }
     }
     HRESULT STDMETHODCALLTYPE GetSourceCount(UINT* count) noexcept override {
-        if (!count) return E_INVALIDARG;
+        if (!count)
+            return E_INVALIDARG;
         *count = static_cast<UINT>(Sources.size());
         return S_OK;
     }
@@ -708,16 +709,18 @@ struct ImmediateCompositeEffect
 class ImmediateBackdropBlurBrush
     : public mediax::XamlCompositionBrushBaseT<ImmediateBackdropBlurBrush> {
    public:
-    ImmediateBackdropBlurBrush(UIElement const& element, float blurAmount,
+    ImmediateBackdropBlurBrush(UIElement const& element,
+                               float blurAmount,
                                winrt::Windows::UI::Color tint)
-        : compositor_(hosting::ElementCompositionPreview::GetElementVisual(
-                          element)
-                          .Compositor()),
+        : compositor_(
+              hosting::ElementCompositionPreview::GetElementVisual(element)
+                  .Compositor()),
           blurAmount_(blurAmount),
           tint_(tint) {}
 
     void OnConnected() {
-        if (CompositionBrush()) return;
+        if (CompositionBrush())
+            return;
         auto effect = winrt::make_self<ImmediateGaussianEffect>();
         effect->Source =
             composition::CompositionEffectSourceParameter(L"backdrop");
@@ -899,7 +902,8 @@ using TaskbarHost_FrameHeight_t = int(WINAPI*)(void* pThis);
 using Std_Ref_Decref_t = void(WINAPI*)(void* pThis);
 using TrayUI_StartTaskbar_t = void(WINAPI*)(void* pThis);
 using TrayUI__Hide_t = void(WINAPI*)(void* pThis);
-using TrayUI_Unhide_t = void(WINAPI*)(void* pThis, int trayUnhideFlags,
+using TrayUI_Unhide_t = void(WINAPI*)(void* pThis,
+                                      int trayUnhideFlags,
                                       int unhideRequest);
 using CSecondaryTray__AutoHide_t = void(WINAPI*)(void* pThis, bool param1);
 using CSecondaryTray__Unhide_t = void(WINAPI*)(void* pThis,
@@ -1014,10 +1018,10 @@ bool WaitForAsyncWithTimeout(AsyncOperation const& operation,
     } catch (...) {
     }
 
-    Wh_Log(L"Island: async operation timed out label=%s status=%d timeoutMs=%lld",
-           label ? label : L"(unknown)",
-           static_cast<int>(status),
-           static_cast<long long>(timeout.count()));
+    Wh_Log(
+        L"Island: async operation timed out label=%s status=%d timeoutMs=%lld",
+        label ? label : L"(unknown)", static_cast<int>(status),
+        static_cast<long long>(timeout.count()));
     return false;
 }
 
@@ -1156,26 +1160,41 @@ HMONITOR g_popupOverlayWgcMonitor = nullptr;
 HRESULT g_popupOverlayWgcLastHr = S_OK;
 
 [[clang::no_destroy]] winrt::com_ptr<ID3D11Device> g_popupOverlayWgcD3dDevice;
-[[clang::no_destroy]] winrt::com_ptr<ID3D11DeviceContext> g_popupOverlayWgcD3dContext;
+[[clang::no_destroy]] winrt::com_ptr<ID3D11DeviceContext>
+    g_popupOverlayWgcD3dContext;
 [[clang::no_destroy]] winrt::com_ptr<IDXGIDevice> g_popupOverlayWgcDxgiDevice;
-[[clang::no_destroy]] winrt::com_ptr<IDXGISwapChain1> g_popupOverlayWgcSwapChain;
-[[clang::no_destroy]] winrt::com_ptr<IDCompositionDevice> g_popupOverlayDcompDevice;
-[[clang::no_destroy]] winrt::com_ptr<IDCompositionTarget> g_popupOverlayDcompTarget;
-[[clang::no_destroy]] winrt::com_ptr<IDCompositionVisual> g_popupOverlayDcompVisual;
-[[clang::no_destroy]] winrt::com_ptr<IDCompositionEffectGroup> g_popupOverlayDcompOpacityEffect;
-[[clang::no_destroy]] winrt::com_ptr<IDCompositionRectangleClip> g_popupOverlayDcompClip;
+[[clang::no_destroy]] winrt::com_ptr<IDXGISwapChain1>
+    g_popupOverlayWgcSwapChain;
+[[clang::no_destroy]] winrt::com_ptr<IDCompositionDevice>
+    g_popupOverlayDcompDevice;
+[[clang::no_destroy]] winrt::com_ptr<IDCompositionTarget>
+    g_popupOverlayDcompTarget;
+[[clang::no_destroy]] winrt::com_ptr<IDCompositionVisual>
+    g_popupOverlayDcompVisual;
+[[clang::no_destroy]] winrt::com_ptr<IDCompositionEffectGroup>
+    g_popupOverlayDcompOpacityEffect;
+[[clang::no_destroy]] winrt::com_ptr<IDCompositionRectangleClip>
+    g_popupOverlayDcompClip;
 bool g_popupOverlayDcompContentAttached = false;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1> g_popupOverlayWgcSwapChainTargetBitmap;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1>
+    g_popupOverlayWgcSwapChainTargetBitmap;
 [[clang::no_destroy]] winrt::com_ptr<ID2D1Factory1> g_popupOverlayWgcD2dFactory;
 [[clang::no_destroy]] winrt::com_ptr<ID2D1Device> g_popupOverlayWgcD2dDevice;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1DeviceContext> g_popupOverlayWgcD2dContext;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1> g_popupOverlayWgcLensDisplacementMap;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1> g_popupOverlayWgcIntermediateBitmap;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1DeviceContext>
+    g_popupOverlayWgcD2dContext;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1>
+    g_popupOverlayWgcLensDisplacementMap;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1Bitmap1>
+    g_popupOverlayWgcIntermediateBitmap;
 [[clang::no_destroy]] winrt::com_ptr<ID2D1Effect> g_popupOverlayWgcBlurEffect;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1Effect> g_popupOverlayWgcRefractionBlurEffect;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1Effect> g_popupOverlayWgcDisplacementEffect;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1SolidColorBrush> g_popupOverlayWgcRimBrush;
-[[clang::no_destroy]] winrt::com_ptr<ID2D1RoundedRectangleGeometry> g_popupOverlayWgcRoundedGeometry;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1Effect>
+    g_popupOverlayWgcRefractionBlurEffect;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1Effect>
+    g_popupOverlayWgcDisplacementEffect;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1SolidColorBrush>
+    g_popupOverlayWgcRimBrush;
+[[clang::no_destroy]] winrt::com_ptr<ID2D1RoundedRectangleGeometry>
+    g_popupOverlayWgcRoundedGeometry;
 int g_popupOverlayWgcLensMapWidth = 0;
 int g_popupOverlayWgcLensMapHeight = 0;
 int g_popupOverlayWgcLensMapRadius = 0;
@@ -1195,10 +1214,14 @@ std::atomic<int> g_popupOverlayDcompPendingRadius{1};
 std::atomic<bool> g_popupOverlayDcompGeometryDirty{false};
 std::atomic<int> g_popupOverlayDcompOpacityMilli{-1};
 
-[[clang::no_destroy]] direct3d11::IDirect3DDevice g_popupOverlayWgcGraphicsDevice{nullptr};
-[[clang::no_destroy]] capture::GraphicsCaptureItem g_popupOverlayWgcItem{nullptr};
-[[clang::no_destroy]] capture::Direct3D11CaptureFramePool g_popupOverlayWgcFramePool{nullptr};
-[[clang::no_destroy]] capture::GraphicsCaptureSession g_popupOverlayWgcSession{nullptr};
+[[clang::no_destroy]] direct3d11::IDirect3DDevice
+    g_popupOverlayWgcGraphicsDevice{nullptr};
+[[clang::no_destroy]] capture::GraphicsCaptureItem g_popupOverlayWgcItem{
+    nullptr};
+[[clang::no_destroy]] capture::Direct3D11CaptureFramePool
+    g_popupOverlayWgcFramePool{nullptr};
+[[clang::no_destroy]] capture::GraphicsCaptureSession g_popupOverlayWgcSession{
+    nullptr};
 winrt::event_token g_popupOverlayWgcFrameArrivedToken{};
 bool g_popupOverlayWgcHadFrame = false;
 std::chrono::steady_clock::time_point g_popupOverlayWgcDiagnosticStartTime{};
@@ -1233,7 +1256,8 @@ Border g_popupXamlPanel = nullptr;
 ScaleTransform g_popupXamlPanelScale = nullptr;
 TranslateTransform g_popupXamlPanelTranslate = nullptr;
 Border g_popupXamlArtFrame = nullptr;
-composition::CompositionRoundedRectangleGeometry g_popupXamlArtClipGeometry = nullptr;
+composition::CompositionRoundedRectangleGeometry g_popupXamlArtClipGeometry =
+    nullptr;
 composition::CompositionGeometricClip g_popupXamlArtGeometricClip = nullptr;
 ScaleTransform g_popupXamlArtScale = nullptr;
 TranslateTransform g_popupXamlArtTranslate = nullptr;
@@ -1405,7 +1429,8 @@ std::chrono::steady_clock::time_point g_lastCompactPlaybackFrameTime{};
 uint64_t g_compactPlaybackAccentThumbnailHash = UINT64_MAX;
 winrt::Windows::UI::Color g_compactPlaybackAccentFrom{0xFF, 0x4F, 0x7D, 0xE8};
 winrt::Windows::UI::Color g_compactPlaybackAccentTo{0xFF, 0x4F, 0x7D, 0xE8};
-winrt::Windows::UI::Color g_compactPlaybackAccentDisplayed{0xFF, 0x4F, 0x7D, 0xE8};
+winrt::Windows::UI::Color g_compactPlaybackAccentDisplayed{0xFF, 0x4F, 0x7D,
+                                                           0xE8};
 bool g_compactPlaybackAccentTransitionActive = false;
 std::chrono::steady_clock::time_point g_compactPlaybackAccentTransitionStart{};
 winrt::event_token g_compactTextRenderingToken{};
@@ -1449,11 +1474,13 @@ winrt::Windows::UI::Color ColorFromPbgra(BYTE const* pixel) {
     }
 
     double inverseAlpha = 255.0 / alpha;
-    return Color(
-        alpha,
-        static_cast<BYTE>(Clamp(std::lround(pixel[2] * inverseAlpha), 0L, 255L)),
-        static_cast<BYTE>(Clamp(std::lround(pixel[1] * inverseAlpha), 0L, 255L)),
-        static_cast<BYTE>(Clamp(std::lround(pixel[0] * inverseAlpha), 0L, 255L)));
+    return Color(alpha,
+                 static_cast<BYTE>(
+                     Clamp(std::lround(pixel[2] * inverseAlpha), 0L, 255L)),
+                 static_cast<BYTE>(
+                     Clamp(std::lround(pixel[1] * inverseAlpha), 0L, 255L)),
+                 static_cast<BYTE>(
+                     Clamp(std::lround(pixel[0] * inverseAlpha), 0L, 255L)));
 }
 
 DWORD FindAppleMusicProcessId() {
@@ -1491,9 +1518,9 @@ bool TrySeekAppleMusicWithUiAutomation(double ratio) {
     IUIAutomationRangeValuePattern* range = nullptr;
     bool succeeded = false;
 
-    HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                      CLSCTX_INPROC_SERVER,
-                                      IID_PPV_ARGS(&automation));
+    HRESULT result =
+        CoCreateInstance(CLSID_CUIAutomation, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_PPV_ARGS(&automation));
     VARIANT processVariant{};
     processVariant.vt = VT_I4;
     processVariant.lVal = static_cast<LONG>(processId);
@@ -1509,23 +1536,22 @@ bool TrySeekAppleMusicWithUiAutomation(double ratio) {
             UIA_ProcessIdPropertyId, processVariant, &processCondition);
     }
     if (SUCCEEDED(result) && idVariant.bstrVal) {
-        result = automation->CreatePropertyCondition(
-            UIA_AutomationIdPropertyId, idVariant, &idCondition);
+        result = automation->CreatePropertyCondition(UIA_AutomationIdPropertyId,
+                                                     idVariant, &idCondition);
     }
     if (SUCCEEDED(result)) {
-        result = automation->CreateAndCondition(
-            processCondition, idCondition, &combinedCondition);
+        result = automation->CreateAndCondition(processCondition, idCondition,
+                                                &combinedCondition);
     }
     if (SUCCEEDED(result)) {
-        result = root->FindFirst(TreeScope_Subtree, combinedCondition,
-                                 &scrubber);
+        result =
+            root->FindFirst(TreeScope_Subtree, combinedCondition, &scrubber);
         if (SUCCEEDED(result) && !scrubber) {
             result = HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
         }
     }
     if (SUCCEEDED(result)) {
-        result = scrubber->GetCurrentPattern(UIA_RangeValuePatternId,
-                                             &unknown);
+        result = scrubber->GetCurrentPattern(UIA_RangeValuePatternId, &unknown);
     }
     if (SUCCEEDED(result)) {
         result = unknown->QueryInterface(IID_PPV_ARGS(&range));
@@ -1535,25 +1561,35 @@ bool TrySeekAppleMusicWithUiAutomation(double ratio) {
         double minimum = 0.0;
         double maximum = 0.0;
         result = range->get_CurrentIsReadOnly(&readOnly);
-        if (SUCCEEDED(result)) result = range->get_CurrentMinimum(&minimum);
-        if (SUCCEEDED(result)) result = range->get_CurrentMaximum(&maximum);
+        if (SUCCEEDED(result))
+            result = range->get_CurrentMinimum(&minimum);
+        if (SUCCEEDED(result))
+            result = range->get_CurrentMaximum(&maximum);
         if (SUCCEEDED(result) && !readOnly && maximum > minimum) {
-            double value = minimum +
-                           (maximum - minimum) * Clamp(ratio, 0.0, 1.0);
+            double value =
+                minimum + (maximum - minimum) * Clamp(ratio, 0.0, 1.0);
             result = range->SetValue(value);
             succeeded = SUCCEEDED(result);
         }
     }
 
     VariantClear(&idVariant);
-    if (range) range->Release();
-    if (unknown) unknown->Release();
-    if (scrubber) scrubber->Release();
-    if (combinedCondition) combinedCondition->Release();
-    if (idCondition) idCondition->Release();
-    if (processCondition) processCondition->Release();
-    if (root) root->Release();
-    if (automation) automation->Release();
+    if (range)
+        range->Release();
+    if (unknown)
+        unknown->Release();
+    if (scrubber)
+        scrubber->Release();
+    if (combinedCondition)
+        combinedCondition->Release();
+    if (idCondition)
+        idCondition->Release();
+    if (processCondition)
+        processCondition->Release();
+    if (root)
+        root->Release();
+    if (automation)
+        automation->Release();
 
     Wh_Log(L"Island: Apple Music UI Automation seek result=%d hr=0x%08X",
            succeeded, static_cast<unsigned>(result));
@@ -1625,11 +1661,12 @@ void ApplyLayoutRect(FrameworkElement const& element,
         return;
     }
 
-    double currentWidth = std::max(1.0, currentScreen.right - currentScreen.left);
-    double currentHeight = std::max(1.0, currentScreen.bottom - currentScreen.top);
+    double currentWidth =
+        std::max(1.0, currentScreen.right - currentScreen.left);
+    double currentHeight =
+        std::max(1.0, currentScreen.bottom - currentScreen.top);
     SetElementSizeIfChanged(element, currentWidth, currentHeight);
-    SetCanvasPositionIfChanged(element,
-                               currentScreen.left - popupScreen.left,
+    SetCanvasPositionIfChanged(element, currentScreen.left - popupScreen.left,
                                currentScreen.top - popupScreen.top);
     if (scale) {
         scale.ScaleX(1.0);
@@ -1646,10 +1683,9 @@ bool IsDarkModeApprox() {
     DWORD value = 1;
     DWORD size = sizeof(value);
     if (RegOpenKeyExW(HKEY_CURRENT_USER,
-                      L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                      0,
-                      KEY_READ,
-                      &key) == ERROR_SUCCESS) {
+                      L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\P"
+                      L"ersonalize",
+                      0, KEY_READ, &key) == ERROR_SUCCESS) {
         RegQueryValueExW(key, L"AppsUseLightTheme", nullptr, nullptr,
                          reinterpret_cast<LPBYTE>(&value), &size);
         RegCloseKey(key);
@@ -1683,16 +1719,14 @@ winrt::Windows::UI::Color IslandBackgroundColor() {
                     : Color(0xEA, 0xF8, 0xF8, 0xFA);
     }
 
-    return dark ? Color(0xE8, 0x20, 0x20, 0x24)
-                : Color(0xE8, 0xF4, 0xF4, 0xF6);
+    return dark ? Color(0xE8, 0x20, 0x20, 0x24) : Color(0xE8, 0xF4, 0xF4, 0xF6);
 }
 
 mediax::Brush LiquidGlassRimHighlightBrush() {
     // A single neutral hairline defines the glass boundary. It is neither a
     // gradient nor an outer glow and casts no shadow.
-    return Brush(IsDarkModeApprox()
-                     ? Color(0x56, 0xFF, 0xFF, 0xFF)
-                     : Color(0x70, 0xFF, 0xFF, 0xFF));
+    return Brush(IsDarkModeApprox() ? Color(0x56, 0xFF, 0xFF, 0xFF)
+                                    : Color(0x70, 0xFF, 0xFF, 0xFF));
 }
 
 mediax::Brush LiquidGlassSurfaceHighlightBrush() {
@@ -1792,17 +1826,17 @@ void ConfigureCompactAlbumArtStroke(Border const& stroke) {
     stroke.IsHitTestVisible(false);
 }
 
-std::vector<uint8_t> ReadThumbnailBytes(streams::IRandomAccessStreamReference const& thumbnail) {
+std::vector<uint8_t> ReadThumbnailBytes(
+    streams::IRandomAccessStreamReference const& thumbnail) {
     std::vector<uint8_t> bytes;
     if (!thumbnail) {
         return bytes;
     }
 
     try {
-        auto stream = GetAsyncResultWithTimeout(
-            thumbnail.OpenReadAsync(),
-            kThumbnailAsyncTimeout,
-            L"thumbnail OpenReadAsync");
+        auto stream = GetAsyncResultWithTimeout(thumbnail.OpenReadAsync(),
+                                                kThumbnailAsyncTimeout,
+                                                L"thumbnail OpenReadAsync");
         uint64_t size64 = stream.Size();
         if (size64 == 0 || size64 > 8 * 1024 * 1024) {
             return bytes;
@@ -1812,8 +1846,7 @@ std::vector<uint8_t> ReadThumbnailBytes(streams::IRandomAccessStreamReference co
         auto buffer = GetAsyncResultWithTimeout(
             stream.ReadAsync(streams::Buffer(size), size,
                              streams::InputStreamOptions::None),
-            kThumbnailAsyncTimeout,
-            L"thumbnail ReadAsync");
+            kThumbnailAsyncTimeout, L"thumbnail ReadAsync");
         streams::DataReader reader = streams::DataReader::FromBuffer(buffer);
         bytes.resize(buffer.Length());
         if (!bytes.empty()) {
@@ -1858,15 +1891,23 @@ void ApplySettingsMigrations(Settings* settings) {
 Settings ReadSettings() {
     Settings settings;
     settings.position = GetStringSetting(L"Main.Position", L"tray_left");
-    settings.compactWidth = Clamp(Wh_GetIntSetting(L"Main.CompactWidth"), 96, 320);
-    settings.autoSizeToTaskbar = Wh_GetIntSetting(L"Main.AutoSizeToTaskbar") != 0;
-    settings.expandedWidth = Clamp(Wh_GetIntSetting(L"Main.ExpandedWidth"), 240, 640);
+    settings.compactWidth =
+        Clamp(Wh_GetIntSetting(L"Main.CompactWidth"), 96, 320);
+    settings.autoSizeToTaskbar =
+        Wh_GetIntSetting(L"Main.AutoSizeToTaskbar") != 0;
+    settings.expandedWidth =
+        Clamp(Wh_GetIntSetting(L"Main.ExpandedWidth"), 240, 640);
     settings.compact = Wh_GetIntSetting(L"Main.Compact") != 0;
-    settings.popupSpacing = Clamp(Wh_GetIntSetting(L"Main.PopupSpacing"), 2, 40);
-    settings.popupCardGap = Clamp(Wh_GetIntSetting(L"Main.PopupCardGap"), 0, 40);
-    settings.popupShadowDepth = Clamp(Wh_GetIntSetting(L"Main.PopupShadowDepth"), 0, 128);
-    settings.popupShadowOpacity = Clamp(Wh_GetIntSetting(L"Main.PopupShadowOpacity"), 0, 100);
-    settings.popupButtonStyle = GetStringSetting(L"Main.PopupButtonStyle", L"fluent_bold");
+    settings.popupSpacing =
+        Clamp(Wh_GetIntSetting(L"Main.PopupSpacing"), 2, 40);
+    settings.popupCardGap =
+        Clamp(Wh_GetIntSetting(L"Main.PopupCardGap"), 0, 40);
+    settings.popupShadowDepth =
+        Clamp(Wh_GetIntSetting(L"Main.PopupShadowDepth"), 0, 128);
+    settings.popupShadowOpacity =
+        Clamp(Wh_GetIntSetting(L"Main.PopupShadowOpacity"), 0, 100);
+    settings.popupButtonStyle =
+        GetStringSetting(L"Main.PopupButtonStyle", L"fluent_bold");
     if (settings.popupButtonStyle != L"minimal_transport" &&
         settings.popupButtonStyle != L"fluent_bold") {
         settings.popupButtonStyle = L"minimal_transport";
@@ -1892,16 +1933,18 @@ Settings ReadSettings() {
     settings.marginLeft = Clamp(Wh_GetIntSetting(L"Main.MarginLeft"), 0, 48);
     settings.marginRight = Clamp(Wh_GetIntSetting(L"Main.MarginRight"), 0, 48);
     settings.hideWhenNoMedia = Wh_GetIntSetting(L"Main.HideWhenNoMedia") != 0;
-    settings.hoverScale =
-        static_cast<double>(Clamp(Wh_GetIntSetting(L"Main.HoverScale"), 100, 125)) / 100.0;
-    settings.hoverLerpSpeed =
-        static_cast<double>(Clamp(Wh_GetIntSetting(L"Main.HoverLerpSpeed"), 1, 80));
+    settings.hoverScale = static_cast<double>(Clamp(
+                              Wh_GetIntSetting(L"Main.HoverScale"), 100, 125)) /
+                          100.0;
+    settings.hoverLerpSpeed = static_cast<double>(
+        Clamp(Wh_GetIntSetting(L"Main.HoverLerpSpeed"), 1, 80));
     settings.animationSpeed =
-        static_cast<double>(Clamp(Wh_GetIntSetting(L"Main.AnimationSpeed"), 10, 400)) / 100.0;
+        static_cast<double>(
+            Clamp(Wh_GetIntSetting(L"Main.AnimationSpeed"), 10, 400)) /
+        100.0;
 
     settings.material = GetStringSetting(L"Main.Material", L"liquid_glass");
-    if (settings.material != L"mica_like" &&
-        settings.material != L"solid" &&
+    if (settings.material != L"mica_like" && settings.material != L"solid" &&
         settings.material != L"acrylic" &&
         settings.material != L"liquid_glass") {
         settings.material = L"liquid_glass";
@@ -1931,23 +1974,26 @@ Settings ReadSettings() {
 // ===== Taskbar host utilities =====
 HWND FindCurrentProcessTaskbarWnd() {
     HWND result = nullptr;
-    EnumWindows([](HWND hwnd, LPARAM param) -> BOOL {
-        DWORD pid = 0;
-        wchar_t className[64]{};
-        if (GetWindowThreadProcessId(hwnd, &pid) &&
-            pid == GetCurrentProcessId() &&
-            GetClassNameW(hwnd, className, ARRAYSIZE(className)) &&
-            _wcsicmp(className, L"Shell_TrayWnd") == 0) {
-            *reinterpret_cast<HWND*>(param) = hwnd;
-            return FALSE;
-        }
-        return TRUE;
-    }, reinterpret_cast<LPARAM>(&result));
+    EnumWindows(
+        [](HWND hwnd, LPARAM param) -> BOOL {
+            DWORD pid = 0;
+            wchar_t className[64]{};
+            if (GetWindowThreadProcessId(hwnd, &pid) &&
+                pid == GetCurrentProcessId() &&
+                GetClassNameW(hwnd, className, ARRAYSIZE(className)) &&
+                _wcsicmp(className, L"Shell_TrayWnd") == 0) {
+                *reinterpret_cast<HWND*>(param) = hwnd;
+                return FALSE;
+            }
+            return TRUE;
+        },
+        reinterpret_cast<LPARAM>(&result));
     return result;
 }
 
 bool RunFromWindowThread(HWND hwnd, WindowThreadProc proc, void* param) {
-    static const UINT msg = RegisterWindowMessageW(L"Windhawk_RunFromWindowThread_" WH_MOD_ID);
+    static const UINT msg =
+        RegisterWindowMessageW(L"Windhawk_RunFromWindowThread_" WH_MOD_ID);
     struct Payload {
         WindowThreadProc proc;
         void* param;
@@ -1973,21 +2019,22 @@ bool RunFromWindowThread(HWND hwnd, WindowThreadProc proc, void* param) {
         [](int code, WPARAM wParam, LPARAM lParam) -> LRESULT {
             if (code == HC_ACTION) {
                 auto cwp = reinterpret_cast<const CWPSTRUCT*>(lParam);
-                static const UINT innerMsg =
-                    RegisterWindowMessageW(L"Windhawk_RunFromWindowThread_" WH_MOD_ID);
+                static const UINT innerMsg = RegisterWindowMessageW(
+                    L"Windhawk_RunFromWindowThread_" WH_MOD_ID);
                 if (cwp->message == innerMsg) {
                     auto payload = reinterpret_cast<Payload*>(cwp->lParam);
                     try {
                         payload->proc(payload->param);
                     } catch (...) {
-                        Wh_Log(L"Island: exception in taskbar-thread hook callback");
+                        Wh_Log(
+                            L"Island: exception in taskbar-thread hook "
+                            L"callback");
                     }
                 }
             }
             return CallNextHookEx(nullptr, code, wParam, lParam);
         },
-        nullptr,
-        tid);
+        nullptr, tid);
 
     if (!hook) {
         return false;
@@ -2000,7 +2047,8 @@ bool RunFromWindowThread(HWND hwnd, WindowThreadProc proc, void* param) {
 }
 
 xaml::XamlRoot GetTaskbarXamlRoot(HWND taskbarWnd) {
-    HWND taskSwWnd = reinterpret_cast<HWND>(GetPropW(taskbarWnd, L"TaskbandHWND"));
+    HWND taskSwWnd =
+        reinterpret_cast<HWND>(GetPropW(taskbarWnd, L"TaskbandHWND"));
     if (!taskSwWnd) {
         return nullptr;
     }
@@ -2008,7 +2056,8 @@ xaml::XamlRoot GetTaskbarXamlRoot(HWND taskbarWnd) {
     void* taskBand = reinterpret_cast<void*>(GetWindowLongPtrW(taskSwWnd, 0));
     void* taskBandForSite = taskBand;
     for (int i = 0; i < 20; ++i) {
-        if (*reinterpret_cast<void**>(taskBandForSite) == CTaskBand_ITaskListWndSite_vftable) {
+        if (*reinterpret_cast<void**>(taskBandForSite) ==
+            CTaskBand_ITaskListWndSite_vftable) {
             break;
         }
         taskBandForSite = reinterpret_cast<void**>(taskBandForSite) + 1;
@@ -2025,22 +2074,24 @@ xaml::XamlRoot GetTaskbarXamlRoot(HWND taskbarWnd) {
 
     size_t elementOffset = 0x10;
 #if defined(_M_X64) || defined(__x86_64__)
-    const BYTE* bytes = reinterpret_cast<const BYTE*>(TaskbarHost_FrameHeight_Original);
+    const BYTE* bytes =
+        reinterpret_cast<const BYTE*>(TaskbarHost_FrameHeight_Original);
     if (bytes[0] == 0x48 && bytes[1] == 0x83 && bytes[2] == 0xEC &&
         bytes[4] == 0x48 && bytes[5] == 0x83 && bytes[6] == 0xC1 &&
         bytes[7] <= 0x7F) {
         elementOffset = bytes[7];
     }
 #elif defined(_M_ARM64) || defined(__aarch64__)
-    const DWORD* words = reinterpret_cast<const DWORD*>(TaskbarHost_FrameHeight_Original);
+    const DWORD* words =
+        reinterpret_cast<const DWORD*>(TaskbarHost_FrameHeight_Original);
     if (words[0] == 0xD503237F && (words[1] & 0xFFC07FFF) == 0xA9807BFD &&
         words[2] == 0x910003FD && (words[3] & 0xFFF00FE0) == 0xF8400C00) {
         elementOffset = (words[3] >> 12) & 0xFF;
     }
 #endif
 
-    auto elementUnknown =
-        *reinterpret_cast<IUnknown**>(reinterpret_cast<BYTE*>(taskbarHostSharedPtr[0]) + elementOffset);
+    auto elementUnknown = *reinterpret_cast<IUnknown**>(
+        reinterpret_cast<BYTE*>(taskbarHostSharedPtr[0]) + elementOffset);
 
     FrameworkElement taskbarElement{nullptr};
     if (elementUnknown) {
@@ -2055,14 +2106,17 @@ xaml::XamlRoot GetTaskbarXamlRoot(HWND taskbarWnd) {
     return root;
 }
 
-FrameworkElement FindChildByName(FrameworkElement const& root, std::wstring_view name, int depth = 32) {
+FrameworkElement FindChildByName(FrameworkElement const& root,
+                                 std::wstring_view name,
+                                 int depth = 32) {
     if (!root || depth <= 0) {
         return nullptr;
     }
 
     int count = VisualTreeHelper::GetChildrenCount(root);
     for (int i = 0; i < count; ++i) {
-        auto child = VisualTreeHelper::GetChild(root, i).try_as<FrameworkElement>();
+        auto child =
+            VisualTreeHelper::GetChild(root, i).try_as<FrameworkElement>();
         if (!child) {
             continue;
         }
@@ -2140,10 +2194,8 @@ std::wstring MediaIdentityKey(MediaState const& state) {
     // live-room/video thumbnail is available, and some providers temporarily
     // repeat the previous thumbnail. This key represents the actual media item
     // for deciding whether old artwork can be reused safely.
-    return state.sourceAppUserModelId + L"\n" +
-           state.title + L"\n" +
-           state.artist + L"\n" +
-           std::to_wstring(state.durationTicks);
+    return state.sourceAppUserModelId + L"\n" + state.title + L"\n" +
+           state.artist + L"\n" + std::to_wstring(state.durationTicks);
 }
 
 bool LooksLikeNativeMusicMediaSource(std::wstring const& source) {
@@ -2219,8 +2271,8 @@ bool ShouldForceMediaProgressToZero(MediaState const& state,
         return false;
     }
 
-    std::wstring key = MediaTrackKey(state) + L"\n" +
-                       std::to_wstring(state.durationTicks);
+    std::wstring key =
+        MediaTrackKey(state) + L"\n" + std::to_wstring(state.durationTicks);
     if (key != g_mediaProgressResetKey) {
         g_mediaProgressResetKey = std::move(key);
         g_mediaProgressResetStarted = now;
@@ -2250,7 +2302,8 @@ MediaState SnapshotMedia() {
     return g_media;
 }
 
-MediaState SnapshotMediaWithTimestamp(std::chrono::steady_clock::time_point& timestamp) {
+MediaState SnapshotMediaWithTimestamp(
+    std::chrono::steady_clock::time_point& timestamp) {
     std::lock_guard lock(g_mediaMutex);
     timestamp = g_mediaStateTimestamp;
     return g_media;
@@ -2261,10 +2314,9 @@ void SetMedia(MediaState&& state) {
     auto now = std::chrono::steady_clock::now();
 
     if (g_optimisticPlaybackPending) {
-        bool sameSource =
-            state.hasSession &&
-            _wcsicmp(state.sourceAppUserModelId.c_str(),
-                     g_optimisticPlaybackSource.c_str()) == 0;
+        bool sameSource = state.hasSession &&
+                          _wcsicmp(state.sourceAppUserModelId.c_str(),
+                                   g_optimisticPlaybackSource.c_str()) == 0;
         if (!sameSource || now >= g_optimisticPlaybackUntil) {
             g_optimisticPlaybackPending = false;
             g_optimisticPlaybackSource.clear();
@@ -2287,9 +2339,9 @@ void SetMedia(MediaState&& state) {
     std::wstring currentKey = MediaTrackKey(g_media);
     std::wstring nextKey = MediaTrackKey(state);
 
-    bool observedTrackChange =
-        g_media.hasSession && state.hasSession &&
-        !currentKey.empty() && !nextKey.empty() && currentKey != nextKey;
+    bool observedTrackChange = g_media.hasSession && state.hasSession &&
+                               !currentKey.empty() && !nextKey.empty() &&
+                               currentKey != nextKey;
     if (observedTrackChange) {
         // Metadata and timeline are separate GSMTC events. Several providers
         // publish the new title/id while their TimelineProperties still belong
@@ -2298,9 +2350,10 @@ void SetMedia(MediaState&& state) {
         g_timelineQuarantineTrackKey = nextKey;
         g_timelineQuarantinePreviousPositionTicks = g_media.positionTicks;
         g_timelineQuarantineUntil = now + std::chrono::seconds(12);
-        Wh_Log(L"Island: quarantining new-track timeline old=%lld incoming=%lld",
-               static_cast<long long>(g_media.positionTicks),
-               static_cast<long long>(state.positionTicks));
+        Wh_Log(
+            L"Island: quarantining new-track timeline old=%lld incoming=%lld",
+            static_cast<long long>(g_media.positionTicks),
+            static_cast<long long>(state.positionTicks));
         state.positionTicks = 0;
     } else if (!g_timelineQuarantineTrackKey.empty()) {
         if (!state.hasSession || nextKey != g_timelineQuarantineTrackKey) {
@@ -2312,8 +2365,7 @@ void SetMedia(MediaState&& state) {
             bool nearRealTrackStart =
                 state.positionTicks <= kFreshTrackStartTicks;
             bool clearlyDifferentTimeline =
-                g_timelineQuarantinePreviousPositionTicks >
-                    20 * 10000000LL &&
+                g_timelineQuarantinePreviousPositionTicks > 20 * 10000000LL &&
                 state.positionTicks + 15 * 10000000LL <
                     g_timelineQuarantinePreviousPositionTicks;
             if (nearRealTrackStart || clearlyDifferentTimeline ||
@@ -2329,7 +2381,8 @@ void SetMedia(MediaState&& state) {
 
     bool sameMedia = g_media.hasSession && state.hasSession &&
                      !currentKey.empty() && currentKey == nextKey &&
-                     state.durationTicks > 0 && g_media.durationTicks == state.durationTicks;
+                     state.durationTicks > 0 &&
+                     g_media.durationTicks == state.durationTicks;
 
     {
         std::lock_guard seekLock(g_seekMutex);
@@ -2359,14 +2412,17 @@ void SetMedia(MediaState&& state) {
 
     if (sameMedia && state.isPlaying) {
         int64_t estimatedTicks = g_media.positionTicks;
-        if (g_media.isPlaying && g_mediaStateTimestamp.time_since_epoch().count() != 0) {
-            double ageSec = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                now - g_mediaStateTimestamp)
-                                .count() /
-                            1000.0;
+        if (g_media.isPlaying &&
+            g_mediaStateTimestamp.time_since_epoch().count() != 0) {
+            double ageSec =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now - g_mediaStateTimestamp)
+                    .count() /
+                1000.0;
             ageSec = Clamp(ageSec, 0.0, 3.0);
             estimatedTicks += static_cast<int64_t>(ageSec * 10000000.0);
-            estimatedTicks = std::clamp<int64_t>(estimatedTicks, 0, state.durationTicks);
+            estimatedTicks =
+                std::clamp<int64_t>(estimatedTicks, 0, state.durationTicks);
         }
 
         // Some GSMTC providers re-emit the old position when metadata is polled.
@@ -2374,7 +2430,8 @@ void SetMedia(MediaState&& state) {
         // right again on the next local extrapolation.
         bool looksLikeStaleBackwardSample =
             state.positionTicks < estimatedTicks &&
-            (estimatedTicks - state.positionTicks) < 120000000LL; // not a real big seek
+            (estimatedTicks - state.positionTicks) <
+                120000000LL;  // not a real big seek
         if (looksLikeStaleBackwardSample) {
             state.positionTicks = estimatedTicks;
         }
@@ -2399,8 +2456,8 @@ RequestMediaManagerWithTimeout(std::chrono::milliseconds timeout) {
     }
 
     try {
-        auto operation =
-            gsm::GlobalSystemMediaTransportControlsSessionManager::RequestAsync();
+        auto operation = gsm::GlobalSystemMediaTransportControlsSessionManager::
+            RequestAsync();
         if (operation.wait_for(timeout) !=
             winrt::Windows::Foundation::AsyncStatus::Completed) {
             try {
@@ -2446,11 +2503,10 @@ std::wstring Utf8ToWide(std::vector<uint8_t> const& bytes) {
         return {};
     }
 
-    size_t offset =
-        bytes.size() >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB &&
-                bytes[2] == 0xBF
-            ? 3
-            : 0;
+    size_t offset = bytes.size() >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB &&
+                            bytes[2] == 0xBF
+                        ? 3
+                        : 0;
     int byteCount = static_cast<int>(bytes.size() - offset);
     int required = MultiByteToWideChar(
         CP_UTF8, MB_ERR_INVALID_CHARS,
@@ -2473,11 +2529,10 @@ std::wstring Utf8ToWide(std::vector<uint8_t> const& bytes) {
 std::vector<uint8_t> ReadNeteaseFileBytes(std::wstring const& path,
                                           size_t maximumBytes) {
     std::vector<uint8_t> bytes;
-    HANDLE file = CreateFileW(path.c_str(), GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE |
-                                  FILE_SHARE_DELETE,
-                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                              nullptr);
+    HANDLE file =
+        CreateFileW(path.c_str(), GENERIC_READ,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) {
         return bytes;
     }
@@ -2525,16 +2580,16 @@ std::string WideToUtf8(std::wstring_view value) {
     if (value.empty()) {
         return {};
     }
-    int required = WideCharToMultiByte(
-        CP_UTF8, 0, value.data(), static_cast<int>(value.size()),
-        nullptr, 0, nullptr, nullptr);
+    int required = WideCharToMultiByte(CP_UTF8, 0, value.data(),
+                                       static_cast<int>(value.size()), nullptr,
+                                       0, nullptr, nullptr);
     if (required <= 0) {
         return {};
     }
     std::string result(static_cast<size_t>(required), '\0');
-    if (WideCharToMultiByte(
-            CP_UTF8, 0, value.data(), static_cast<int>(value.size()),
-            result.data(), required, nullptr, nullptr) != required) {
+    if (WideCharToMultiByte(CP_UTF8, 0, value.data(),
+                            static_cast<int>(value.size()), result.data(),
+                            required, nullptr, nullptr) != required) {
         return {};
     }
     return result;
@@ -2544,12 +2599,20 @@ struct NeteaseSqliteDb;
 struct NeteaseSqliteStmt;
 
 struct NeteaseSqliteApi {
-    using OpenV2 = int(__cdecl*)(char const*, NeteaseSqliteDb**, int,
+    using OpenV2 = int(__cdecl*)(char const*,
+                                 NeteaseSqliteDb**,
+                                 int,
                                  char const*);
     using Close = int(__cdecl*)(NeteaseSqliteDb*);
-    using PrepareV2 = int(__cdecl*)(NeteaseSqliteDb*, char const*, int,
-                                    NeteaseSqliteStmt**, char const**);
-    using BindText = int(__cdecl*)(NeteaseSqliteStmt*, int, char const*, int,
+    using PrepareV2 = int(__cdecl*)(NeteaseSqliteDb*,
+                                    char const*,
+                                    int,
+                                    NeteaseSqliteStmt**,
+                                    char const**);
+    using BindText = int(__cdecl*)(NeteaseSqliteStmt*,
+                                   int,
+                                   char const*,
+                                   int,
                                    void(__cdecl*)(void*));
     using Step = int(__cdecl*)(NeteaseSqliteStmt*);
     using ColumnText = unsigned char const*(__cdecl*)(NeteaseSqliteStmt*, int);
@@ -2622,8 +2685,7 @@ bool LooksLikeImageBytes(std::vector<uint8_t> const& bytes) {
            bytes[2] == 'F';
 }
 
-std::vector<uint8_t> ReadNeteaseCachedArtwork(
-    std::wstring const& artworkUrl) {
+std::vector<uint8_t> ReadNeteaseCachedArtwork(std::wstring const& artworkUrl) {
     static std::wstring cachedUrl;
     static std::vector<uint8_t> cachedBytes;
     static std::wstring lastMissUrl;
@@ -2651,8 +2713,7 @@ std::vector<uint8_t> ReadNeteaseCachedArtwork(
     if (size_t query = baseUrl.find(L'?'); query != std::wstring::npos) {
         baseUrl.resize(query);
     }
-    if (size_t scheme = baseUrl.find(L"://");
-        scheme != std::wstring::npos) {
+    if (size_t scheme = baseUrl.find(L"://"); scheme != std::wstring::npos) {
         baseUrl.erase(0, scheme + 3);
     }
     if (size_t pathStart = baseUrl.find(L'/');
@@ -2663,8 +2724,7 @@ std::vector<uint8_t> ReadNeteaseCachedArtwork(
         baseUrl.erase(0, pathStart);
     }
     std::string pattern = WideToUtf8(L"%" + baseUrl + L"%");
-    std::string databasePath =
-        WideToUtf8(root + L"\\Statics\\index.dat");
+    std::string databasePath = WideToUtf8(root + L"\\Statics\\index.dat");
     if (pattern.empty() || databasePath.empty()) {
         return {};
     }
@@ -2675,8 +2735,8 @@ std::vector<uint8_t> ReadNeteaseCachedArtwork(
     NeteaseSqliteDb* database = nullptr;
     NeteaseSqliteStmt* statement = nullptr;
     std::vector<uint8_t> bytes;
-    if (sqlite.openV2(databasePath.c_str(), &database,
-                      kSqliteOpenReadOnly, nullptr) == kSqliteOk &&
+    if (sqlite.openV2(databasePath.c_str(), &database, kSqliteOpenReadOnly,
+                      nullptr) == kSqliteOk &&
         database) {
         constexpr char kQuery[] =
             "SELECT path FROM cache WHERE url LIKE ?1 "
@@ -2700,8 +2760,8 @@ std::vector<uint8_t> ReadNeteaseCachedArtwork(
                     continue;
                 }
                 std::vector<uint8_t> utf8Path(
-                    path, path + std::strlen(
-                                     reinterpret_cast<char const*>(path)));
+                    path,
+                    path + std::strlen(reinterpret_cast<char const*>(path)));
                 std::wstring cachedPath = Utf8ToWide(utf8Path);
                 bool safeName =
                     !cachedPath.empty() &&
@@ -2853,19 +2913,17 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
                 (static_cast<uint64_t>(data.ftLastWriteTime.dwHighDateTime)
                  << 32) |
                 data.ftLastWriteTime.dwLowDateTime;
-            signature.size =
-                (static_cast<uint64_t>(data.nFileSizeHigh) << 32) |
-                data.nFileSizeLow;
+            signature.size = (static_cast<uint64_t>(data.nFileSizeHigh) << 32) |
+                             data.nFileSizeLow;
         }
         return signature;
     };
 
     std::wstring playingListPath = NeteaseLocalDataPath();
     size_t slash = playingListPath.find_last_of(L"\\/");
-    std::wstring directory =
-        slash == std::wstring::npos
-            ? std::wstring{}
-            : playingListPath.substr(0, slash + 1);
+    std::wstring directory = slash == std::wstring::npos
+                                 ? std::wstring{}
+                                 : playingListPath.substr(0, slash + 1);
     std::wstring fmPlayPath =
         directory.empty() ? std::wstring{} : directory + L"fmPlay";
     FileSignature fmSignature = fileSignature(fmPlayPath);
@@ -2887,8 +2945,7 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
     }
 
     NeteaseTrackMetadata parsedMetadata;
-    auto tryFile = [&](std::wstring const& path,
-                       wchar_t const* arrayName,
+    auto tryFile = [&](std::wstring const& path, wchar_t const* arrayName,
                        bool wrappedTracks) {
         // The normal queue is under 1 MB on current NetEase builds. This is
         // only read after the window title or file signature changes, never on
@@ -2904,8 +2961,7 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
         if (GetFileAttributesExW(path.c_str(), GetFileExInfoStandard,
                                  &fileData)) {
             sourceWriteTimeTicks =
-                (static_cast<uint64_t>(
-                     fileData.ftLastWriteTime.dwHighDateTime)
+                (static_cast<uint64_t>(fileData.ftLastWriteTime.dwHighDateTime)
                  << 32) |
                 fileData.ftLastWriteTime.dwLowDateTime;
         }
@@ -2916,12 +2972,10 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
             for (auto const& itemValue : items) {
                 try {
                     auto item = itemValue.GetObject();
-                    auto track =
-                        wrappedTracks && item.HasKey(L"track")
-                            ? item.GetNamedObject(L"track")
-                            : item;
-                    std::wstring title =
-                        JsonScalarString(track, L"name");
+                    auto track = wrappedTracks && item.HasKey(L"track")
+                                     ? item.GetNamedObject(L"track")
+                                     : item;
+                    std::wstring title = JsonScalarString(track, L"name");
                     if (title.empty() || !track.HasKey(L"artists")) {
                         continue;
                     }
@@ -2956,8 +3010,7 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
 
                     if (track.HasKey(L"album")) {
                         auto album = track.GetNamedObject(L"album");
-                        found.artworkUrl =
-                            JsonScalarString(album, L"picUrl");
+                        found.artworkUrl = JsonScalarString(album, L"picUrl");
                         if (found.artworkUrl.empty()) {
                             found.artworkUrl =
                                 JsonScalarString(album, L"cover");
@@ -2971,10 +3024,8 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
                                 std::llround(durationMs * 10000.0));
                         }
                     }
-                    found.sourceWriteTimeTicks =
-                        sourceWriteTimeTicks;
-                    found.sourceTimestampTracksPlayback =
-                        !wrappedTracks;
+                    found.sourceWriteTimeTicks = sourceWriteTimeTicks;
+                    found.sourceTimestampTracksPlayback = !wrappedTracks;
                     parsedMetadata = std::move(found);
                     return true;
                 } catch (...) {
@@ -2987,8 +3038,7 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
 
     // Private FM maintains a separate queue and updates this file whenever its
     // currentIndex changes, so prefer it for both metadata and progress.
-    bool found =
-        !fmPlayPath.empty() && tryFile(fmPlayPath, L"queue", false);
+    bool found = !fmPlayPath.empty() && tryFile(fmPlayPath, L"queue", false);
     if (!found) {
         found = tryFile(playingListPath, L"list", true);
     }
@@ -3027,8 +3077,7 @@ std::wstring NeteaseJpegThumbnailUrl(std::wstring artworkUrl) {
     if (size_t query = artworkUrl.find(L'?'); query != std::wstring::npos) {
         artworkUrl.resize(query);
     }
-    artworkUrl +=
-        L"?imageView&enlarge=1&thumbnail=384y384&type=jpg";
+    artworkUrl += L"?imageView&enlarge=1&thumbnail=384y384&type=jpg";
     return artworkUrl;
 }
 
@@ -3047,25 +3096,22 @@ std::vector<uint8_t> DownloadRemoteBytesSync(std::wstring remoteUrl) {
         return {};
     }
 
-    std::wstring host(components.lpszHostName,
-                      components.dwHostNameLength);
+    std::wstring host(components.lpszHostName, components.dwHostNameLength);
     std::wstring resource;
     if (components.lpszUrlPath && components.dwUrlPathLength) {
-        resource.assign(components.lpszUrlPath,
-                        components.dwUrlPathLength);
+        resource.assign(components.lpszUrlPath, components.dwUrlPathLength);
     }
     if (components.lpszExtraInfo && components.dwExtraInfoLength) {
-        resource.append(components.lpszExtraInfo,
-                        components.dwExtraInfoLength);
+        resource.append(components.lpszExtraInfo, components.dwExtraInfoLength);
     }
     if (resource.empty()) {
         resource = L"/";
     }
 
-    HINTERNET session = WinHttpOpen(
-        L"Windhawk Island Media Controls/0.9.234",
-        WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME,
-        WINHTTP_NO_PROXY_BYPASS, 0);
+    HINTERNET session =
+        WinHttpOpen(L"Windhawk Island Media Controls/0.9.234",
+                    WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME,
+                    WINHTTP_NO_PROXY_BYPASS, 0);
     if (!session) {
         return {};
     }
@@ -3075,27 +3121,24 @@ std::vector<uint8_t> DownloadRemoteBytesSync(std::wstring remoteUrl) {
 
     HINTERNET connection =
         WinHttpConnect(session, host.c_str(), components.nPort, 0);
-    HINTERNET request = connection
-                            ? WinHttpOpenRequest(
-                                  connection, L"GET", resource.c_str(),
-                                  nullptr, WINHTTP_NO_REFERER,
-                                  WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                  components.nScheme == INTERNET_SCHEME_HTTPS
-                                      ? WINHTTP_FLAG_SECURE
-                                      : 0)
-                            : nullptr;
+    HINTERNET request =
+        connection ? WinHttpOpenRequest(
+                         connection, L"GET", resource.c_str(), nullptr,
+                         WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+                         components.nScheme == INTERNET_SCHEME_HTTPS
+                             ? WINHTTP_FLAG_SECURE
+                             : 0)
+                   : nullptr;
     std::vector<uint8_t> result;
-    BOOL succeeded =
-        request &&
-        WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                           WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
-        WinHttpReceiveResponse(request, nullptr);
+    BOOL succeeded = request &&
+                     WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS,
+                                        0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+                     WinHttpReceiveResponse(request, nullptr);
     if (succeeded) {
         DWORD status = 0;
         DWORD statusSize = sizeof(status);
         succeeded = WinHttpQueryHeaders(
-            request,
-            WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+            request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
             WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
             WINHTTP_NO_HEADER_INDEX);
         succeeded = succeeded && status >= 200 && status < 300;
@@ -3209,9 +3252,7 @@ std::vector<uint8_t> RequestNeteaseRemoteArtworkAsync(
 
 void RemoteBytesThreadProc() {
     struct ExitGuard {
-        ~ExitGuard() {
-            g_remoteBytesThreadExited = true;
-        }
+        ~ExitGuard() { g_remoteBytesThreadExited = true; }
     } exitGuard;
 
     while (g_remoteBytesThreadRunning) {
@@ -3241,9 +3282,8 @@ void RemoteBytesThreadProc() {
                     ++it;
                 }
             }
-            g_remoteBytesCache.push_front(
-                {remoteUrl, std::move(bytes),
-                 std::chrono::steady_clock::now()});
+            g_remoteBytesCache.push_front({remoteUrl, std::move(bytes),
+                                           std::chrono::steady_clock::now()});
             while (g_remoteBytesCache.size() > 8) {
                 g_remoteBytesCache.pop_back();
             }
@@ -3340,9 +3380,8 @@ bool ClickResolvedScreenPointForWindow(
     inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
     inputs[1].type = INPUT_MOUSE;
     inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    bool succeeded =
-        SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT)) ==
-        ARRAYSIZE(inputs);
+    bool succeeded = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT)) ==
+                     ARRAYSIZE(inputs);
     Sleep(12);
 
     if (havePreviousCursor) {
@@ -3496,18 +3535,16 @@ std::wstring BilibiliBvidFromUrl(std::wstring const& url) {
     if (marker != std::wstring::npos) {
         marker += 5;
         size_t end = url.find_first_of(L"&#", marker);
-        return url.substr(marker, end == std::wstring::npos
-                                      ? std::wstring::npos
-                                      : end - marker);
+        return url.substr(marker, end == std::wstring::npos ? std::wstring::npos
+                                                            : end - marker);
     }
 
     marker = url.find(L"/video/");
     if (marker != std::wstring::npos) {
         marker += 7;
         size_t end = url.find_first_of(L"/?#", marker);
-        return url.substr(marker, end == std::wstring::npos
-                                      ? std::wstring::npos
-                                      : end - marker);
+        return url.substr(marker, end == std::wstring::npos ? std::wstring::npos
+                                                            : end - marker);
     }
     return {};
 }
@@ -3535,9 +3572,9 @@ bool TryReadBilibiliUiState(BilibiliUiState* state) {
     IUIAutomationElement* root = nullptr;
     IUIAutomationCondition* documentCondition = nullptr;
     IUIAutomationElement* document = nullptr;
-    HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                      CLSCTX_INPROC_SERVER,
-                                      IID_PPV_ARGS(&automation));
+    HRESULT result =
+        CoCreateInstance(CLSID_CUIAutomation, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_PPV_ARGS(&automation));
     if (SUCCEEDED(result)) {
         result = automation->ElementFromHandle(state->window, &root);
     }
@@ -3545,12 +3582,12 @@ bool TryReadBilibiliUiState(BilibiliUiState* state) {
         VARIANT value{};
         value.vt = VT_I4;
         value.lVal = UIA_DocumentControlTypeId;
-        result = automation->CreatePropertyCondition(
-            UIA_ControlTypePropertyId, value, &documentCondition);
+        result = automation->CreatePropertyCondition(UIA_ControlTypePropertyId,
+                                                     value, &documentCondition);
     }
     if (SUCCEEDED(result)) {
-        result =
-            root->FindFirst(TreeScope_Descendants, documentCondition, &document);
+        result = root->FindFirst(TreeScope_Descendants, documentCondition,
+                                 &document);
     }
 
     if (SUCCEEDED(result) && document) {
@@ -3562,11 +3599,10 @@ bool TryReadBilibiliUiState(BilibiliUiState* state) {
 
         IUnknown* unknown = nullptr;
         IUIAutomationValuePattern* valuePattern = nullptr;
-        if (SUCCEEDED(document->GetCurrentPattern(UIA_ValuePatternId,
-                                                  &unknown)) &&
+        if (SUCCEEDED(
+                document->GetCurrentPattern(UIA_ValuePatternId, &unknown)) &&
             unknown &&
-            SUCCEEDED(unknown->QueryInterface(
-                IID_PPV_ARGS(&valuePattern)))) {
+            SUCCEEDED(unknown->QueryInterface(IID_PPV_ARGS(&valuePattern)))) {
             BSTR urlRaw = nullptr;
             if (SUCCEEDED(valuePattern->get_CurrentValue(&urlRaw))) {
                 state->url = urlRaw ? urlRaw : L"";
@@ -3581,10 +3617,14 @@ bool TryReadBilibiliUiState(BilibiliUiState* state) {
         }
     }
 
-    if (document) document->Release();
-    if (documentCondition) documentCondition->Release();
-    if (root) root->Release();
-    if (automation) automation->Release();
+    if (document)
+        document->Release();
+    if (documentCondition)
+        documentCondition->Release();
+    if (root)
+        root->Release();
+    if (automation)
+        automation->Release();
     return !BilibiliBvidFromUrl(state->url).empty();
 }
 
@@ -3610,15 +3650,13 @@ bool TryReadBilibiliMetadata(std::wstring const& bvid,
                 auto root = json::JsonObject::Parse(text);
                 if (root.GetNamedNumber(L"code", -1) == 0) {
                     auto data = root.GetNamedObject(L"data");
-                    std::wstring newTitle =
-                        JsonScalarString(data, L"title");
+                    std::wstring newTitle = JsonScalarString(data, L"title");
                     std::wstring newArtist;
                     if (data.HasKey(L"owner")) {
                         newArtist = JsonScalarString(
                             data.GetNamedObject(L"owner"), L"name");
                     }
-                    std::wstring artworkUrl =
-                        JsonScalarString(data, L"pic");
+                    std::wstring artworkUrl = JsonScalarString(data, L"pic");
                     cachedBvid = bvid;
                     cachedTitle = std::move(newTitle);
                     cachedArtist = std::move(newArtist);
@@ -3638,9 +3676,12 @@ bool TryReadBilibiliMetadata(std::wstring const& bvid,
             cachedArtwork = std::move(artworkBytes);
         }
     }
-    if (title) *title = cachedTitle;
-    if (artist) *artist = cachedArtist;
-    if (artwork) *artwork = cachedArtwork;
+    if (title)
+        *title = cachedTitle;
+    if (artist)
+        *artist = cachedArtist;
+    if (artwork)
+        *artwork = cachedArtwork;
     return true;
 }
 
@@ -3690,8 +3731,7 @@ bool TryReadBilibiliState(MediaState* state, bool isPlaying) {
 
 bool TryFavoriteBilibili() {
     HWND window = FindBilibiliWindow();
-    HWND renderWidget =
-        window ? FindChromeRenderWidgetWindow(window) : nullptr;
+    HWND renderWidget = window ? FindChromeRenderWidgetWindow(window) : nullptr;
     if (!window || !renderWidget) {
         return false;
     }
@@ -3706,9 +3746,9 @@ bool TryFavoriteBilibili() {
             IUIAutomationElement* root = nullptr;
             IUIAutomationCondition* condition = nullptr;
             IUIAutomationElement* cacheText = nullptr;
-            HRESULT result = CoCreateInstance(
-                CLSID_CUIAutomation, nullptr, CLSCTX_INPROC_SERVER,
-                IID_PPV_ARGS(&automation));
+            HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
+                                              CLSCTX_INPROC_SERVER,
+                                              IID_PPV_ARGS(&automation));
             if (SUCCEEDED(result)) {
                 result = automation->ElementFromHandle(window, &root);
             }
@@ -3723,32 +3763,33 @@ bool TryFavoriteBilibili() {
                 VariantClear(&value);
             }
             if (SUCCEEDED(result)) {
-                result = root->FindFirst(
-                    TreeScope_Descendants, condition, &cacheText);
+                result = root->FindFirst(TreeScope_Descendants, condition,
+                                         &cacheText);
             }
 
             RECT rect{};
             bool resolved =
                 SUCCEEDED(result) && cacheText &&
-                SUCCEEDED(
-                    cacheText->get_CurrentBoundingRectangle(&rect)) &&
+                SUCCEEDED(cacheText->get_CurrentBoundingRectangle(&rect)) &&
                 rect.right > rect.left && rect.bottom > rect.top;
             if (resolved) {
                 UINT dpi = GetDpiForWindow(window);
                 if (!dpi) {
                     dpi = 96;
                 }
-                favoritePoint->x =
-                    (rect.left + rect.right) / 2 -
-                    MulDiv(66, static_cast<int>(dpi), 96);
-                favoritePoint->y =
-                    (rect.top + rect.bottom) / 2 -
-                    MulDiv(25, static_cast<int>(dpi), 96);
+                favoritePoint->x = (rect.left + rect.right) / 2 -
+                                   MulDiv(66, static_cast<int>(dpi), 96);
+                favoritePoint->y = (rect.top + rect.bottom) / 2 -
+                                   MulDiv(25, static_cast<int>(dpi), 96);
             }
-            if (cacheText) cacheText->Release();
-            if (condition) condition->Release();
-            if (root) root->Release();
-            if (automation) automation->Release();
+            if (cacheText)
+                cacheText->Release();
+            if (condition)
+                condition->Release();
+            if (root)
+                root->Release();
+            if (automation)
+                automation->Release();
             return resolved;
         });
 
@@ -3803,24 +3844,24 @@ bool IsNeteaseCloudMusicAudioActive() {
 
     auto probe = []() -> bool {
         winrt::com_ptr<IMMDeviceEnumerator> deviceEnumerator;
-        HRESULT result = CoCreateInstance(
-            kCLSID_MMDeviceEnumerator, nullptr, CLSCTX_INPROC_SERVER,
-            IID_PPV_ARGS(deviceEnumerator.put()));
+        HRESULT result = CoCreateInstance(kCLSID_MMDeviceEnumerator, nullptr,
+                                          CLSCTX_INPROC_SERVER,
+                                          IID_PPV_ARGS(deviceEnumerator.put()));
         if (FAILED(result)) {
             return false;
         }
 
         winrt::com_ptr<IMMDevice> device;
-        result = deviceEnumerator->GetDefaultAudioEndpoint(
-            eRender, eMultimedia, device.put());
+        result = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eMultimedia,
+                                                           device.put());
         if (FAILED(result)) {
             return false;
         }
 
         winrt::com_ptr<IAudioSessionManager2> sessionManager;
-        result = device->Activate(
-            __uuidof(IAudioSessionManager2), CLSCTX_INPROC_SERVER, nullptr,
-            sessionManager.put_void());
+        result = device->Activate(__uuidof(IAudioSessionManager2),
+                                  CLSCTX_INPROC_SERVER, nullptr,
+                                  sessionManager.put_void());
         if (FAILED(result)) {
             return false;
         }
@@ -3838,8 +3879,8 @@ bool IsNeteaseCloudMusicAudioActive() {
 
         for (int i = 0; i < sessionCount; ++i) {
             winrt::com_ptr<IAudioSessionControl> sessionControl;
-            if (FAILED(sessionEnumerator->GetSession(i,
-                                                     sessionControl.put()))) {
+            if (FAILED(
+                    sessionEnumerator->GetSession(i, sessionControl.put()))) {
                 continue;
             }
 
@@ -3880,8 +3921,7 @@ NeteaseCloudMusicWindow FindNeteaseCloudMusicWindow() {
     NeteaseCloudMusicWindow result;
     EnumWindows(
         [](HWND hwnd, LPARAM param) -> BOOL {
-            auto result =
-                reinterpret_cast<NeteaseCloudMusicWindow*>(param);
+            auto result = reinterpret_cast<NeteaseCloudMusicWindow*>(param);
             DWORD processId = 0;
             if (!GetWindowThreadProcessId(hwnd, &processId) ||
                 !IsNeteaseCloudMusicProcessId(processId)) {
@@ -3894,8 +3934,8 @@ NeteaseCloudMusicWindow FindNeteaseCloudMusicWindow() {
             }
 
             std::wstring title(static_cast<size_t>(titleLength) + 1, L'\0');
-            int copied = GetWindowTextW(
-                hwnd, title.data(), static_cast<int>(title.size()));
+            int copied = GetWindowTextW(hwnd, title.data(),
+                                        static_cast<int>(title.size()));
             if (copied <= 0) {
                 return TRUE;
             }
@@ -3927,7 +3967,7 @@ bool ReadDefaultOutputVolume(double& value) {
     }
     winrt::com_ptr<IMMDevice> device;
     if (FAILED(enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia,
-                                                    device.put()))) {
+                                                   device.put()))) {
         return false;
     }
     winrt::com_ptr<IAudioEndpointVolume> endpoint;
@@ -3954,7 +3994,7 @@ bool WriteDefaultOutputVolume(double value) {
     }
     winrt::com_ptr<IMMDevice> device;
     if (FAILED(enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia,
-                                                    device.put()))) {
+                                                   device.put()))) {
         return false;
     }
     winrt::com_ptr<IAudioEndpointVolume> endpoint;
@@ -3963,8 +4003,8 @@ bool WriteDefaultOutputVolume(double value) {
                                 endpoint.put_void()))) {
         return false;
     }
-    if (FAILED(endpoint->SetMasterVolumeLevelScalar(
-            static_cast<float>(value), nullptr))) {
+    if (FAILED(endpoint->SetMasterVolumeLevelScalar(static_cast<float>(value),
+                                                    nullptr))) {
         return false;
     }
     g_popupSystemVolume = value;
@@ -4061,9 +4101,9 @@ bool TryGetNeteasePlaybackState(bool* isPlaying) {
     IUIAutomationElement* root = nullptr;
     IUIAutomationCondition* condition = nullptr;
     IUIAutomationElement* element = nullptr;
-    HRESULT result = CoCreateInstance(CLSID_CUIAutomation, nullptr,
-                                      CLSCTX_INPROC_SERVER,
-                                      IID_PPV_ARGS(&automation));
+    HRESULT result =
+        CoCreateInstance(CLSID_CUIAutomation, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_PPV_ARGS(&automation));
     if (SUCCEEDED(result)) {
         result = automation->ElementFromHandle(window.hwnd, &root);
     }
@@ -4174,7 +4214,8 @@ bool TrySeekNeteaseCloudMusic(double ratio) {
 
     if (wasMinimized) {
         ShowWindow(window.hwnd, SW_RESTORE);
-        for (int attempt = 0; attempt < 40 && IsIconic(window.hwnd); ++attempt) {
+        for (int attempt = 0; attempt < 40 && IsIconic(window.hwnd);
+             ++attempt) {
             Sleep(5);
         }
     }
@@ -4191,8 +4232,8 @@ bool TrySeekNeteaseCloudMusic(double ratio) {
     }
 
     int edgeInset = std::max(1, ScaleNeteasePixel(window.hwnd, 2));
-    int seekWidth = std::max(
-        1, static_cast<int>(client.right - client.left) - edgeInset);
+    int seekWidth =
+        std::max(1, static_cast<int>(client.right - client.left) - edgeInset);
     int x = client.left + static_cast<int>(std::llround(seekWidth * ratio));
     // NetEase 3.x draws the seek strip at the top edge of its 82-DIP minibar.
     int y = std::max(client.top,
@@ -4204,9 +4245,9 @@ bool TrySeekNeteaseCloudMusic(double ratio) {
 
     DWORD_PTR ignored = 0;
     auto send = [&](UINT message, WPARAM keys) {
-        return SendMessageTimeoutW(
-                   renderWidget, message, keys, point,
-                   SMTO_ABORTIFHUNG | SMTO_BLOCK, 180, &ignored) != 0;
+        return SendMessageTimeoutW(renderWidget, message, keys, point,
+                                   SMTO_ABORTIFHUNG | SMTO_BLOCK, 180,
+                                   &ignored) != 0;
     };
     SendMessageTimeoutW(window.hwnd, WM_ACTIVATE, WA_ACTIVE,
                         reinterpret_cast<LPARAM>(previousForeground),
@@ -4232,8 +4273,10 @@ bool TrySeekNeteaseCloudMusic(double ratio) {
         ShowWindow(window.hwnd, SW_MINIMIZE);
     }
     restoreWindowVisual();
-    Wh_Log(L"Island: NetEase hidden seek result=%d foreground=%d ratio=%.4f hwnd=%p",
-           succeeded, foregroundAccepted, ratio, renderWidget);
+    Wh_Log(
+        L"Island: NetEase hidden seek result=%d foreground=%d ratio=%.4f "
+        L"hwnd=%p",
+        succeeded, foregroundAccepted, ratio, renderWidget);
     return succeeded;
 }
 
@@ -4253,28 +4296,22 @@ bool TryToggleNeteaseFavorite() {
                 return false;
             }
 
-            HWND renderWidget =
-                FindNeteaseRenderWidgetWindow(windowHandle);
+            HWND renderWidget = FindNeteaseRenderWidgetWindow(windowHandle);
             RECT client{};
-            if (!renderWidget ||
-                !GetClientRect(renderWidget, &client) ||
-                client.right <= client.left ||
-                client.bottom <= client.top) {
+            if (!renderWidget || !GetClientRect(renderWidget, &client) ||
+                client.right <= client.left || client.bottom <= client.top) {
                 return false;
             }
-            point->x =
-                client.left + ScaleNeteasePixel(windowHandle, 247);
-            point->y = client.bottom -
-                       ScaleNeteasePixel(windowHandle, 40);
+            point->x = client.left + ScaleNeteasePixel(windowHandle, 247);
+            point->y = client.bottom - ScaleNeteasePixel(windowHandle, 40);
             return ClientToScreen(renderWidget, point) != FALSE;
         });
     Wh_Log(L"Island: NetEase favorite toggle result=%d", succeeded);
     return succeeded;
 }
 
-int64_t EstimateNeteasePositionTicks(
-    NeteaseTrackMetadata const& metadata,
-    bool isPlaying) {
+int64_t EstimateNeteasePositionTicks(NeteaseTrackMetadata const& metadata,
+                                     bool isPlaying) {
     auto now = std::chrono::steady_clock::now();
     // NetEase can update the visible title before its local metadata id. The
     // estimator must reset on either signal; otherwise it keeps accumulating
@@ -4285,14 +4322,12 @@ int64_t EstimateNeteasePositionTicks(
     bool newPlaybackTimestamp =
         metadata.sourceTimestampTracksPlayback &&
         metadata.sourceWriteTimeTicks != 0 &&
-        metadata.sourceWriteTimeTicks !=
-            g_neteaseProgressSourceWriteTimeTicks;
+        metadata.sourceWriteTimeTicks != g_neteaseProgressSourceWriteTimeTicks;
 
     if (newTrack || newPlaybackTimestamp ||
         g_neteaseProgressSampleTime.time_since_epoch().count() == 0) {
         g_neteaseProgressTrackId = std::move(trackIdentity);
-        g_neteaseProgressSourceWriteTimeTicks =
-            metadata.sourceWriteTimeTicks;
+        g_neteaseProgressSourceWriteTimeTicks = metadata.sourceWriteTimeTicks;
         g_neteaseEstimatedPositionTicks = 0;
 
         // A title-only change paired with the previous file timestamp is a
@@ -4305,15 +4340,12 @@ int64_t EstimateNeteasePositionTicks(
             FILETIME nowFileTime{};
             GetSystemTimeAsFileTime(&nowFileTime);
             uint64_t nowTicks =
-                (static_cast<uint64_t>(nowFileTime.dwHighDateTime)
-                 << 32) |
+                (static_cast<uint64_t>(nowFileTime.dwHighDateTime) << 32) |
                 nowFileTime.dwLowDateTime;
             if (nowTicks >= metadata.sourceWriteTimeTicks) {
-                uint64_t ageTicks =
-                    nowTicks - metadata.sourceWriteTimeTicks;
-                if (ageTicks <=
-                    static_cast<uint64_t>(
-                        std::max<int64_t>(metadata.durationTicks, 0))) {
+                uint64_t ageTicks = nowTicks - metadata.sourceWriteTimeTicks;
+                if (ageTicks <= static_cast<uint64_t>(std::max<int64_t>(
+                                    metadata.durationTicks, 0))) {
                     g_neteaseEstimatedPositionTicks =
                         static_cast<int64_t>(ageTicks);
                 }
@@ -4321,17 +4353,16 @@ int64_t EstimateNeteasePositionTicks(
         }
     } else if (isPlaying) {
         g_neteaseEstimatedPositionTicks +=
-            std::chrono::duration_cast<std::chrono::duration<
-                int64_t, std::ratio<1, 10000000>>>(
+            std::chrono::duration_cast<
+                std::chrono::duration<int64_t, std::ratio<1, 10000000>>>(
                 now - g_neteaseProgressSampleTime)
                 .count();
     }
 
     g_neteaseProgressSampleTime = now;
     g_neteaseEstimatedPositionTicks =
-        std::clamp<int64_t>(
-            g_neteaseEstimatedPositionTicks, 0,
-            std::max<int64_t>(metadata.durationTicks, 0));
+        std::clamp<int64_t>(g_neteaseEstimatedPositionTicks, 0,
+                            std::max<int64_t>(metadata.durationTicks, 0));
     return g_neteaseEstimatedPositionTicks;
 }
 
@@ -4368,8 +4399,7 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
         fallback.positionTicks =
             EstimateNeteasePositionTicks(metadata, isPlaying);
         fallback.canSeek = fallback.durationTicks > 0;
-        fallback.thumbnailBytes =
-            ReadNeteaseCachedArtwork(metadata.artworkUrl);
+        fallback.thumbnailBytes = ReadNeteaseCachedArtwork(metadata.artworkUrl);
         if (fallback.thumbnailBytes.empty()) {
             fallback.thumbnailBytes =
                 RequestNeteaseRemoteArtworkAsync(metadata.artworkUrl);
@@ -4381,10 +4411,9 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
     MediaState previous = SnapshotMedia();
     bool sameTrack =
         previous.hasSession &&
-        _wcsicmp(previous.sourceAppUserModelId.c_str(),
-                 L"cloudmusic.exe") == 0 &&
-        ((!fallback.mediaId.empty() &&
-          previous.mediaId == fallback.mediaId) ||
+        _wcsicmp(previous.sourceAppUserModelId.c_str(), L"cloudmusic.exe") ==
+            0 &&
+        ((!fallback.mediaId.empty() && previous.mediaId == fallback.mediaId) ||
          (fallback.mediaId.empty() && previous.mediaId.empty() &&
           previous.title == fallback.title &&
           previous.artist == fallback.artist));
@@ -4416,16 +4445,13 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
     // with the old or missing cover.
     static std::wstring pendingArtworkMediaId;
     static std::chrono::steady_clock::time_point pendingArtworkSince{};
-    bool changedTrack =
-        previous.hasSession &&
-        _wcsicmp(previous.sourceAppUserModelId.c_str(),
-                 L"cloudmusic.exe") == 0 &&
-        (previous.mediaId != fallback.mediaId ||
-         previous.title != fallback.title);
-    bool artworkExpected =
-        !metadata.artworkUrl.empty();
-    if (changedTrack && artworkExpected &&
-        fallback.thumbnailBytes.empty() &&
+    bool changedTrack = previous.hasSession &&
+                        _wcsicmp(previous.sourceAppUserModelId.c_str(),
+                                 L"cloudmusic.exe") == 0 &&
+                        (previous.mediaId != fallback.mediaId ||
+                         previous.title != fallback.title);
+    bool artworkExpected = !metadata.artworkUrl.empty();
+    if (changedTrack && artworkExpected && fallback.thumbnailBytes.empty() &&
         !previous.thumbnailBytes.empty()) {
         std::wstring pendingKey =
             fallback.mediaId.empty() ? fallback.title : fallback.mediaId;
@@ -4502,15 +4528,16 @@ gsm::GlobalSystemMediaTransportControlsSession SelectBestSession(
             try {
                 isPlaying =
                     session.GetPlaybackInfo().PlaybackStatus() ==
-                    gsm::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+                    gsm::
+                        GlobalSystemMediaTransportControlsSessionPlaybackStatus::
+                            Playing;
             } catch (...) {
             }
             if (!isPlaying) {
                 continue;
             }
 
-            if (current &&
-                winrt::get_abi(session) == winrt::get_abi(current)) {
+            if (current && winrt::get_abi(session) == winrt::get_abi(current)) {
                 return session;
             }
             if (!firstPlaying) {
@@ -4549,15 +4576,15 @@ gsm::GlobalSystemMediaTransportControlsSession CurrentSessionFromManager(
 
 // ===== Media refresh and commands =====
 void RefreshMediaState(
-    gsm::GlobalSystemMediaTransportControlsSessionManager const& manager = nullptr) {
+    gsm::GlobalSystemMediaTransportControlsSessionManager const& manager =
+        nullptr) {
     MediaState state;
     MediaState previous = SnapshotMedia();
     bool neteaseWasCurrent =
         IsNeteaseCloudMusicSource(previous.sourceAppUserModelId);
     // Once NetEase is the active source, keep its paused state instead of
     // discarding it and falling back to a stale "playing" GSMTC session.
-    bool haveState =
-        TryReadNeteaseCloudMusicState(&state, !neteaseWasCurrent);
+    bool haveState = TryReadNeteaseCloudMusicState(&state, !neteaseWasCurrent);
     if (!haveState) {
         try {
             auto session = CurrentSessionFromManager(manager);
@@ -4572,7 +4599,9 @@ void RefreshMediaState(
                 auto playback = session.GetPlaybackInfo();
                 state.isPlaying =
                     playback.PlaybackStatus() ==
-                    gsm::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
+                    gsm::
+                        GlobalSystemMediaTransportControlsSessionPlaybackStatus::
+                            Playing;
                 try {
                     state.canSeek =
                         playback.Controls().IsPlaybackPositionEnabled();
@@ -4598,11 +4627,11 @@ void RefreshMediaState(
                 int64_t position = timeline.Position().count();
                 state.timelineStartTicks = start;
                 state.durationTicks = end > start ? end - start : 0;
-                state.positionTicks = state.durationTicks > 0
-                                          ? std::clamp<int64_t>(
-                                                position - start, 0,
-                                                state.durationTicks)
-                                          : 0;
+                state.positionTicks =
+                    state.durationTicks > 0
+                        ? std::clamp<int64_t>(position - start, 0,
+                                              state.durationTicks)
+                        : 0;
                 if (IsBilibiliSource(state.sourceAppUserModelId)) {
                     // Bilibili metadata can be more complete than GSMTC, but
                     // GSMTC remains the sole source of timeline and seek state.
@@ -4654,40 +4683,45 @@ void SeekToMediaPosition(double ratio) {
     int64_t absolutePositionTicks =
         state.timelineStartTicks + relativePositionTicks;
     bool providerReportsSeekSupport = state.canSeek;
-    RunMediaCommand([absolutePositionTicks, relativePositionTicks,
-                     providerReportsSeekSupport, ratio](
-                        gsm::GlobalSystemMediaTransportControlsSession const& session) {
-        try {
-            auto source = session.SourceAppUserModelId();
-            bool isAppleMusic =
-                std::wstring_view(source).find(L"AppleMusic") !=
-                std::wstring_view::npos;
-            if (isAppleMusic && !providerReportsSeekSupport &&
-                TrySeekAppleMusicWithUiAutomation(ratio)) {
-                return;
-            }
+    RunMediaCommand(
+        [absolutePositionTicks, relativePositionTicks,
+         providerReportsSeekSupport,
+         ratio](gsm::GlobalSystemMediaTransportControlsSession const& session) {
+            try {
+                auto source = session.SourceAppUserModelId();
+                bool isAppleMusic =
+                    std::wstring_view(source).find(L"AppleMusic") !=
+                    std::wstring_view::npos;
+                if (isAppleMusic && !providerReportsSeekSupport &&
+                    TrySeekAppleMusicWithUiAutomation(ratio)) {
+                    return;
+                }
 
-            bool changed = GetAsyncResultWithTimeout(
-                session.TryChangePlaybackPositionAsync(relativePositionTicks),
-                kMediaCommandAsyncTimeout,
-                L"TryChangePlaybackPositionAsync relative");
-            if (!changed && absolutePositionTicks != relativePositionTicks) {
-                changed = GetAsyncResultWithTimeout(
-                    session.TryChangePlaybackPositionAsync(absolutePositionTicks),
+                bool changed = GetAsyncResultWithTimeout(
+                    session.TryChangePlaybackPositionAsync(
+                        relativePositionTicks),
                     kMediaCommandAsyncTimeout,
-                    L"TryChangePlaybackPositionAsync absolute");
+                    L"TryChangePlaybackPositionAsync relative");
+                if (!changed &&
+                    absolutePositionTicks != relativePositionTicks) {
+                    changed = GetAsyncResultWithTimeout(
+                        session.TryChangePlaybackPositionAsync(
+                            absolutePositionTicks),
+                        kMediaCommandAsyncTimeout,
+                        L"TryChangePlaybackPositionAsync absolute");
+                }
+                Wh_Log(
+                    L"Island: seek source=%s result=%d advertised=%d "
+                    L"relative=%lld absolute=%lld",
+                    source.c_str(), changed, providerReportsSeekSupport,
+                    static_cast<long long>(relativePositionTicks),
+                    static_cast<long long>(absolutePositionTicks));
+            } catch (winrt::hresult_error const& error) {
+                Wh_Log(L"Island: seek source=%s failed=0x%08X",
+                       session.SourceAppUserModelId().c_str(),
+                       static_cast<unsigned>(error.code().value));
             }
-            Wh_Log(L"Island: seek source=%s result=%d advertised=%d relative=%lld absolute=%lld",
-                   source.c_str(), changed,
-                   providerReportsSeekSupport,
-                   static_cast<long long>(relativePositionTicks),
-                   static_cast<long long>(absolutePositionTicks));
-        } catch (winrt::hresult_error const& error) {
-            Wh_Log(L"Island: seek source=%s failed=0x%08X",
-                   session.SourceAppUserModelId().c_str(),
-                   static_cast<unsigned>(error.code().value));
-        }
-    });
+        });
 }
 
 // ===== Artwork pipeline =====
@@ -4709,7 +4743,8 @@ HBITMAP DecodeAlbumBitmap(std::vector<uint8_t> const& bytes, UINT size) {
         return nullptr;
     }
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -4719,12 +4754,12 @@ HBITMAP DecodeAlbumBitmap(std::vector<uint8_t> const& bytes, UINT size) {
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -4733,7 +4768,8 @@ HBITMAP DecodeAlbumBitmap(std::vector<uint8_t> const& bytes, UINT size) {
         hr = factory->CreateBitmapScaler(&scaler);
     }
     if (SUCCEEDED(hr)) {
-        hr = scaler->Initialize(frame, size, size, WICBitmapInterpolationModeFant);
+        hr = scaler->Initialize(frame, size, size,
+                                WICBitmapInterpolationModeFant);
     }
     if (SUCCEEDED(hr)) {
         hr = factory->CreateFormatConverter(&converter);
@@ -4753,7 +4789,8 @@ HBITMAP DecodeAlbumBitmap(std::vector<uint8_t> const& bytes, UINT size) {
     info.bmiHeader.biBitCount = 32;
     info.bmiHeader.biCompression = BI_RGB;
     if (SUCCEEDED(hr)) {
-        bitmap = CreateDIBSection(nullptr, &info, DIB_RGB_COLORS, &pixels, nullptr, 0);
+        bitmap = CreateDIBSection(nullptr, &info, DIB_RGB_COLORS, &pixels,
+                                  nullptr, 0);
         if (!bitmap || !pixels) {
             hr = E_OUTOFMEMORY;
         }
@@ -4767,19 +4804,26 @@ HBITMAP DecodeAlbumBitmap(std::vector<uint8_t> const& bytes, UINT size) {
         bitmap = nullptr;
     }
 
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
     return bitmap;
 }
 
-std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& bytes,
-                                                     bool edgeFadeToMiddle = false,
-                                                     bool fadeFromTop = false,
-                                                     bool fadeFromRight = false) {
+std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(
+    std::vector<uint8_t> const& bytes,
+    bool edgeFadeToMiddle = false,
+    bool fadeFromTop = false,
+    bool fadeFromRight = false) {
     std::vector<uint8_t> output;
     if (bytes.empty()) {
         return output;
@@ -4794,7 +4838,8 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
     const UINT stride = kLowDetailSize * 4;
     const UINT bufferSize = stride * kLowDetailSize;
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -4807,12 +4852,12 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -4847,15 +4892,20 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
                 int sumR = 0;
                 int sumA = 0;
                 int count = 0;
-                int left = std::max(0, static_cast<int>(x) - static_cast<int>(kBlurRadius));
-                int right = std::min(static_cast<int>(kLowDetailSize) - 1,
-                                     static_cast<int>(x) + static_cast<int>(kBlurRadius));
-                int top = std::max(0, static_cast<int>(y) - static_cast<int>(kBlurRadius));
-                int bottom = std::min(static_cast<int>(kLowDetailSize) - 1,
-                                      static_cast<int>(y) + static_cast<int>(kBlurRadius));
+                int left = std::max(
+                    0, static_cast<int>(x) - static_cast<int>(kBlurRadius));
+                int right = std::min(
+                    static_cast<int>(kLowDetailSize) - 1,
+                    static_cast<int>(x) + static_cast<int>(kBlurRadius));
+                int top = std::max(
+                    0, static_cast<int>(y) - static_cast<int>(kBlurRadius));
+                int bottom = std::min(
+                    static_cast<int>(kLowDetailSize) - 1,
+                    static_cast<int>(y) + static_cast<int>(kBlurRadius));
                 for (int yy = top; yy <= bottom; ++yy) {
                     for (int xx = left; xx <= right; ++xx) {
-                        BYTE* pixel = source.data() +
+                        BYTE* pixel =
+                            source.data() +
                             (static_cast<size_t>(yy) * kLowDetailSize + xx) * 4;
                         sumB += pixel[0];
                         sumG += pixel[1];
@@ -4864,7 +4914,8 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
                         ++count;
                     }
                 }
-                BYTE* target = pixels.data() +
+                BYTE* target =
+                    pixels.data() +
                     (static_cast<size_t>(y) * kLowDetailSize + x) * 4;
                 target[0] = static_cast<BYTE>(sumB / count);
                 target[1] = static_cast<BYTE>(sumG / count);
@@ -4883,15 +4934,15 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
         // Expanded-surface color wash: keep only a low-frequency album glow
         // near the selected edge and ease it to transparent at the middle.
         const double kEdgeAlpha = IsDarkModeApprox() ? 0.72 : 0.88;
-        const double middle = (static_cast<double>(kLowDetailSize) - 1.0) * 0.50;
+        const double middle =
+            (static_cast<double>(kLowDetailSize) - 1.0) * 0.50;
         const double edge = static_cast<double>(kLowDetailSize) - 1.0;
         for (UINT y = 0; y < kLowDetailSize; ++y) {
             for (UINT x = 0; x < kLowDetailSize; ++x) {
                 double edgePosition =
-                    fadeFromRight
-                        ? static_cast<double>(x)
-                        : (fadeFromTop ? edge - static_cast<double>(y)
-                                       : static_cast<double>(y));
+                    fadeFromRight ? static_cast<double>(x)
+                                  : (fadeFromTop ? edge - static_cast<double>(y)
+                                                 : static_cast<double>(y));
                 double amount = 0.0;
                 if (edgePosition > middle && edge > middle) {
                     amount = (edgePosition - middle) / (edge - middle);
@@ -4900,11 +4951,15 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
                 }
                 double alphaScale = kEdgeAlpha * amount;
                 BYTE* pixel = pixels.data() +
-                    (static_cast<size_t>(y) * kLowDetailSize + x) * 4;
-                pixel[3] = static_cast<BYTE>(std::lround(pixel[3] * alphaScale));
-                pixel[0] = static_cast<BYTE>(std::lround(pixel[0] * alphaScale));
-                pixel[1] = static_cast<BYTE>(std::lround(pixel[1] * alphaScale));
-                pixel[2] = static_cast<BYTE>(std::lround(pixel[2] * alphaScale));
+                              (static_cast<size_t>(y) * kLowDetailSize + x) * 4;
+                pixel[3] =
+                    static_cast<BYTE>(std::lround(pixel[3] * alphaScale));
+                pixel[0] =
+                    static_cast<BYTE>(std::lround(pixel[0] * alphaScale));
+                pixel[1] =
+                    static_cast<BYTE>(std::lround(pixel[1] * alphaScale));
+                pixel[2] =
+                    static_cast<BYTE>(std::lround(pixel[2] * alphaScale));
             }
         }
     }
@@ -4932,7 +4987,8 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
         hr = outFrame->SetPixelFormat(&pixelFormat);
     }
     if (SUCCEEDED(hr)) {
-        hr = outFrame->WritePixels(kLowDetailSize, stride, bufferSize, pixels.data());
+        hr = outFrame->WritePixels(kLowDetailSize, stride, bufferSize,
+                                   pixels.data());
     }
     if (SUCCEEDED(hr)) {
         hr = outFrame->Commit();
@@ -4956,16 +5012,26 @@ std::vector<uint8_t> CreateLowDetailAlbumCoverBytes(std::vector<uint8_t> const& 
         }
     }
 
-    if (propertyBag) propertyBag->Release();
-    if (outFrame) outFrame->Release();
-    if (encoder) encoder->Release();
-    if (outStream) outStream->Release();
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (propertyBag)
+        propertyBag->Release();
+    if (outFrame)
+        outFrame->Release();
+    if (encoder)
+        encoder->Release();
+    if (outStream)
+        outStream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
     return output;
 }
 
@@ -4973,9 +5039,12 @@ winrt::Windows::UI::Color DefaultPopupAccentColor() {
     return Color(0xFF, 0x4F, 0x7D, 0xE8);
 }
 
-std::vector<uint8_t> EncodePbgraPngBytes(UINT width, UINT height, std::vector<BYTE> const& pixels) {
+std::vector<uint8_t> EncodePbgraPngBytes(UINT width,
+                                         UINT height,
+                                         std::vector<BYTE> const& pixels) {
     std::vector<uint8_t> output;
-    if (width == 0 || height == 0 || pixels.size() < static_cast<size_t>(width) * height * 4) {
+    if (width == 0 || height == 0 ||
+        pixels.size() < static_cast<size_t>(width) * height * 4) {
         return output;
     }
 
@@ -4985,8 +5054,8 @@ std::vector<uint8_t> EncodePbgraPngBytes(UINT width, UINT height, std::vector<BY
     IWICBitmapFrameEncode* outFrame = nullptr;
     IPropertyBag2* propertyBag = nullptr;
 
-    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                                  IID_PPV_ARGS(&factory));
+    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                                  CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     if (SUCCEEDED(hr)) {
         hr = CreateStreamOnHGlobal(nullptr, TRUE, &outStream);
     }
@@ -5010,8 +5079,7 @@ std::vector<uint8_t> EncodePbgraPngBytes(UINT width, UINT height, std::vector<BY
         hr = outFrame->SetPixelFormat(&pixelFormat);
     }
     if (SUCCEEDED(hr)) {
-        hr = outFrame->WritePixels(height, width * 4,
-                                   width * height * 4,
+        hr = outFrame->WritePixels(height, width * 4, width * height * 4,
                                    const_cast<BYTE*>(pixels.data()));
     }
     if (SUCCEEDED(hr)) {
@@ -5036,11 +5104,16 @@ std::vector<uint8_t> EncodePbgraPngBytes(UINT width, UINT height, std::vector<BY
         }
     }
 
-    if (propertyBag) propertyBag->Release();
-    if (outFrame) outFrame->Release();
-    if (encoder) encoder->Release();
-    if (outStream) outStream->Release();
-    if (factory) factory->Release();
+    if (propertyBag)
+        propertyBag->Release();
+    if (outFrame)
+        outFrame->Release();
+    if (encoder)
+        encoder->Release();
+    if (outStream)
+        outStream->Release();
+    if (factory)
+        factory->Release();
     return output;
 }
 
@@ -5079,9 +5152,9 @@ double PopupCoverG2MaskScale(UINT x, UINT y, UINT size, double radius) {
     constexpr int kSamplesPerAxis = 4;
     int coveredSamples = 0;
     for (int sampleY = 0; sampleY < kSamplesPerAxis; ++sampleY) {
-        double py = static_cast<double>(y) +
-                    (static_cast<double>(sampleY) + 0.5) /
-                        static_cast<double>(kSamplesPerAxis);
+        double py =
+            static_cast<double>(y) + (static_cast<double>(sampleY) + 0.5) /
+                                         static_cast<double>(kSamplesPerAxis);
         for (int sampleX = 0; sampleX < kSamplesPerAxis; ++sampleX) {
             double px = static_cast<double>(x) +
                         (static_cast<double>(sampleX) + 0.5) /
@@ -5102,7 +5175,8 @@ void ApplyPopupCoverG2Mask(std::vector<BYTE>& pixels, UINT size) {
     }
 
     constexpr double kPopupCoverG2RadiusRatio = 0.118;
-    const double radius = std::max(1.0, static_cast<double>(size) * kPopupCoverG2RadiusRatio);
+    const double radius =
+        std::max(1.0, static_cast<double>(size) * kPopupCoverG2RadiusRatio);
     for (UINT y = 0; y < size; ++y) {
         for (UINT x = 0; x < size; ++x) {
             double alphaScale = PopupCoverG2MaskScale(x, y, size, radius);
@@ -5110,7 +5184,8 @@ void ApplyPopupCoverG2Mask(std::vector<BYTE>& pixels, UINT size) {
                 continue;
             }
 
-            BYTE* pixel = pixels.data() + (static_cast<size_t>(y) * size + x) * 4;
+            BYTE* pixel =
+                pixels.data() + (static_cast<size_t>(y) * size + x) * 4;
             pixel[0] = static_cast<BYTE>(std::lround(pixel[0] * alphaScale));
             pixel[1] = static_cast<BYTE>(std::lround(pixel[1] * alphaScale));
             pixel[2] = static_cast<BYTE>(std::lround(pixel[2] * alphaScale));
@@ -5119,13 +5194,16 @@ void ApplyPopupCoverG2Mask(std::vector<BYTE>& pixels, UINT size) {
     }
 }
 
-std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& bytes, UINT size = 512) {
+std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(
+    std::vector<uint8_t> const& bytes,
+    UINT size = 512) {
     std::vector<uint8_t> output;
     if (bytes.empty() || size == 0) {
         return output;
     }
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -5136,12 +5214,12 @@ std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& by
     UINT sourceHeight = 0;
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -5155,8 +5233,10 @@ std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& by
     if (SUCCEEDED(hr) && sourceWidth > 0 && sourceHeight > 0) {
         double scale = static_cast<double>(size) /
                        static_cast<double>(std::min(sourceWidth, sourceHeight));
-        scaledWidth = std::max(size, static_cast<UINT>(std::ceil(sourceWidth * scale)));
-        scaledHeight = std::max(size, static_cast<UINT>(std::ceil(sourceHeight * scale)));
+        scaledWidth =
+            std::max(size, static_cast<UINT>(std::ceil(sourceWidth * scale)));
+        scaledHeight =
+            std::max(size, static_cast<UINT>(std::ceil(sourceHeight * scale)));
     }
     if (SUCCEEDED(hr)) {
         hr = factory->CreateBitmapScaler(&scaler);
@@ -5174,7 +5254,8 @@ std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& by
                                    WICBitmapPaletteTypeCustom);
     }
 
-    std::vector<BYTE> scaledPixels(static_cast<size_t>(scaledWidth) * scaledHeight * 4);
+    std::vector<BYTE> scaledPixels(static_cast<size_t>(scaledWidth) *
+                                   scaledHeight * 4);
     if (SUCCEEDED(hr)) {
         hr = converter->CopyPixels(nullptr, scaledWidth * 4,
                                    static_cast<UINT>(scaledPixels.size()),
@@ -5185,7 +5266,8 @@ std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& by
         UINT offsetX = (scaledWidth > size) ? (scaledWidth - size) / 2 : 0;
         UINT offsetY = (scaledHeight > size) ? (scaledHeight - size) / 2 : 0;
         for (UINT y = 0; y < size; ++y) {
-            BYTE* source = scaledPixels.data() +
+            BYTE* source =
+                scaledPixels.data() +
                 (static_cast<size_t>(y + offsetY) * scaledWidth + offsetX) * 4;
             BYTE* target = pixels.data() + static_cast<size_t>(y) * size * 4;
             std::memcpy(target, source, static_cast<size_t>(size) * 4);
@@ -5195,19 +5277,26 @@ std::vector<uint8_t> CreatePopupG2AlbumCoverBytes(std::vector<uint8_t> const& by
         output = EncodePbgraPngBytes(size, size, pixels);
     }
 
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
     return output;
 }
 
-std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(UINT size,
-                                                       bool edgeFadeToMiddle = false,
-                                                       bool fadeFromTop = false,
-                                                       bool fadeFromRight = false) {
+std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(
+    UINT size,
+    bool edgeFadeToMiddle = false,
+    bool fadeFromTop = false,
+    bool fadeFromRight = false) {
     if (size == 0) {
         return {};
     }
@@ -5224,7 +5313,8 @@ std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(UINT size,
             double glow = std::exp(-(dx * dx + dy * dy) / 0.16);
             double diagonal = 1.0 - 0.34 * v + 0.12 * u;
             double r = accent.R * (0.74 + 0.24 * glow) * diagonal + 36.0 * glow;
-            double g = accent.G * (0.78 + 0.20 * glow) * diagonal + 28.0 * (1.0 - v);
+            double g =
+                accent.G * (0.78 + 0.20 * glow) * diagonal + 28.0 * (1.0 - v);
             double b = accent.B * (0.86 + 0.14 * glow) * diagonal + 20.0 * u;
 
             double alphaScale = 1.0;
@@ -5240,11 +5330,16 @@ std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(UINT size,
                 }
             }
 
-            BYTE alpha = static_cast<BYTE>(std::lround(255.0 * Clamp(alphaScale, 0.0, 1.0)));
-            BYTE rr = static_cast<BYTE>(Clamp(static_cast<int>(std::lround(r)), 0, 255));
-            BYTE gg = static_cast<BYTE>(Clamp(static_cast<int>(std::lround(g)), 0, 255));
-            BYTE bb = static_cast<BYTE>(Clamp(static_cast<int>(std::lround(b)), 0, 255));
-            BYTE* pixel = pixels.data() + (static_cast<size_t>(y) * size + x) * 4;
+            BYTE alpha = static_cast<BYTE>(
+                std::lround(255.0 * Clamp(alphaScale, 0.0, 1.0)));
+            BYTE rr = static_cast<BYTE>(
+                Clamp(static_cast<int>(std::lround(r)), 0, 255));
+            BYTE gg = static_cast<BYTE>(
+                Clamp(static_cast<int>(std::lround(g)), 0, 255));
+            BYTE bb = static_cast<BYTE>(
+                Clamp(static_cast<int>(std::lround(b)), 0, 255));
+            BYTE* pixel =
+                pixels.data() + (static_cast<size_t>(y) * size + x) * 4;
             pixel[0] = static_cast<BYTE>(std::lround(bb * alpha / 255.0));
             pixel[1] = static_cast<BYTE>(std::lround(gg * alpha / 255.0));
             pixel[2] = static_cast<BYTE>(std::lround(rr * alpha / 255.0));
@@ -5254,26 +5349,29 @@ std::vector<uint8_t> CreatePlaceholderAlbumCoverBytes(UINT size,
     return EncodePbgraPngBytes(size, size, pixels);
 }
 
-bool GetArtworkDimensions(std::vector<uint8_t> const& bytes, UINT& width, UINT& height) {
+bool GetArtworkDimensions(std::vector<uint8_t> const& bytes,
+                          UINT& width,
+                          UINT& height) {
     width = 0;
     height = 0;
     if (bytes.empty()) {
         return false;
     }
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -5282,10 +5380,14 @@ bool GetArtworkDimensions(std::vector<uint8_t> const& bytes, UINT& width, UINT& 
         hr = frame->GetSize(&width, &height);
     }
 
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
     return SUCCEEDED(hr) && width > 0 && height > 0;
 }
 
@@ -5333,7 +5435,8 @@ winrt::Windows::UI::Color BoostArtworkColor(winrt::Windows::UI::Color color,
         double minC = std::min({r, g, b});
         double chroma = maxC - minC;
         if (chroma < minChroma) {
-            double factor = chroma < 1.0 ? 2.35 : std::min(2.35, minChroma / chroma);
+            double factor =
+                chroma < 1.0 ? 2.35 : std::min(2.35, minChroma / chroma);
             double g2 = 0.299 * r + 0.587 * g + 0.114 * b;
             r = g2 + (r - g2) * factor;
             g = g2 + (g - g2) * factor;
@@ -5362,23 +5465,26 @@ winrt::Windows::UI::Color BoostArtworkColor(winrt::Windows::UI::Color color,
 
     double maxBeforeClean = std::max({r, g, b});
     double minBeforeClean = std::min({r, g, b});
-    double satBeforeClean = maxBeforeClean > 1.0
-                                ? (maxBeforeClean - minBeforeClean) / maxBeforeClean
-                                : 0.0;
+    double satBeforeClean =
+        maxBeforeClean > 1.0
+            ? (maxBeforeClean - minBeforeClean) / maxBeforeClean
+            : 0.0;
     double muted = Clamp((0.34 - satBeforeClean) / 0.28, 0.0, 1.0);
     if (IsDarkModeApprox()) {
         // Dark theme: use the same adaptive idea as light mode. Muted covers get
         // a restrained clean-up rather than a fixed high-saturation boost.
         double minChroma = 34.0 + (1.0 - muted) * 26.0;
         double extraSat = 1.08 + (1.0 - muted) * 0.26;
-        cleanColor(minChroma, 82.0, muted > 0.55 ? 202.0 : 226.0, extraSat, 0.00);
+        cleanColor(minChroma, 82.0, muted > 0.55 ? 202.0 : 226.0, extraSat,
+                   0.00);
     } else {
         // Light theme: adapt to the source colorfulness. Muted covers should not
         // be forced into neon accents, but still need enough chroma to avoid a
         // dirty gray/brown look on the progress bar and generated artwork.
         double minChroma = 36.0 + (1.0 - muted) * 24.0;
         double extraSat = 1.16 + (1.0 - muted) * 0.28;
-        cleanColor(minChroma, 122.0, muted > 0.55 ? 206.0 : 218.0, extraSat, 0.00);
+        cleanColor(minChroma, 122.0, muted > 0.55 ? 206.0 : 218.0, extraSat,
+                   0.00);
     }
 
     return Color(color.A,
@@ -5387,7 +5493,8 @@ winrt::Windows::UI::Color BoostArtworkColor(winrt::Windows::UI::Color color,
                  static_cast<BYTE>(std::clamp(std::lround(b), 0l, 255l)));
 }
 
-std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> const& bytes) {
+std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(
+    std::vector<uint8_t> const& bytes) {
     if (bytes.empty()) {
         return {};
     }
@@ -5397,7 +5504,8 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
     const UINT stride = kSampleSize * 4;
     const UINT bufferSize = stride * kSampleSize;
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -5406,12 +5514,12 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -5437,16 +5545,23 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
         hr = converter->CopyPixels(nullptr, stride, bufferSize, sample.data());
     }
     if (FAILED(hr)) {
-        if (converter) converter->Release();
-        if (scaler) scaler->Release();
-        if (frame) frame->Release();
-        if (decoder) decoder->Release();
-        if (factory) factory->Release();
-        if (stream) stream->Release();
+        if (converter)
+            converter->Release();
+        if (scaler)
+            scaler->Release();
+        if (frame)
+            frame->Release();
+        if (decoder)
+            decoder->Release();
+        if (factory)
+            factory->Release();
+        if (stream)
+            stream->Release();
         return {};
     }
 
-    auto averageRectColor = [&](int x0, int y0, int x1, int y1) -> winrt::Windows::UI::Color {
+    auto averageRectColor = [&](int x0, int y0, int x1,
+                                int y1) -> winrt::Windows::UI::Color {
         long sumB = 0, sumG = 0, sumR = 0, sumA = 0, count = 0;
         x0 = std::clamp(x0, 0, static_cast<int>(kSampleSize) - 1);
         y0 = std::clamp(y0, 0, static_cast<int>(kSampleSize) - 1);
@@ -5454,7 +5569,8 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
         y1 = std::clamp(y1, y0 + 1, static_cast<int>(kSampleSize));
         for (int y = y0; y < y1; ++y) {
             for (int x = x0; x < x1; ++x) {
-                BYTE* pixel = sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
+                BYTE* pixel = sample.data() +
+                              (static_cast<size_t>(y) * kSampleSize + x) * 4;
                 auto color = ColorFromPbgra(pixel);
                 if (color.A == 0) {
                     continue;
@@ -5469,10 +5585,9 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
         if (count <= 0) {
             return DefaultPopupAccentColor();
         }
-        winrt::Windows::UI::Color c = Color(static_cast<BYTE>(sumA / count),
-                                            static_cast<BYTE>(sumR / count),
-                                            static_cast<BYTE>(sumG / count),
-                                            static_cast<BYTE>(sumB / count));
+        winrt::Windows::UI::Color c = Color(
+            static_cast<BYTE>(sumA / count), static_cast<BYTE>(sumR / count),
+            static_cast<BYTE>(sumG / count), static_cast<BYTE>(sumB / count));
         return BoostArtworkColor(c, 1.18, 1.04);
     };
 
@@ -5486,7 +5601,8 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
     SalientSample salient;
     for (UINT y = 0; y < kSampleSize; ++y) {
         for (UINT x = 0; x < kSampleSize; ++x) {
-            BYTE* pixel = sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
+            BYTE* pixel =
+                sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
             auto color = ColorFromPbgra(pixel);
             if (color.A == 0) {
                 continue;
@@ -5505,14 +5621,18 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
             // chrome that can appear in video thumbnails.
             double lumaWindow = 1.0 - std::abs(luma - 145.0) / 145.0;
             lumaWindow = Clamp(lumaWindow, 0.0, 1.0);
-            double score = saturation * saturation * (0.45 + 0.55 * lumaWindow) *
+            double score = saturation * saturation *
+                           (0.45 + 0.55 * lumaWindow) *
                            (0.40 + 0.60 * (chroma / 255.0));
             if (score > salient.score) {
                 salient.score = score;
-                salient.color = BoostArtworkColor(
-                    color, 1.48, 1.08);
-                salient.x = kSampleSize > 1 ? static_cast<float>(x) / (kSampleSize - 1) : 0.72f;
-                salient.y = kSampleSize > 1 ? static_cast<float>(y) / (kSampleSize - 1) : 0.30f;
+                salient.color = BoostArtworkColor(color, 1.48, 1.08);
+                salient.x = kSampleSize > 1
+                                ? static_cast<float>(x) / (kSampleSize - 1)
+                                : 0.72f;
+                salient.y = kSampleSize > 1
+                                ? static_cast<float>(y) / (kSampleSize - 1)
+                                : 0.30f;
             }
         }
     }
@@ -5522,12 +5642,9 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
     salient.y = std::clamp(salient.y, 0.16f, 0.78f);
 
     std::array<winrt::Windows::UI::Color, 6> palette{
-        averageRectColor(0, 0, 5, 5),
-        averageRectColor(9, 0, 14, 5),
-        averageRectColor(0, 9, 5, 14),
-        averageRectColor(9, 9, 14, 14),
-        averageRectColor(3, 3, 11, 11),
-        salient.color,
+        averageRectColor(0, 0, 5, 5),   averageRectColor(9, 0, 14, 5),
+        averageRectColor(0, 9, 5, 14),  averageRectColor(9, 9, 14, 14),
+        averageRectColor(3, 3, 11, 11), salient.color,
     };
 
     std::array<winrt::Windows::Foundation::Numerics::float2, 6> points{{
@@ -5541,11 +5658,15 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
     std::array<float, 6> sigma{{0.34f, 0.34f, 0.34f, 0.34f, 0.42f, 0.16f}};
     std::array<float, 6> weightBoost{{1.0f, 1.0f, 1.0f, 1.0f, 0.92f, 2.25f}};
 
-    std::vector<BYTE> outputPixels(static_cast<size_t>(kOutputSize) * kOutputSize * 4);
+    std::vector<BYTE> outputPixels(static_cast<size_t>(kOutputSize) *
+                                   kOutputSize * 4);
     for (UINT y = 0; y < kOutputSize; ++y) {
-        float fy = kOutputSize > 1 ? static_cast<float>(y) / (kOutputSize - 1) : 0.0f;
+        float fy =
+            kOutputSize > 1 ? static_cast<float>(y) / (kOutputSize - 1) : 0.0f;
         for (UINT x = 0; x < kOutputSize; ++x) {
-            float fx = kOutputSize > 1 ? static_cast<float>(x) / (kOutputSize - 1) : 0.0f;
+            float fx = kOutputSize > 1
+                           ? static_cast<float>(x) / (kOutputSize - 1)
+                           : 0.0f;
             double sumW = 0.0;
             double sumR = 0.0, sumG = 0.0, sumB = 0.0;
             for (size_t i = 0; i < points.size(); ++i) {
@@ -5560,7 +5681,8 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
                 sumG += palette[i].G * w;
                 sumB += palette[i].B * w;
             }
-            if (sumW <= 0.0) sumW = 1.0;
+            if (sumW <= 0.0)
+                sumW = 1.0;
             double r = sumR / sumW;
             double g = sumG / sumW;
             double b = sumB / sumW;
@@ -5582,15 +5704,16 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
             double perpX = -dirY;
             double perpY = dirX;
 
-            auto gaussianAniso = [&](double px, double py,
-                                     double cx, double cy,
-                                     double sigmaAlong, double sigmaAcross) -> double {
+            auto gaussianAniso = [&](double px, double py, double cx, double cy,
+                                     double sigmaAlong,
+                                     double sigmaAcross) -> double {
                 double dx = px - cx;
                 double dy = py - cy;
                 double along = dx * dirX + dy * dirY;
                 double across = dx * perpX + dy * perpY;
-                double value = (along * along) / (2.0 * sigmaAlong * sigmaAlong) +
-                               (across * across) / (2.0 * sigmaAcross * sigmaAcross);
+                double value =
+                    (along * along) / (2.0 * sigmaAlong * sigmaAlong) +
+                    (across * across) / (2.0 * sigmaAcross * sigmaAcross);
                 return std::exp(-value);
             };
 
@@ -5600,15 +5723,14 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
             double tailCy = salient.y - dirY * 0.060;
             double core = gaussianAniso(fx, fy, coreCx, coreCy, 0.060, 0.070);
             double tail = gaussianAniso(fx, fy, tailCx, tailCy, 0.170, 0.115);
-            double rim = gaussianAniso(fx, fy,
-                                       salient.x + dirX * 0.006,
-                                       salient.y + dirY * 0.006,
-                                       0.038, 0.050);
+            double rim = gaussianAniso(fx, fy, salient.x + dirX * 0.006,
+                                       salient.y + dirY * 0.006, 0.038, 0.050);
 
             // Solid side: stronger local color injection plus a subtle specular lift.
             double solidMix = 0.40 * core + 0.16 * rim;
             // Soft side: broader low-contrast bloom using a lighter version.
-            winrt::Windows::UI::Color softColor = BoostArtworkColor(salient.color, 1.08, 1.18);
+            winrt::Windows::UI::Color softColor =
+                BoostArtworkColor(salient.color, 1.08, 1.18);
             double softMix = 0.20 * tail;
 
             r = r * (1.0 - solidMix) + salient.color.R * solidMix;
@@ -5628,22 +5750,32 @@ std::vector<uint8_t> CreateMeshGradientAlbumCoverBytes(std::vector<uint8_t> cons
             // subtle brighten toward the center for a soft artwork-card glow
             double cx = (fx - 0.5) * 2.0;
             double cy = (fy - 0.5) * 2.0;
-            double radial = std::clamp(1.0 - std::sqrt(cx * cx + cy * cy), 0.0, 1.0);
+            double radial =
+                std::clamp(1.0 - std::sqrt(cx * cx + cy * cy), 0.0, 1.0);
             double lift = 1.0 + radial * 0.07;
             size_t idx = (static_cast<size_t>(y) * kOutputSize + x) * 4;
-            outputPixels[idx + 0] = static_cast<BYTE>(std::clamp(std::lround(b * lift), 0l, 255l));
-            outputPixels[idx + 1] = static_cast<BYTE>(std::clamp(std::lround(g * lift), 0l, 255l));
-            outputPixels[idx + 2] = static_cast<BYTE>(std::clamp(std::lround(r * lift), 0l, 255l));
+            outputPixels[idx + 0] =
+                static_cast<BYTE>(std::clamp(std::lround(b * lift), 0l, 255l));
+            outputPixels[idx + 1] =
+                static_cast<BYTE>(std::clamp(std::lround(g * lift), 0l, 255l));
+            outputPixels[idx + 2] =
+                static_cast<BYTE>(std::clamp(std::lround(r * lift), 0l, 255l));
             outputPixels[idx + 3] = 255;
         }
     }
 
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
 
     return EncodePbgraPngBytes(kOutputSize, kOutputSize, outputPixels);
 }
@@ -5670,7 +5802,8 @@ struct RenderColorD {
 };
 
 RenderColorD ToRenderColor(winrt::Windows::UI::Color const& c) {
-    return {static_cast<double>(c.R), static_cast<double>(c.G), static_cast<double>(c.B)};
+    return {static_cast<double>(c.R), static_cast<double>(c.G),
+            static_cast<double>(c.B)};
 }
 
 void BlendRenderColor(RenderColorD& base,
@@ -5687,7 +5820,8 @@ winrt::Windows::UI::Color LerpArtworkColor(winrt::Windows::UI::Color const& a,
                                            double t) {
     t = Clamp(t, 0.0, 1.0);
     auto L = [&](BYTE av, BYTE bv) -> BYTE {
-        return static_cast<BYTE>(std::clamp(std::lround(av * (1.0 - t) + bv * t), 0l, 255l));
+        return static_cast<BYTE>(
+            std::clamp(std::lround(av * (1.0 - t) + bv * t), 0l, 255l));
     };
     return Color(255, L(a.R, b.R), L(a.G, b.G), L(a.B, b.B));
 }
@@ -5698,7 +5832,8 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
     const UINT stride = kSampleSize * 4;
     const UINT bufferSize = stride * kSampleSize;
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -5707,12 +5842,12 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -5738,18 +5873,24 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
         hr = converter->CopyPixels(nullptr, stride, bufferSize, sample.data());
     }
     if (FAILED(hr)) {
-        if (converter) converter->Release();
-        if (scaler) scaler->Release();
-        if (frame) frame->Release();
-        if (decoder) decoder->Release();
-        if (factory) factory->Release();
-        if (stream) stream->Release();
+        if (converter)
+            converter->Release();
+        if (scaler)
+            scaler->Release();
+        if (frame)
+            frame->Release();
+        if (decoder)
+            decoder->Release();
+        if (factory)
+            factory->Release();
+        if (stream)
+            stream->Release();
         return false;
     }
 
-    auto averageRectColor = [&](int x0, int y0, int x1, int y1,
-                                double sat = 1.14, double bri = 1.03)
-        -> winrt::Windows::UI::Color {
+    auto averageRectColor =
+        [&](int x0, int y0, int x1, int y1, double sat = 1.14,
+            double bri = 1.03) -> winrt::Windows::UI::Color {
         long sumB = 0, sumG = 0, sumR = 0, sumA = 0, count = 0;
         x0 = std::clamp(x0, 0, static_cast<int>(kSampleSize) - 1);
         y0 = std::clamp(y0, 0, static_cast<int>(kSampleSize) - 1);
@@ -5757,7 +5898,8 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
         y1 = std::clamp(y1, y0 + 1, static_cast<int>(kSampleSize));
         for (int y = y0; y < y1; ++y) {
             for (int x = x0; x < x1; ++x) {
-                BYTE* pixel = sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
+                BYTE* pixel = sample.data() +
+                              (static_cast<size_t>(y) * kSampleSize + x) * 4;
                 auto color = ColorFromPbgra(pixel);
                 if (color.A == 0) {
                     continue;
@@ -5775,7 +5917,8 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
         return BoostArtworkColor(Color(static_cast<BYTE>(sumA / count),
                                        static_cast<BYTE>(sumR / count),
                                        static_cast<BYTE>(sumG / count),
-                                       static_cast<BYTE>(sumB / count)), sat, bri);
+                                       static_cast<BYTE>(sumB / count)),
+                                 sat, bri);
     };
 
     out.tl = averageRectColor(0, 0, 5, 5, 1.08, 1.01);
@@ -5789,7 +5932,8 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
     double bestScore = -1.0;
     for (UINT y = 0; y < kSampleSize; ++y) {
         for (UINT x = 0; x < kSampleSize; ++x) {
-            BYTE* pixel = sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
+            BYTE* pixel =
+                sample.data() + (static_cast<size_t>(y) * kSampleSize + x) * 4;
             auto color = ColorFromPbgra(pixel);
             if (color.A == 0) {
                 continue;
@@ -5804,35 +5948,49 @@ bool ExtractAdaptiveArtworkPalette(std::vector<uint8_t> const& bytes,
             double luma = 0.299 * r + 0.587 * g + 0.114 * b;
             double lumaWindow = 1.0 - std::abs(luma - 150.0) / 150.0;
             lumaWindow = Clamp(lumaWindow, 0.0, 1.0);
-            double score = saturation * saturation * (0.42 + 0.58 * lumaWindow) *
+            double score = saturation * saturation *
+                           (0.42 + 0.58 * lumaWindow) *
                            (0.40 + 0.60 * (chroma / 255.0));
             if (score > bestScore) {
                 bestScore = score;
-                out.accent = BoostArtworkColor(
-                    color, 1.46, 1.08);
-                out.accentX = kSampleSize > 1 ? static_cast<float>(x) / (kSampleSize - 1) : 0.68f;
-                out.accentY = kSampleSize > 1 ? static_cast<float>(y) / (kSampleSize - 1) : 0.32f;
+                out.accent = BoostArtworkColor(color, 1.46, 1.08);
+                out.accentX = kSampleSize > 1
+                                  ? static_cast<float>(x) / (kSampleSize - 1)
+                                  : 0.68f;
+                out.accentY = kSampleSize > 1
+                                  ? static_cast<float>(y) / (kSampleSize - 1)
+                                  : 0.32f;
             }
         }
     }
     out.accentX = std::clamp(out.accentX, 0.18f, 0.84f);
     out.accentY = std::clamp(out.accentY, 0.16f, 0.82f);
     out.accentSoft = BoostArtworkColor(out.accent, 1.08, 1.16);
-    out.bright = BoostArtworkColor(LerpArtworkColor(out.accent, Color(255, 255, 245, 200), 0.42),
-                                   1.02, 1.14);
+    out.bright = BoostArtworkColor(
+        LerpArtworkColor(out.accent, Color(255, 255, 245, 200), 0.42), 1.02,
+        1.14);
 
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
     return true;
 }
 
-double GaussianBlobWeight(double fx, double fy,
-                          double cx, double cy,
-                          double sx, double sy,
+double GaussianBlobWeight(double fx,
+                          double fy,
+                          double cx,
+                          double cy,
+                          double sx,
+                          double sy,
                           double rot = 0.0) {
     double dx = fx - cx;
     double dy = fy - cy;
@@ -5840,18 +5998,28 @@ double GaussianBlobWeight(double fx, double fy,
     double sr = std::sin(rot);
     double rx = dx * cr + dy * sr;
     double ry = -dx * sr + dy * cr;
-    return std::exp(-((rx * rx) / (2.0 * sx * sx) + (ry * ry) / (2.0 * sy * sy)));
+    return std::exp(
+        -((rx * rx) / (2.0 * sx * sx) + (ry * ry) / (2.0 * sy * sy)));
 }
 
-double DiagonalBeamWeight(double fx, double fy,
-                          double cx, double cy,
-                          double rot, double sx, double sy) {
+double DiagonalBeamWeight(double fx,
+                          double fy,
+                          double cx,
+                          double cy,
+                          double rot,
+                          double sx,
+                          double sy) {
     return GaussianBlobWeight(fx, fy, cx, cy, sx, sy, rot);
 }
 
-double RibbonWeight(double fx, double fy,
-                    double yBase, double amp, double freq,
-                    double phase, double tilt, double sigma) {
+double RibbonWeight(double fx,
+                    double fy,
+                    double yBase,
+                    double amp,
+                    double freq,
+                    double phase,
+                    double tilt,
+                    double sigma) {
     double y = yBase + amp * std::sin((fx * freq + phase) * 6.28318530718) +
                tilt * (fx - 0.5);
     double d = fy - y;
@@ -5864,43 +6032,66 @@ std::vector<uint8_t> RenderAdaptiveArtworkTemplate(
     UINT outputSize = 128) {
     std::vector<BYTE> out(static_cast<size_t>(outputSize) * outputSize * 4);
     for (UINT y = 0; y < outputSize; ++y) {
-        double fy = outputSize > 1 ? static_cast<double>(y) / (outputSize - 1) : 0.0;
+        double fy =
+            outputSize > 1 ? static_cast<double>(y) / (outputSize - 1) : 0.0;
         for (UINT x = 0; x < outputSize; ++x) {
-            double fx = outputSize > 1 ? static_cast<double>(x) / (outputSize - 1) : 0.0;
+            double fx = outputSize > 1
+                            ? static_cast<double>(x) / (outputSize - 1)
+                            : 0.0;
             RenderColorD color = ToRenderColor(pal.bg);
             shader(fx, fy, color);
             // subtle top light and bottom vignette, similar to the HTML preview
             double topLight = (1.0 - fy) * 0.05;
             double bottomShade = fy * 0.14;
-            color.r = std::clamp(color.r * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
-            color.g = std::clamp(color.g * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
-            color.b = std::clamp(color.b * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
+            color.r = std::clamp(
+                color.r * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
+            color.g = std::clamp(
+                color.g * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
+            color.b = std::clamp(
+                color.b * (1.0 - bottomShade) + 255.0 * topLight, 0.0, 255.0);
             size_t idx = (static_cast<size_t>(y) * outputSize + x) * 4;
-            out[idx + 0] = static_cast<BYTE>(std::clamp(std::lround(color.b), 0l, 255l));
-            out[idx + 1] = static_cast<BYTE>(std::clamp(std::lround(color.g), 0l, 255l));
-            out[idx + 2] = static_cast<BYTE>(std::clamp(std::lround(color.r), 0l, 255l));
+            out[idx + 0] =
+                static_cast<BYTE>(std::clamp(std::lround(color.b), 0l, 255l));
+            out[idx + 1] =
+                static_cast<BYTE>(std::clamp(std::lround(color.g), 0l, 255l));
+            out[idx + 2] =
+                static_cast<BYTE>(std::clamp(std::lround(color.r), 0l, 255l));
             out[idx + 3] = 255;
         }
     }
     return EncodePbgraPngBytes(outputSize, outputSize, out);
 }
 
-std::vector<uint8_t> CreateEnergyFlameAlbumCoverBytes(std::vector<uint8_t> const& bytes) {
+std::vector<uint8_t> CreateEnergyFlameAlbumCoverBytes(
+    std::vector<uint8_t> const& bytes) {
     AdaptiveArtworkPalette pal;
     if (!ExtractAdaptiveArtworkPalette(bytes, pal)) {
         return {};
     }
     auto warm = LerpArtworkColor(pal.accent, pal.center, 0.20);
-    auto golden = BoostArtworkColor(LerpArtworkColor(pal.accent, Color(255, 255, 215, 70), 0.56), 1.10, 1.10);
-    return RenderAdaptiveArtworkTemplate(pal, [&](double fx, double fy, RenderColorD& c) {
+    auto golden = BoostArtworkColor(
+        LerpArtworkColor(pal.accent, Color(255, 255, 215, 70), 0.56), 1.10,
+        1.10);
+    return RenderAdaptiveArtworkTemplate(pal, [&](double fx, double fy,
+                                                  RenderColorD& c) {
         auto top = LerpArtworkColor(pal.tl, warm, 0.48);
         auto bottom = LerpArtworkColor(pal.bl, pal.dark, 0.42);
         BlendRenderColor(c, LerpArtworkColor(bottom, top, 1.0 - fy), 1.0);
-        BlendRenderColor(c, warm, 0.28 * GaussianBlobWeight(fx, fy, 0.38, 0.34, 0.38, 0.26, -0.20));
-        BlendRenderColor(c, pal.dark, 0.26 * GaussianBlobWeight(fx, fy, 0.18, 0.78, 0.58, 0.28, 0.18));
-        BlendRenderColor(c, golden, 0.82 * GaussianBlobWeight(fx, fy, 0.55, 0.16, 0.14, 0.18, 0.46));
-        BlendRenderColor(c, golden, 0.38 * DiagonalBeamWeight(fx, fy, 0.58, 0.20, -0.72, 0.22, 0.08));
-        BlendRenderColor(c, pal.accent, 0.22 * RibbonWeight(fx, fy, 0.18, 0.03, 1.02, 0.22, 0.12, 0.08));
+        BlendRenderColor(
+            c, warm,
+            0.28 * GaussianBlobWeight(fx, fy, 0.38, 0.34, 0.38, 0.26, -0.20));
+        BlendRenderColor(
+            c, pal.dark,
+            0.26 * GaussianBlobWeight(fx, fy, 0.18, 0.78, 0.58, 0.28, 0.18));
+        BlendRenderColor(
+            c, golden,
+            0.82 * GaussianBlobWeight(fx, fy, 0.55, 0.16, 0.14, 0.18, 0.46));
+        BlendRenderColor(
+            c, golden,
+            0.38 * DiagonalBeamWeight(fx, fy, 0.58, 0.20, -0.72, 0.22, 0.08));
+        BlendRenderColor(
+            c, pal.accent,
+            0.22 * RibbonWeight(fx, fy, 0.18, 0.03, 1.02, 0.22, 0.12, 0.08));
     });
 }
 
@@ -5912,8 +6103,7 @@ std::vector<uint8_t> CreateDisplayAlbumCoverBytes(
     }
 
     bool browserSource = LooksLikeBrowserMediaSource(sourceAppUserModelId);
-    if (!browserSource ||
-        !ShouldUseAbstractArtworkForDisplay(bytes) ||
+    if (!browserSource || !ShouldUseAbstractArtworkForDisplay(bytes) ||
         g_settings.artworkAbstractMode == L"browser_original" ||
         g_settings.artworkAbstractMode == L"off") {
         return bytes;
@@ -5947,8 +6137,7 @@ std::vector<uint8_t> CreateDisplayAlbumCoverBytesCached(
 
     if (hash != 0 && hash == s_lastHash &&
         s_lastSource == sourceAppUserModelId &&
-        s_lastMode == g_settings.artworkAbstractMode &&
-        !s_lastResult.empty()) {
+        s_lastMode == g_settings.artworkAbstractMode && !s_lastResult.empty()) {
         return s_lastResult;
     }
 
@@ -5959,7 +6148,8 @@ std::vector<uint8_t> CreateDisplayAlbumCoverBytesCached(
     return s_lastResult;
 }
 
-winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& bytes) {
+winrt::Windows::UI::Color ExtractAlbumAccentColor(
+    std::vector<uint8_t> const& bytes) {
     if (bytes.empty()) {
         return DefaultPopupAccentColor();
     }
@@ -5968,7 +6158,8 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
     const UINT stride = kAccentSampleSize * 4;
     const UINT bufferSize = stride * kAccentSampleSize;
 
-    IStream* stream = SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
+    IStream* stream =
+        SHCreateMemStream(bytes.data(), static_cast<UINT>(bytes.size()));
     IWICImagingFactory* factory = nullptr;
     IWICBitmapDecoder* decoder = nullptr;
     IWICBitmapFrameDecode* frame = nullptr;
@@ -5977,12 +6168,12 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
 
     HRESULT hr = stream ? S_OK : E_FAIL;
     if (SUCCEEDED(hr)) {
-        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_PPV_ARGS(&factory));
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
     }
     if (SUCCEEDED(hr)) {
-        hr = factory->CreateDecoderFromStream(stream, nullptr,
-                                              WICDecodeMetadataCacheOnLoad, &decoder);
+        hr = factory->CreateDecoderFromStream(
+            stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
     }
     if (SUCCEEDED(hr)) {
         hr = decoder->GetFrame(0, &frame);
@@ -6017,7 +6208,8 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
     if (SUCCEEDED(hr)) {
         for (UINT y = 0; y < kAccentSampleSize; ++y) {
             for (UINT x = 0; x < kAccentSampleSize; ++x) {
-                BYTE* pixel = pixels.data() +
+                BYTE* pixel =
+                    pixels.data() +
                     (static_cast<size_t>(y) * kAccentSampleSize + x) * 4;
                 double a = pixel[3] / 255.0;
                 if (a < 0.05) {
@@ -6032,7 +6224,8 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
                 double maxChannel = std::max({r, g, b});
                 double minChannel = std::min({r, g, b});
                 double chroma = maxChannel - minChannel;
-                double saturation = maxChannel > 1.0 ? chroma / maxChannel : 0.0;
+                double saturation =
+                    maxChannel > 1.0 ? chroma / maxChannel : 0.0;
                 double saturationWeight = 0.65 + chroma / 255.0;
                 double weight = a * saturationWeight;
                 sumR += r * weight;
@@ -6045,18 +6238,25 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         }
     }
 
-    if (converter) converter->Release();
-    if (scaler) scaler->Release();
-    if (frame) frame->Release();
-    if (decoder) decoder->Release();
-    if (factory) factory->Release();
-    if (stream) stream->Release();
+    if (converter)
+        converter->Release();
+    if (scaler)
+        scaler->Release();
+    if (frame)
+        frame->Release();
+    if (decoder)
+        decoder->Release();
+    if (factory)
+        factory->Release();
+    if (stream)
+        stream->Release();
 
     if (FAILED(hr) || weightSum <= 0.0) {
         return DefaultPopupAccentColor();
     }
 
-    double sourceAvgSaturation = Clamp(sourceSaturationSum / weightSum, 0.0, 1.0);
+    double sourceAvgSaturation =
+        Clamp(sourceSaturationSum / weightSum, 0.0, 1.0);
     double sourceAvgChroma = Clamp(sourceChromaSum / weightSum, 0.0, 255.0);
     double r = sumR / weightSum;
     double g = sumG / weightSum;
@@ -6088,7 +6288,8 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         // clean enough to be visible on a dark surface, but avoid neon accents
         // when the cover itself is globally muted.
         double gray2 = 0.299 * r + 0.587 * g + 0.114 * b;
-        double sourceColorfulness = Clamp((sourceAvgSaturation - 0.16) / 0.44, 0.0, 1.0);
+        double sourceColorfulness =
+            Clamp((sourceAvgSaturation - 0.16) / 0.44, 0.0, 1.0);
         double extraSat = 1.08 + sourceColorfulness * 0.30;
         r = gray2 + (r - gray2) * extraSat;
         g = gray2 + (g - gray2) * extraSat;
@@ -6103,7 +6304,9 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         }
         if (chroma < minChroma) {
             double maxFactor = 1.50 + sourceColorfulness * 0.80;
-            double factor = chroma < 1.0 ? maxFactor : std::min(maxFactor, minChroma / chroma);
+            double factor = chroma < 1.0
+                                ? maxFactor
+                                : std::min(maxFactor, minChroma / chroma);
             double g2 = 0.299 * r + 0.587 * g + 0.114 * b;
             r = g2 + (r - g2) * factor;
             g = g2 + (g - g2) * factor;
@@ -6129,7 +6332,8 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         // covers muted. Use only a gentle chroma floor for low-saturation
         // artwork, and reserve stronger saturation for already-colorful covers.
         double gray2 = 0.299 * r + 0.587 * g + 0.114 * b;
-        double sourceColorfulness = Clamp((sourceAvgSaturation - 0.18) / 0.42, 0.0, 1.0);
+        double sourceColorfulness =
+            Clamp((sourceAvgSaturation - 0.18) / 0.42, 0.0, 1.0);
         double extraSat = 1.10 + sourceColorfulness * 0.30;
         r = gray2 + (r - gray2) * extraSat;
         g = gray2 + (g - gray2) * extraSat;
@@ -6144,7 +6348,9 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         }
         if (chroma < minChroma) {
             double maxFactor = 1.45 + sourceColorfulness * 0.75;
-            double factor = chroma < 1.0 ? maxFactor : std::min(maxFactor, minChroma / chroma);
+            double factor = chroma < 1.0
+                                ? maxFactor
+                                : std::min(maxFactor, minChroma / chroma);
             double g2 = 0.299 * r + 0.587 * g + 0.114 * b;
             r = g2 + (r - g2) * factor;
             g = g2 + (g - g2) * factor;
@@ -6167,20 +6373,23 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
         }
     }
 
-    return Color(0xFF,
-                 static_cast<BYTE>(Clamp(static_cast<int>(std::lround(r)), 0, 255)),
-                 static_cast<BYTE>(Clamp(static_cast<int>(std::lround(g)), 0, 255)),
-                 static_cast<BYTE>(Clamp(static_cast<int>(std::lround(b)), 0, 255)));
+    return Color(
+        0xFF,
+        static_cast<BYTE>(Clamp(static_cast<int>(std::lround(r)), 0, 255)),
+        static_cast<BYTE>(Clamp(static_cast<int>(std::lround(g)), 0, 255)),
+        static_cast<BYTE>(Clamp(static_cast<int>(std::lround(b)), 0, 255)));
 }
 
 // ===== Popup design system =====
 winrt::Windows::UI::Color LerpColor(winrt::Windows::UI::Color const& from,
-                                  winrt::Windows::UI::Color const& to,
-                                  double progress) {
+                                    winrt::Windows::UI::Color const& to,
+                                    double progress) {
     progress = Clamp(progress, 0.0, 1.0);
     auto lerpByte = [progress](BYTE a, BYTE b) -> BYTE {
-        return static_cast<BYTE>(Clamp(static_cast<int>(std::lround(
-            static_cast<double>(a) + (static_cast<double>(b) - static_cast<double>(a)) * progress)),
+        return static_cast<BYTE>(Clamp(
+            static_cast<int>(std::lround(
+                static_cast<double>(a) +
+                (static_cast<double>(b) - static_cast<double>(a)) * progress)),
             0, 255));
     };
     return Color(lerpByte(from.A, to.A), lerpByte(from.R, to.R),
@@ -6188,7 +6397,8 @@ winrt::Windows::UI::Color LerpColor(winrt::Windows::UI::Color const& from,
 }
 
 winrt::Windows::UI::Color PopupTargetAccentColor() {
-    return g_popupAccentColorValid ? g_popupAccentColor : DefaultPopupAccentColor();
+    return g_popupAccentColorValid ? g_popupAccentColor
+                                   : DefaultPopupAccentColor();
 }
 
 winrt::Windows::UI::Color PopupAccentColor() {
@@ -6200,28 +6410,49 @@ double Clamp01(double v) {
     return Clamp(v, 0.0, 1.0);
 }
 
-winrt::Windows::UI::Color ColorFromHsv(double h, double s, double v, BYTE a = 0xFF) {
+winrt::Windows::UI::Color ColorFromHsv(double h,
+                                       double s,
+                                       double v,
+                                       BYTE a = 0xFF) {
     h = std::fmod(h, 360.0);
-    if (h < 0.0) h += 360.0;
+    if (h < 0.0)
+        h += 360.0;
     s = Clamp01(s);
     v = Clamp01(v);
     double c = v * s;
     double x = c * (1.0 - std::abs(std::fmod(h / 60.0, 2.0) - 1.0));
     double m = v - c;
     double r = 0.0, g = 0.0, b = 0.0;
-    if (h < 60.0) { r = c; g = x; }
-    else if (h < 120.0) { r = x; g = c; }
-    else if (h < 180.0) { g = c; b = x; }
-    else if (h < 240.0) { g = x; b = c; }
-    else if (h < 300.0) { r = x; b = c; }
-    else { r = c; b = x; }
-    return Color(a,
-                 static_cast<BYTE>(std::clamp(std::lround((r + m) * 255.0), 0l, 255l)),
-                 static_cast<BYTE>(std::clamp(std::lround((g + m) * 255.0), 0l, 255l)),
-                 static_cast<BYTE>(std::clamp(std::lround((b + m) * 255.0), 0l, 255l)));
+    if (h < 60.0) {
+        r = c;
+        g = x;
+    } else if (h < 120.0) {
+        r = x;
+        g = c;
+    } else if (h < 180.0) {
+        g = c;
+        b = x;
+    } else if (h < 240.0) {
+        g = x;
+        b = c;
+    } else if (h < 300.0) {
+        r = x;
+        b = c;
+    } else {
+        r = c;
+        b = x;
+    }
+    return Color(
+        a,
+        static_cast<BYTE>(std::clamp(std::lround((r + m) * 255.0), 0l, 255l)),
+        static_cast<BYTE>(std::clamp(std::lround((g + m) * 255.0), 0l, 255l)),
+        static_cast<BYTE>(std::clamp(std::lround((b + m) * 255.0), 0l, 255l)));
 }
 
-void ColorToHsv(winrt::Windows::UI::Color const& color, double& h, double& s, double& v) {
+void ColorToHsv(winrt::Windows::UI::Color const& color,
+                double& h,
+                double& s,
+                double& v) {
     double r = color.R / 255.0;
     double g = color.G / 255.0;
     double b = color.B / 255.0;
@@ -6230,11 +6461,15 @@ void ColorToHsv(winrt::Windows::UI::Color const& color, double& h, double& s, do
     double delta = maxv - minv;
     h = 0.0;
     if (delta > 1e-6) {
-        if (maxv == r) h = 60.0 * std::fmod(((g - b) / delta), 6.0);
-        else if (maxv == g) h = 60.0 * (((b - r) / delta) + 2.0);
-        else h = 60.0 * (((r - g) / delta) + 4.0);
+        if (maxv == r)
+            h = 60.0 * std::fmod(((g - b) / delta), 6.0);
+        else if (maxv == g)
+            h = 60.0 * (((b - r) / delta) + 2.0);
+        else
+            h = 60.0 * (((r - g) / delta) + 4.0);
     }
-    if (h < 0.0) h += 360.0;
+    if (h < 0.0)
+        h += 360.0;
     s = maxv <= 1e-6 ? 0.0 : delta / maxv;
     v = maxv;
 }
@@ -6251,19 +6486,15 @@ winrt::Windows::UI::Color PopupProgressCleanStartColor() {
     double targetS;
     double targetV;
     if (dark) {
-        targetS = muted > 0.0
-                      ? Clamp(s * 1.10 + 0.08, 0.30, 0.52)
-                      : Clamp(s * 1.04, 0.48, 0.76);
-        targetV = muted > 0.0
-                      ? Clamp(v + 0.08, 0.58, 0.76)
-                      : Clamp(v + 0.04, 0.62, 0.88);
+        targetS = muted > 0.0 ? Clamp(s * 1.10 + 0.08, 0.30, 0.52)
+                              : Clamp(s * 1.04, 0.48, 0.76);
+        targetV = muted > 0.0 ? Clamp(v + 0.08, 0.58, 0.76)
+                              : Clamp(v + 0.04, 0.62, 0.88);
     } else {
-        targetS = muted > 0.0
-                      ? Clamp(s * 1.10 + 0.08, 0.28, 0.46)
-                      : Clamp(s * 1.02, 0.46, 0.72);
-        targetV = muted > 0.0
-                      ? Clamp(v + 0.04, 0.64, 0.76)
-                      : Clamp(v, 0.58, 0.82);
+        targetS = muted > 0.0 ? Clamp(s * 1.10 + 0.08, 0.28, 0.46)
+                              : Clamp(s * 1.02, 0.46, 0.72);
+        targetV =
+            muted > 0.0 ? Clamp(v + 0.04, 0.64, 0.76) : Clamp(v, 0.58, 0.82);
     }
     return ColorFromHsv(h, targetS, targetV);
 }
@@ -6277,19 +6508,15 @@ winrt::Windows::UI::Color PopupProgressVividColor() {
     double targetS;
     double targetV;
     if (dark) {
-        targetS = muted > 0.0
-                      ? Clamp(s * 1.10 + 0.10, 0.34, 0.54)
-                      : Clamp(s * 1.08, 0.56, 0.82);
-        targetV = muted > 0.0
-                      ? Clamp(v + 0.10, 0.68, 0.86)
-                      : Clamp(v + 0.08, 0.76, 0.94);
+        targetS = muted > 0.0 ? Clamp(s * 1.10 + 0.10, 0.34, 0.54)
+                              : Clamp(s * 1.08, 0.56, 0.82);
+        targetV = muted > 0.0 ? Clamp(v + 0.10, 0.68, 0.86)
+                              : Clamp(v + 0.08, 0.76, 0.94);
     } else {
-        targetS = muted > 0.0
-                      ? Clamp(s * 1.08 + 0.10, 0.32, 0.50)
-                      : Clamp(s * 1.08, 0.54, 0.78);
-        targetV = muted > 0.0
-                      ? Clamp(v + 0.06, 0.68, 0.82)
-                      : Clamp(v + 0.07, 0.64, 0.86);
+        targetS = muted > 0.0 ? Clamp(s * 1.08 + 0.10, 0.32, 0.50)
+                              : Clamp(s * 1.08, 0.54, 0.78);
+        targetV = muted > 0.0 ? Clamp(v + 0.06, 0.68, 0.82)
+                              : Clamp(v + 0.07, 0.64, 0.86);
     }
     return ColorFromHsv(h, targetS, targetV);
 }
@@ -6303,14 +6530,12 @@ winrt::Windows::UI::Color PopupProgressBrightSoftColor() {
     double targetV;
     double muted = Clamp((0.40 - s) / 0.34, 0.0, 1.0);
     if (dark) {
-        targetS = muted > 0.0
-                      ? Clamp(s * 0.78 + 0.08, 0.25, 0.42)
-                      : Clamp(s * 0.52, 0.32, 0.56);
+        targetS = muted > 0.0 ? Clamp(s * 0.78 + 0.08, 0.25, 0.42)
+                              : Clamp(s * 0.52, 0.32, 0.56);
         targetV = muted > 0.0 ? 0.82 : 0.92;
     } else {
-        targetS = muted > 0.0
-                      ? Clamp(s * 0.78 + 0.08, 0.24, 0.40)
-                      : Clamp(s * 0.64, 0.36, 0.58);
+        targetS = muted > 0.0 ? Clamp(s * 0.78 + 0.08, 0.24, 0.40)
+                              : Clamp(s * 0.64, 0.36, 0.58);
         targetV = muted > 0.0 ? 0.80 : 0.86;
     }
     auto color = ColorFromHsv(h, targetS, targetV);
@@ -6399,7 +6624,8 @@ void UpdatePopupAlbumBitmap(MediaState const& state) {
 constexpr wchar_t kPopupClassName[] = L"WindhawkIslandMediaPopup";
 constexpr wchar_t kPopupToggleHitWindowClassName[] =
     L"WindhawkIslandMediaToggleHitWindow";
-constexpr wchar_t kPopupBackdropOverlayClassName[] = L"WindhawkIslandMediaBackdropOverlay";
+constexpr wchar_t kPopupBackdropOverlayClassName[] =
+    L"WindhawkIslandMediaBackdropOverlay";
 constexpr UINT_PTR kPopupTimerId = 0x494D;
 constexpr UINT_PTR kPopupBackdropOverlayTimerId = 0x494E;
 constexpr UINT_PTR kTaskbarLayoutMonitorTimerId = 0x494D4C54;
@@ -6419,14 +6645,15 @@ double PopupTextMotionEase(double value) {
 
 // Clip animated text to its own text lane. Without this, render transforms can
 // let the incoming/outgoing title briefly draw outside the compact/popup card.
-void ApplyElementClip(FrameworkElement const& element, double width, double height) {
+void ApplyElementClip(FrameworkElement const& element,
+                      double width,
+                      double height) {
     if (!element || width <= 0.0 || height <= 0.0) {
         return;
     }
     try {
         mediax::RectangleGeometry clip;
-        clip.Rect({0.0f, 0.0f,
-                   static_cast<float>(std::max(1.0, width)),
+        clip.Rect({0.0f, 0.0f, static_cast<float>(std::max(1.0, width)),
                    static_cast<float>(std::max(1.0, height))});
         element.Clip(clip);
     } catch (...) {
@@ -6443,9 +6670,10 @@ void ApplyElementClipWithPadding(FrameworkElement const& element,
     try {
         horizontalPadding = std::max(0.0, horizontalPadding);
         mediax::RectangleGeometry clip;
-        clip.Rect({static_cast<float>(-horizontalPadding), 0.0f,
-                   static_cast<float>(std::max(1.0, width + horizontalPadding * 2.0)),
-                   static_cast<float>(std::max(1.0, height))});
+        clip.Rect(
+            {static_cast<float>(-horizontalPadding), 0.0f,
+             static_cast<float>(std::max(1.0, width + horizontalPadding * 2.0)),
+             static_cast<float>(std::max(1.0, height))});
         element.Clip(clip);
     } catch (...) {
     }
@@ -6499,19 +6727,15 @@ bool AdvancePopupSpring(double dt) {
     // continuous response without a visible bounce. Small fixed substeps keep
     // the result stable when Explorer drops or delays a frame.
     constexpr double kAngularFrequency = 20.5;
-    constexpr double kStiffness =
-        kAngularFrequency * kAngularFrequency;
+    constexpr double kStiffness = kAngularFrequency * kAngularFrequency;
     constexpr double kDamping = 2.0 * kAngularFrequency;
     constexpr double kMaxStep = 1.0 / 120.0;
-    int steps = std::max(
-        1, static_cast<int>(std::ceil(scaledDt / kMaxStep)));
+    int steps = std::max(1, static_cast<int>(std::ceil(scaledDt / kMaxStep)));
     double h = scaledDt / static_cast<double>(steps);
     for (int i = 0; i < steps; ++i) {
-        double displacement =
-            g_popupAnimationTarget - g_popupAnimationProgress;
+        double displacement = g_popupAnimationTarget - g_popupAnimationProgress;
         double acceleration =
-            kStiffness * displacement -
-            kDamping * g_popupAnimationVelocity;
+            kStiffness * displacement - kDamping * g_popupAnimationVelocity;
         g_popupAnimationVelocity += acceleration * h;
         g_popupAnimationProgress += g_popupAnimationVelocity * h;
     }
@@ -6563,12 +6787,12 @@ double LerpDouble(double from, double to, double progress) {
 static double SourceScaledRadius(double baseRadius,
                                  double baseSize,
                                  DipRect const& sourceRect) {
-    double sourceWidth = std::max(1.0,
-        static_cast<double>(sourceRect.right - sourceRect.left));
-    double sourceHeight = std::max(1.0,
-        static_cast<double>(sourceRect.bottom - sourceRect.top));
-    double scale = std::min(sourceWidth, sourceHeight) /
-                   std::max(1.0, baseSize);
+    double sourceWidth =
+        std::max(1.0, static_cast<double>(sourceRect.right - sourceRect.left));
+    double sourceHeight =
+        std::max(1.0, static_cast<double>(sourceRect.bottom - sourceRect.top));
+    double scale =
+        std::min(sourceWidth, sourceHeight) / std::max(1.0, baseSize);
     return std::max(1.0, baseRadius * scale);
 }
 
@@ -6665,9 +6889,9 @@ double PopupBackdropOverlayOpacity() {
 }
 
 BYTE PopupBackdropOverlayMaxAlpha() {
-    return static_cast<BYTE>(
-        Clamp(static_cast<int>(std::lround(255.0 * PopupBackdropOverlayOpacity())),
-              0, 255));
+    return static_cast<BYTE>(Clamp(
+        static_cast<int>(std::lround(255.0 * PopupBackdropOverlayOpacity())), 0,
+        255));
 }
 
 bool PopupBackdropCoverEffectEnabled() {
@@ -6702,9 +6926,9 @@ int PopupTargetArtSize(int width, int height) {
     int surfaceWidth = std::max(96, width - kPopupHostShadowMargin * 2);
     int surfaceHeight = std::max(96, height - kPopupHostShadowMargin * 2);
     int availableWidth = std::max(96, surfaceWidth - PopupSurfaceGap() * 2);
-    int availableHeight = std::max(
-        96,
-        surfaceHeight - PopupSurfaceGap() * 2 - PopupArtCardGap() - kPopupCardHeight);
+    int availableHeight =
+        std::max(96, surfaceHeight - PopupSurfaceGap() * 2 - PopupArtCardGap() -
+                         kPopupCardHeight);
     return std::max(96, std::min(availableWidth, availableHeight));
 }
 
@@ -6717,10 +6941,8 @@ RECT PopupBackdropRectFromParts(RECT const& artRect, RECT const& cardRect) {
     int top = std::min(artRect.top, cardRect.top);
     int right = std::max(artRect.right, cardRect.right);
     int bottom = std::max(artRect.bottom, cardRect.bottom);
-    return {left - PopupBackdropPadding(),
-            top - PopupBackdropPadding(),
-            right + PopupBackdropPadding(),
-            bottom + PopupBackdropPadding()};
+    return {left - PopupBackdropPadding(), top - PopupBackdropPadding(),
+            right + PopupBackdropPadding(), bottom + PopupBackdropPadding()};
 }
 
 int PopupFinalWidthFromArtSize(int artSize) {
@@ -6761,19 +6983,18 @@ mediax::Brush PopupControlCardBrush() {
 
 winrt::Windows::UI::Color PopupPrimaryTextColor() {
     bool dark = IsDarkModeApprox();
-    return dark ? Color(0xFF, 0xFF, 0xFF, 0xFF)
-                : Color(0xFF, 0x00, 0x00, 0x00);
+    return dark ? Color(0xFF, 0xFF, 0xFF, 0xFF) : Color(0xFF, 0x00, 0x00, 0x00);
 }
 
 winrt::Windows::UI::Color PopupSecondaryTextColor() {
     bool dark = IsDarkModeApprox();
-    return dark ? Color(0xC8, 0xFF, 0xFF, 0xFF)
-                : Color(0xC8, 0x00, 0x00, 0x00);
+    return dark ? Color(0xC8, 0xFF, 0xFF, 0xFF) : Color(0xC8, 0x00, 0x00, 0x00);
 }
 
 // ===== Transport routing =====
 void NoteMediaNavigationDirection(int direction) {
-    g_pendingMediaNavigationDirection = direction < 0 ? -1 : (direction > 0 ? 1 : 0);
+    g_pendingMediaNavigationDirection =
+        direction < 0 ? -1 : (direction > 0 ? 1 : 0);
     g_pendingMediaNavigationTime = std::chrono::steady_clock::now();
 }
 
@@ -6842,23 +7063,23 @@ void RunMediaTransportCommand(MediaTransportCommand command) {
         return;
     }
 
-    RunMediaCommand([command](
-                        gsm::GlobalSystemMediaTransportControlsSession const&
-                            session) {
-        switch (command) {
-            case MediaTransportCommand::Previous:
-                NoteMediaNavigationDirection(-1);
-                (void)session.TrySkipPreviousAsync();
-                break;
-            case MediaTransportCommand::TogglePlayPause:
-                (void)session.TryTogglePlayPauseAsync();
-                break;
-            case MediaTransportCommand::Next:
-                NoteMediaNavigationDirection(1);
-                (void)session.TrySkipNextAsync();
-                break;
-        }
-    });
+    RunMediaCommand(
+        [command](
+            gsm::GlobalSystemMediaTransportControlsSession const& session) {
+            switch (command) {
+                case MediaTransportCommand::Previous:
+                    NoteMediaNavigationDirection(-1);
+                    (void)session.TrySkipPreviousAsync();
+                    break;
+                case MediaTransportCommand::TogglePlayPause:
+                    (void)session.TryTogglePlayPauseAsync();
+                    break;
+                case MediaTransportCommand::Next:
+                    NoteMediaNavigationDirection(1);
+                    (void)session.TrySkipNextAsync();
+                    break;
+            }
+        });
 }
 
 // ===== Popup text foregrounds =====
@@ -6873,7 +7094,8 @@ mediax::Brush PopupTextForegroundBrush(winrt::Windows::UI::Color color,
     brush.EndPoint({1.0f, 0.5f});
     mediax::GradientStopCollection stops;
 
-    auto addStop = [&](double offset, winrt::Windows::UI::Color const& stopColor) {
+    auto addStop = [&](double offset,
+                       winrt::Windows::UI::Color const& stopColor) {
         mediax::GradientStop stop;
         stop.Offset(offset);
         stop.Color(stopColor);
@@ -6892,7 +7114,8 @@ void ApplyPopupTextForegroundFade(double edgeFadeAmount, bool force = false) {
     edgeFadeAmount = Clamp(edgeFadeAmount, 0.0, 1.0);
     bool dark = IsDarkModeApprox();
     if (!force && g_popupTextForegroundValid &&
-        std::abs(g_popupTextForegroundEdgeFadeAmount - edgeFadeAmount) < 0.003 &&
+        std::abs(g_popupTextForegroundEdgeFadeAmount - edgeFadeAmount) <
+            0.003 &&
         g_popupTextForegroundDark == dark) {
         return;
     }
@@ -6902,16 +7125,24 @@ void ApplyPopupTextForegroundFade(double edgeFadeAmount, bool force = false) {
     g_popupTextForegroundEdgeFadeAmount = edgeFadeAmount;
     g_popupTextForegroundDark = dark;
 
-    auto primary = PopupTextForegroundBrush(PopupPrimaryTextColor(), edgeFadeAmount);
-    auto secondary = PopupTextForegroundBrush(PopupSecondaryTextColor(), edgeFadeAmount);
+    auto primary =
+        PopupTextForegroundBrush(PopupPrimaryTextColor(), edgeFadeAmount);
+    auto secondary =
+        PopupTextForegroundBrush(PopupSecondaryTextColor(), edgeFadeAmount);
     auto secondarySolid = Brush(PopupSecondaryTextColor());
 
-    if (g_popupXamlTitle) g_popupXamlTitle.Foreground(primary);
-    if (g_popupXamlOutgoingTitle) g_popupXamlOutgoingTitle.Foreground(primary);
-    if (g_popupXamlArtist) g_popupXamlArtist.Foreground(secondary);
-    if (g_popupXamlOutgoingArtist) g_popupXamlOutgoingArtist.Foreground(secondary);
-    if (g_popupXamlElapsed) g_popupXamlElapsed.Foreground(secondarySolid);
-    if (g_popupXamlDuration) g_popupXamlDuration.Foreground(secondarySolid);
+    if (g_popupXamlTitle)
+        g_popupXamlTitle.Foreground(primary);
+    if (g_popupXamlOutgoingTitle)
+        g_popupXamlOutgoingTitle.Foreground(primary);
+    if (g_popupXamlArtist)
+        g_popupXamlArtist.Foreground(secondary);
+    if (g_popupXamlOutgoingArtist)
+        g_popupXamlOutgoingArtist.Foreground(secondary);
+    if (g_popupXamlElapsed)
+        g_popupXamlElapsed.Foreground(secondarySolid);
+    if (g_popupXamlDuration)
+        g_popupXamlDuration.Foreground(secondarySolid);
 }
 
 void ApplyPopupTextForegrounds(bool edgeFade, bool force = false) {
@@ -7044,27 +7275,26 @@ mediax::Brush PopupBackdropCardTintBrush() {
                 brush.GradientStops(stops);
                 return brush;
             }
-            return Brush(Color(preserveCompactWash ? 0x00 : 0x04,
-                               0xFF, 0xFF, 0xFF));
+            return Brush(
+                Color(preserveCompactWash ? 0x00 : 0x04, 0xFF, 0xFF, 0xFF));
         }
 
         // Native blur comes from the overlay window itself. Add only a clean
         // light-mode white veil here so acrylic keeps enough tint without the
         // compact island inheriting AcrylicBrush's inactive fallback behavior.
-        return Brush(dark ? Color(0x00, 0x00, 0x00, 0x00)
-                          : Color(preserveCompactWash ? 0x68 : 0x8C,
-                                  0xFF, 0xFF, 0xFF));
+        return Brush(
+            dark ? Color(0x00, 0x00, 0x00, 0x00)
+                 : Color(preserveCompactWash ? 0x68 : 0x8C, 0xFF, 0xFF, 0xFF));
     }
     // Backdrop and control tints are tuned separately so light mode can stay
     // brighter without making dark mode look washed out. In dark mode this
     // matches the previous version, where the backdrop card tint reused the
     // control-card tint.
     if (dark) {
-        return Brush(Color(preserveCompactWash ? 0x58 : 0x70,
-                           0x20, 0x20, 0x26));
+        return Brush(
+            Color(preserveCompactWash ? 0x58 : 0x70, 0x20, 0x20, 0x26));
     }
-    return Brush(Color(preserveCompactWash ? 0xB8 : 0xE8,
-                       0xFF, 0xFF, 0xFF));
+    return Brush(Color(preserveCompactWash ? 0xB8 : 0xE8, 0xFF, 0xFF, 0xFF));
 }
 
 mediax::Brush PopupSurfaceStrokeBrush() {
@@ -7167,19 +7397,15 @@ void CalculatePopupFinalLayout(RECT const& finalRect,
         int contentLeft = artRect.right + inset;
         int contentRight = cardRect.right - inset;
         int textTop = artRect.top + 3;
-        titleRect = {contentLeft, textTop,
-                     contentRight, textTop + 24};
-        artistRect = {contentLeft, textTop + 24,
-                      contentRight, textTop + 45};
+        titleRect = {contentLeft, textTop, contentRight, textTop + 24};
+        artistRect = {contentLeft, textTop + 24, contentRight, textTop + 45};
         int progressSideInset = artRect.left - cardRect.left;
-        progressRect = {artRect.right + progressSideInset,
-                        cardRect.top + 66,
-                        cardRect.right - progressSideInset,
-                        cardRect.top + 70};
-        elapsedRect = {contentLeft, cardRect.top + 72,
-                       contentLeft + 68, cardRect.top + 88};
-        durationRect = {contentRight - 68, cardRect.top + 72,
-                        contentRight, cardRect.top + 88};
+        progressRect = {artRect.right + progressSideInset, cardRect.top + 66,
+                        cardRect.right - progressSideInset, cardRect.top + 70};
+        elapsedRect = {contentLeft, cardRect.top + 72, contentLeft + 68,
+                       cardRect.top + 88};
+        durationRect = {contentRight - 68, cardRect.top + 72, contentRight,
+                        cardRect.top + 88};
         constexpr int controlsVisualOffset = 6;
         controlsRect = {contentLeft - controlsVisualOffset, cardRect.top + 96,
                         contentRight - controlsVisualOffset,
@@ -7208,47 +7434,35 @@ void CalculatePopupFinalLayout(RECT const& finalRect,
 
     int contentLeft = cardRect.left + kPopupCardInnerPadding;
     int contentRight = cardRect.right - kPopupCardInnerPadding;
-    titleRect = {contentLeft,
-                 cardRect.top + 18,
-                 contentRight,
+    titleRect = {contentLeft, cardRect.top + 18, contentRight,
                  cardRect.top + 46};
-    artistRect = {contentLeft,
-                  cardRect.top + 48,
-                  contentRight,
+    artistRect = {contentLeft, cardRect.top + 48, contentRight,
                   cardRect.top + 74};
-    progressRect = {contentLeft,
-                    cardRect.top + 91,
-                    contentRight,
+    progressRect = {contentLeft, cardRect.top + 91, contentRight,
                     cardRect.top + 97};
-    elapsedRect = {contentLeft,
-                   cardRect.top + 103,
-                   contentLeft + 78,
+    elapsedRect = {contentLeft, cardRect.top + 103, contentLeft + 78,
                    cardRect.top + 103 + kPopupTimeTextHeight};
-    durationRect = {contentRight - 78,
-                    cardRect.top + 103,
-                    contentRight,
+    durationRect = {contentRight - 78, cardRect.top + 103, contentRight,
                     cardRect.top + 103 + kPopupTimeTextHeight};
-    controlsRect = {contentLeft,
-                    cardRect.top + 132,
-                    contentRight,
+    controlsRect = {contentLeft, cardRect.top + 132, contentRight,
                     cardRect.top + 194};
 }
 
 RECT UnionPopupRects(RECT const& a, RECT const& b) {
-    RECT result{std::min(a.left, b.left),
-                std::min(a.top, b.top),
-                std::max(a.right, b.right),
-                std::max(a.bottom, b.bottom)};
+    RECT result{std::min(a.left, b.left), std::min(a.top, b.top),
+                std::max(a.right, b.right), std::max(a.bottom, b.bottom)};
     // Reserve the compact island's full center-hover envelope from the first
     // frame. Otherwise the resting XAML surface grows past the fixed host's
     // left edge and is clipped even though its own rounded clip is correct.
     double hoverScale = std::max(1.0, g_settings.hoverScale);
     int compactWidth = std::max(1L, a.right - a.left);
     int compactHeight = std::max(1L, a.bottom - a.top);
-    int hoverPadX = static_cast<int>(
-        std::ceil(compactWidth * (hoverScale - 1.0) * 0.5)) + 3;
-    int hoverPadY = static_cast<int>(
-        std::ceil(compactHeight * (hoverScale - 1.0) * 0.5)) + 3;
+    int hoverPadX =
+        static_cast<int>(std::ceil(compactWidth * (hoverScale - 1.0) * 0.5)) +
+        3;
+    int hoverPadY =
+        static_cast<int>(std::ceil(compactHeight * (hoverScale - 1.0) * 0.5)) +
+        3;
     InflateRect(&result, std::max(2, hoverPadX), std::max(2, hoverPadY));
     return result;
 }
@@ -7258,15 +7472,15 @@ RECT CurrentPopupSurfaceScreenRect() {
     // pixels and use the full animated host bounds; the precise XAML surface is
     // calculated in DIP coordinates in UpdatePopupXamlVisuals().
     double progress = PopupProgress();
-    return {LerpInt(g_popupSourceRect.left, g_popupFinalRect.left, progress),
-            LerpInt(g_popupSourceRect.top, g_popupFinalRect.top, progress),
-            LerpInt(g_popupSourceRect.right, g_popupFinalRect.right, progress),
-            LerpInt(g_popupSourceRect.bottom, g_popupFinalRect.bottom, progress)};
+    return {
+        LerpInt(g_popupSourceRect.left, g_popupFinalRect.left, progress),
+        LerpInt(g_popupSourceRect.top, g_popupFinalRect.top, progress),
+        LerpInt(g_popupSourceRect.right, g_popupFinalRect.right, progress),
+        LerpInt(g_popupSourceRect.bottom, g_popupFinalRect.bottom, progress)};
 }
 
 bool PopupScreenPointIsInsideCurrentSurface(POINT screenPoint) {
-    if (!g_expandedPopup || !IsWindowVisible(g_expandedPopup) ||
-        !g_expanded) {
+    if (!g_expandedPopup || !IsWindowVisible(g_expandedPopup) || !g_expanded) {
         return false;
     }
 
@@ -7296,9 +7510,8 @@ bool PopupScreenPointIsInsideCurrentSurface(POINT screenPoint) {
 
 LRESULT PopupExpandedHitTest(LPARAM lParam) {
     POINT screenPoint{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-    return PopupScreenPointIsInsideCurrentSurface(screenPoint)
-               ? HTCLIENT
-               : HTTRANSPARENT;
+    return PopupScreenPointIsInsideCurrentSurface(screenPoint) ? HTCLIENT
+                                                               : HTTRANSPARENT;
 }
 
 constexpr UINT_PTR kPopupXamlChildSubclassId = 1;
@@ -7344,7 +7557,8 @@ LRESULT CALLBACK PopupXamlChildSubclassProc(HWND hwnd,
         bool transitionActive =
             g_popupLifecycleState == PopupLifecycleState::Opening ||
             g_popupLifecycleState == PopupLifecycleState::Closing ||
-            std::abs(g_popupAnimationTarget - g_popupAnimationProgress) >= 0.006;
+            std::abs(g_popupAnimationTarget - g_popupAnimationProgress) >=
+                0.006;
         if ((transitionActive &&
              PopupScreenPointIsInsideCurrentSurface(screenPoint)) ||
             PopupPointIsInsideOriginalToggleArea(screenPoint)) {
@@ -7360,8 +7574,7 @@ LRESULT CALLBACK PopupXamlChildSubclassProc(HWND hwnd,
     } else if (message == WM_MOUSEACTIVATE) {
         return MA_NOACTIVATE;
     } else if (message == WM_NCDESTROY) {
-        RemoveWindowSubclass(hwnd,
-                             PopupXamlChildSubclassProc,
+        RemoveWindowSubclass(hwnd, PopupXamlChildSubclassProc,
                              kPopupXamlChildSubclassId);
         if (g_popupXamlChild == hwnd) {
             g_popupXamlChild = nullptr;
@@ -7376,10 +7589,8 @@ void SubclassPopupXamlChildWindow() {
     if (!g_popupXamlChild || g_popupXamlChildSubclassed) {
         return;
     }
-    if (SetWindowSubclass(g_popupXamlChild,
-                          PopupXamlChildSubclassProc,
-                          kPopupXamlChildSubclassId,
-                          0)) {
+    if (SetWindowSubclass(g_popupXamlChild, PopupXamlChildSubclassProc,
+                          kPopupXamlChildSubclassId, 0)) {
         g_popupXamlChildSubclassed = true;
     }
 }
@@ -7388,8 +7599,7 @@ void UnsubclassPopupXamlChildWindow() {
     if (!g_popupXamlChild || !g_popupXamlChildSubclassed) {
         return;
     }
-    RemoveWindowSubclass(g_popupXamlChild,
-                         PopupXamlChildSubclassProc,
+    RemoveWindowSubclass(g_popupXamlChild, PopupXamlChildSubclassProc,
                          kPopupXamlChildSubclassId);
     g_popupXamlChildSubclassed = false;
 }
@@ -7416,11 +7626,7 @@ void ParkPopupWindow(HWND hwnd) {
         return;
     }
 
-    SetWindowPos(hwnd,
-                 nullptr,
-                 kPopupHiddenParkingX,
-                 kPopupHiddenParkingY,
-                 1,
+    SetWindowPos(hwnd, nullptr, kPopupHiddenParkingX, kPopupHiddenParkingY, 1,
                  1,
                  SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER |
                      SWP_NOCOPYBITS | SWP_NOSENDCHANGING | SWP_HIDEWINDOW);
@@ -7451,7 +7657,8 @@ bool PopupShouldExpandRight(MONITORINFO const& monitorInfo) {
     }
 
     int sourceCenter = (g_popupSourceRect.left + g_popupSourceRect.right) / 2;
-    int monitorCenter = (monitorInfo.rcMonitor.left + monitorInfo.rcMonitor.right) / 2;
+    int monitorCenter =
+        (monitorInfo.rcMonitor.left + monitorInfo.rcMonitor.right) / 2;
     return sourceCenter <= monitorCenter;
 }
 
@@ -7471,12 +7678,17 @@ DWORD PopupNativeBorderColorRef() {
     return dark ? RGB(74, 74, 82) : RGB(255, 255, 255);
 }
 
-void SetPopupDwmAttributes(HWND hwnd, int cornerPreference, int backdropType, bool nativeBorder = false) {
-    DWORD borderColor = nativeBorder ? PopupNativeBorderColorRef() : kDwmColorNone;
+void SetPopupDwmAttributes(HWND hwnd,
+                           int cornerPreference,
+                           int backdropType,
+                           bool nativeBorder = false) {
+    DWORD borderColor =
+        nativeBorder ? PopupNativeBorderColorRef() : kDwmColorNone;
     BOOL dark = IsDarkModeApprox();
     DwmSetWindowAttribute(hwnd, 34, &borderColor, sizeof(borderColor));
     DwmSetWindowAttribute(hwnd, 20, &dark, sizeof(dark));
-    DwmSetWindowAttribute(hwnd, 33, &cornerPreference, sizeof(cornerPreference));
+    DwmSetWindowAttribute(hwnd, 33, &cornerPreference,
+                          sizeof(cornerPreference));
     DwmSetWindowAttribute(hwnd, 38, &backdropType, sizeof(backdropType));
 }
 
@@ -7507,13 +7719,12 @@ void SetPopupOverlayNativeFrost(HWND hwnd, bool enabled) {
         void* data;
         SIZE_T size;
     };
-    using SetWindowCompositionAttribute_t = BOOL(WINAPI*)(
-        HWND, CompositionAttributeData*);
+    using SetWindowCompositionAttribute_t =
+        BOOL(WINAPI*)(HWND, CompositionAttributeData*);
 
     static auto setWindowCompositionAttribute =
-        reinterpret_cast<SetWindowCompositionAttribute_t>(
-            GetProcAddress(GetModuleHandleW(L"user32.dll"),
-                           "SetWindowCompositionAttribute"));
+        reinterpret_cast<SetWindowCompositionAttribute_t>(GetProcAddress(
+            GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute"));
     if (!setWindowCompositionAttribute) {
         return;
     }
@@ -7539,7 +7750,8 @@ void ApplyPopupBackdrop(HWND hwnd) {
         // the same rounded compact-material Border used by the taskbar island.
         // Keep the host HWND visually empty. The only visible outline is the
         // same XAML IslandBorderBrush() stroke used by the compact island.
-        SetPopupDwmAttributes(hwnd, kDwmCornerDoNotRound, kDwmBackdropNone, false);
+        SetPopupDwmAttributes(hwnd, kDwmCornerDoNotRound, kDwmBackdropNone,
+                              false);
         return;
     }
 
@@ -7554,13 +7766,12 @@ void ApplyPopupBackdrop(HWND hwnd) {
         void* data;
         SIZE_T size;
     };
-    using SetWindowCompositionAttribute_t = BOOL(WINAPI*)(
-        HWND, CompositionAttributeData*);
+    using SetWindowCompositionAttribute_t =
+        BOOL(WINAPI*)(HWND, CompositionAttributeData*);
 
     static auto setWindowCompositionAttribute =
-        reinterpret_cast<SetWindowCompositionAttribute_t>(
-            GetProcAddress(GetModuleHandleW(L"user32.dll"),
-                           "SetWindowCompositionAttribute"));
+        reinterpret_cast<SetWindowCompositionAttribute_t>(GetProcAddress(
+            GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute"));
     if (setWindowCompositionAttribute) {
         bool dark = IsDarkModeApprox();
         AccentPolicy policy{
@@ -7577,16 +7788,19 @@ void ApplyPopupBackdrop(HWND hwnd) {
 
 RECT PopupButtonRect(int index, int width, int height) {
     RECT localFinal{0, 0, width, height};
-    RECT art{}, card{}, title{}, artist{}, progress{}, elapsed{}, duration{}, controls{};
-    CalculatePopupFinalLayout(localFinal, art, card, title, artist, progress, elapsed, duration, controls);
+    RECT art{}, card{}, title{}, artist{}, progress{}, elapsed{}, duration{},
+        controls{};
+    CalculatePopupFinalLayout(localFinal, art, card, title, artist, progress,
+                              elapsed, duration, controls);
 
     int buttonSize = Clamp(
-        static_cast<int>((controls.right - controls.left - 16) / 3), 30,
-        38);
+        static_cast<int>((controls.right - controls.left - 16) / 3), 30, 38);
     int gap = 8;
     int total = buttonSize * 3 + gap * 2;
-    int left = (controls.left + controls.right - total) / 2 + index * (buttonSize + gap);
-    int top = controls.top + ((controls.bottom - controls.top) - buttonSize) / 2;
+    int left = (controls.left + controls.right - total) / 2 +
+               index * (buttonSize + gap);
+    int top =
+        controls.top + ((controls.bottom - controls.top) - buttonSize) / 2;
     return {left, top, left + buttonSize, top + buttonSize};
 }
 
@@ -7615,16 +7829,17 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
     RECT targetElapsedScreen{};
     RECT targetDurationScreen{};
     RECT targetControlsScreen{};
-    CalculatePopupFinalLayout(g_popupFinalRect, targetArtScreen, targetCardScreen,
-                              targetTitleScreen, targetArtistScreen,
-                              targetProgressScreen, targetElapsedScreen, targetDurationScreen,
-                              targetControlsScreen);
+    CalculatePopupFinalLayout(
+        g_popupFinalRect, targetArtScreen, targetCardScreen, targetTitleScreen,
+        targetArtistScreen, targetProgressScreen, targetElapsedScreen,
+        targetDurationScreen, targetControlsScreen);
     double artProgress = progress;
     RECT artScreen{
         LerpInt(g_popupSourceArtRect.left, targetArtScreen.left, artProgress),
         LerpInt(g_popupSourceArtRect.top, targetArtScreen.top, artProgress),
         LerpInt(g_popupSourceArtRect.right, targetArtScreen.right, artProgress),
-        LerpInt(g_popupSourceArtRect.bottom, targetArtScreen.bottom, artProgress),
+        LerpInt(g_popupSourceArtRect.bottom, targetArtScreen.bottom,
+                artProgress),
     };
     RECT artRect{
         artScreen.left - popupScreen.left,
@@ -7635,17 +7850,17 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
     int artSize = std::max(1, static_cast<int>(artRect.right - artRect.left));
 
     int artRadius = static_cast<int>(kPopupUnifiedCornerRadius);
-    HRGN artClip = CreateRoundRectRgn(artRect.left, artRect.top,
-                                      artRect.right + 1, artRect.bottom + 1,
-                                      artRadius * 2, artRadius * 2);
+    HRGN artClip =
+        CreateRoundRectRgn(artRect.left, artRect.top, artRect.right + 1,
+                           artRect.bottom + 1, artRadius * 2, artRadius * 2);
     int saved = SaveDC(dc);
     SelectClipRgn(dc, artClip);
     if (g_popupAlbumBitmap) {
         HDC source = CreateCompatibleDC(dc);
         HGDIOBJ oldBitmap = SelectObject(source, g_popupAlbumBitmap);
         BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
-        AlphaBlend(dc, artRect.left, artRect.top, artSize, artSize,
-                   source, 0, 0, 256, 256, blend);
+        AlphaBlend(dc, artRect.left, artRect.top, artSize, artSize, source, 0,
+                   0, 256, 256, blend);
         SelectObject(source, oldBitmap);
         DeleteDC(source);
     } else {
@@ -7660,26 +7875,31 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
     SetBkMode(dc, TRANSPARENT);
     int titleSize = LerpInt(12, 16, progress);
     int artistSize = LerpInt(10, 13, progress);
-    HFONT titleFont = CreateFontW(-titleSize, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-                                  DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+    HFONT titleFont = CreateFontW(-titleSize, 0, 0, 0, FW_BOLD, FALSE, FALSE,
+                                  FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                                   CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                                   DEFAULT_PITCH, L"Segoe UI Variable Text");
-    HFONT artistFont = CreateFontW(-artistSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                                   DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-                                   CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                                   DEFAULT_PITCH, L"Segoe UI Variable Text");
+    HFONT artistFont = CreateFontW(
+        -artistSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+        DEFAULT_PITCH, L"Segoe UI Variable Text");
 
     RECT titleScreen{
         LerpInt(g_popupSourceTitleRect.left, targetTitleScreen.left, progress),
         LerpInt(g_popupSourceTitleRect.top, targetTitleScreen.top, progress),
-        LerpInt(g_popupSourceTitleRect.right, targetTitleScreen.right, progress),
-        LerpInt(g_popupSourceTitleRect.bottom, targetTitleScreen.bottom, progress),
+        LerpInt(g_popupSourceTitleRect.right, targetTitleScreen.right,
+                progress),
+        LerpInt(g_popupSourceTitleRect.bottom, targetTitleScreen.bottom,
+                progress),
     };
     RECT artistScreen{
-        LerpInt(g_popupSourceArtistRect.left, targetArtistScreen.left, progress),
+        LerpInt(g_popupSourceArtistRect.left, targetArtistScreen.left,
+                progress),
         LerpInt(g_popupSourceArtistRect.top, targetArtistScreen.top, progress),
-        LerpInt(g_popupSourceArtistRect.right, targetArtistScreen.right, progress),
-        LerpInt(g_popupSourceArtistRect.bottom, targetArtistScreen.bottom, progress),
+        LerpInt(g_popupSourceArtistRect.right, targetArtistScreen.right,
+                progress),
+        LerpInt(g_popupSourceArtistRect.bottom, targetArtistScreen.bottom,
+                progress),
     };
     RECT titleRect{titleScreen.left - popupScreen.left,
                    titleScreen.top - popupScreen.top,
@@ -7717,20 +7937,22 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
                                    0.0, 1.0)
                            : 0.0;
         RECT progressValue = progressTrack;
-        progressValue.right = progressValue.left +
-                              static_cast<int>((progressTrack.right - progressTrack.left) * ratio);
-        HBRUSH valueBrush = CreateSolidBrush(dark ? RGB(242, 242, 245) : RGB(42, 42, 46));
+        progressValue.right =
+            progressValue.left +
+            static_cast<int>((progressTrack.right - progressTrack.left) *
+                             ratio);
+        HBRUSH valueBrush =
+            CreateSolidBrush(dark ? RGB(242, 242, 245) : RGB(42, 42, 46));
         FillRect(dc, &progressValue, valueBrush);
         DeleteObject(valueBrush);
 
-        HFONT iconFont = CreateFontW(-16, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
-                                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+        HFONT iconFont = CreateFontW(-16, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE,
+                                     FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                                      CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                                      DEFAULT_PITCH, L"Segoe Fluent Icons");
         SelectObject(dc, iconFont);
         const wchar_t* glyphs[] = {
-            L"\uEB9E", state.isPlaying ? L"\uE769" : L"\uE768",
-            L"\uEB9D"};
+            L"\uEB9E", state.isPlaying ? L"\uE769" : L"\uE768", L"\uEB9D"};
         for (int i = 0; i < 3; ++i) {
             RECT button = PopupButtonRect(i, width, height);
             SetTextColor(dc, primary);
@@ -7771,11 +7993,9 @@ winrt::hstring PopupTransportGlyph(Border const& surface,
         return winrt::hstring(L"\uEB9D");
     }
     if (name == L"Popup_Favorite") {
-        return favorite ? winrt::hstring(L"\uE00C")
-                        : winrt::hstring(L"\uE00B");
+        return favorite ? winrt::hstring(L"\uE00C") : winrt::hstring(L"\uE00B");
     }
-    return playing ? winrt::hstring(L"\uE769")
-                   : winrt::hstring(L"\uE768");
+    return playing ? winrt::hstring(L"\uE769") : winrt::hstring(L"\uE768");
 }
 
 void UpdatePopupTransportButtonGlyph(Border const& surface,
@@ -7828,21 +8048,18 @@ void ApplyOptimisticPlaybackToggle() {
                 if (auto playFe =
                         FindChildByName(g_playerGrid, L"Island_Play")) {
                     if (auto button = playFe.try_as<Button>()) {
-                        if (auto icon =
-                                button.Content().try_as<TextBlock>()) {
-                            icon.Text(state.playing ? L"\uE769"
-                                                    : L"\uE768");
+                        if (auto icon = button.Content().try_as<TextBlock>()) {
+                            icon.Text(state.playing ? L"\uE769" : L"\uE768");
                         }
                     }
                 }
                 SetCompactPlaybackIndicatorState(state.playing);
             }
             if (g_popupXamlControls) {
-                for (auto const& child :
-                     g_popupXamlControls.Children()) {
+                for (auto const& child : g_popupXamlControls.Children()) {
                     if (auto surface = child.try_as<Border>()) {
-                        UpdatePopupTransportButtonGlyph(
-                            surface, state.playing, state.favorite);
+                        UpdatePopupTransportButtonGlyph(surface, state.playing,
+                                                        state.favorite);
                     }
                 }
             }
@@ -7882,8 +8099,8 @@ mediax::Brush PopupButtonHoverBrush(bool dark) {
 void ApplyPopupButtonVisual(Border const& surface, bool hovered = false) {
     bool dark = IsDarkModeApprox();
     bool primary = IsPopupPrimaryButton(surface);
-    auto primaryText = dark ? Color(0xFF, 0xFF, 0xFF, 0xFF)
-                            : Color(0xFF, 0x00, 0x00, 0x00);
+    auto primaryText =
+        dark ? Color(0xFF, 0xFF, 0xFF, 0xFF) : Color(0xFF, 0x00, 0x00, 0x00);
 
     double width = PopupButtonWidth();
     double height = PopupButtonHeight();
@@ -7914,8 +8131,8 @@ void ApplyPopupButtonVisual(Border const& surface, bool hovered = false) {
         icon.Margin({0, 0, 0, 0});
         icon.HorizontalAlignment(HorizontalAlignment::Center);
         icon.VerticalAlignment(VerticalAlignment::Center);
-        icon.Glyph(PopupTransportGlyph(surface, state.isPlaying,
-                                       state.isFavorite));
+        icon.Glyph(
+            PopupTransportGlyph(surface, state.isPlaying, state.isFavorite));
         icon.Foreground(foreground);
         icon.FontFamily(mediax::FontFamily(L"Segoe Fluent Icons"));
         icon.FontSize(fontSize);
@@ -7929,8 +8146,8 @@ void ApplyPopupButtonVisual(Border const& surface, bool hovered = false) {
         text.HorizontalAlignment(HorizontalAlignment::Stretch);
         text.VerticalAlignment(VerticalAlignment::Center);
         text.TextAlignment(xaml::TextAlignment::Center);
-        text.Text(PopupTransportGlyph(surface, state.isPlaying,
-                                      state.isFavorite));
+        text.Text(
+            PopupTransportGlyph(surface, state.isPlaying, state.isFavorite));
         text.Foreground(foreground);
         text.FontFamily(mediax::FontFamily(L"Segoe Fluent Icons"));
         text.FontSize(fontSize);
@@ -7938,12 +8155,15 @@ void ApplyPopupButtonVisual(Border const& surface, bool hovered = false) {
     }
 }
 
-Border MakePopupXamlButton(const wchar_t* name, void (*onClick)(), bool primary = false) {
+Border MakePopupXamlButton(const wchar_t* name,
+                           void (*onClick)(),
+                           bool primary = false) {
     Border surface;
     surface.Name(name);
     surface.Margin({0, 0, 0, 0});
     surface.Padding({0, 0, 0, 0});
-    surface.Tag(winrt::box_value(winrt::hstring(primary ? L"primary" : L"secondary")));
+    surface.Tag(
+        winrt::box_value(winrt::hstring(primary ? L"primary" : L"secondary")));
     surface.IsHitTestVisible(true);
 
     controls::FontIcon icon;
@@ -7954,36 +8174,42 @@ Border MakePopupXamlButton(const wchar_t* name, void (*onClick)(), bool primary 
     surface.Child(icon);
     ApplyPopupButtonVisual(surface, false);
 
-    surface.PointerEntered([](auto const& sender, input::PointerRoutedEventArgs const&) {
-        if (auto border = sender.template try_as<Border>()) {
-            ApplyPopupButtonVisual(border, true);
-        }
-    });
-    surface.PointerExited([](auto const& sender, input::PointerRoutedEventArgs const&) {
-        if (auto border = sender.template try_as<Border>()) {
-            ApplyPopupButtonVisual(border, false);
-        }
-    });
-    surface.PointerPressed([](auto const& sender, input::PointerRoutedEventArgs const& args) {
-        if (auto border = sender.template try_as<Border>()) {
-            border.Opacity(0.82);
-        }
-        args.Handled(true);
-    });
-    surface.PointerReleased([onClick](auto const& sender, input::PointerRoutedEventArgs const& args) {
-        if (auto border = sender.template try_as<Border>()) {
-            border.Opacity(1.0);
-            ApplyPopupButtonVisual(border, false);
-        }
-        onClick();
-        args.Handled(true);
-    });
-    surface.PointerCanceled([](auto const& sender, input::PointerRoutedEventArgs const&) {
-        if (auto border = sender.template try_as<Border>()) {
-            border.Opacity(1.0);
-            ApplyPopupButtonVisual(border, false);
-        }
-    });
+    surface.PointerEntered(
+        [](auto const& sender, input::PointerRoutedEventArgs const&) {
+            if (auto border = sender.template try_as<Border>()) {
+                ApplyPopupButtonVisual(border, true);
+            }
+        });
+    surface.PointerExited(
+        [](auto const& sender, input::PointerRoutedEventArgs const&) {
+            if (auto border = sender.template try_as<Border>()) {
+                ApplyPopupButtonVisual(border, false);
+            }
+        });
+    surface.PointerPressed(
+        [](auto const& sender, input::PointerRoutedEventArgs const& args) {
+            if (auto border = sender.template try_as<Border>()) {
+                border.Opacity(0.82);
+            }
+            args.Handled(true);
+        });
+    surface.PointerReleased(
+        [onClick](auto const& sender,
+                  input::PointerRoutedEventArgs const& args) {
+            if (auto border = sender.template try_as<Border>()) {
+                border.Opacity(1.0);
+                ApplyPopupButtonVisual(border, false);
+            }
+            onClick();
+            args.Handled(true);
+        });
+    surface.PointerCanceled(
+        [](auto const& sender, input::PointerRoutedEventArgs const&) {
+            if (auto border = sender.template try_as<Border>()) {
+                border.Opacity(1.0);
+                ApplyPopupButtonVisual(border, false);
+            }
+        });
     return surface;
 }
 
@@ -7998,8 +8224,7 @@ void ApplyPopupXamlTheme(bool force = false) {
     }
 
     bool dark = IsDarkModeApprox();
-    if (!force && g_popupXamlThemeValid &&
-        g_popupXamlThemeDark == dark &&
+    if (!force && g_popupXamlThemeValid && g_popupXamlThemeDark == dark &&
         g_popupXamlThemeMaterial == g_settings.material &&
         g_popupXamlThemeButtonStyle == g_settings.popupButtonStyle &&
         g_popupXamlThemeShadowDepth == PopupShadowDepth() &&
@@ -8032,32 +8257,40 @@ void ApplyPopupXamlTheme(bool force = false) {
         g_popupXamlBackdropTint.BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlBackdropSurfaceHighlight) {
-        g_popupXamlBackdropSurfaceHighlight.Background(LiquidGlassSurfaceHighlightBrush());
+        g_popupXamlBackdropSurfaceHighlight.Background(
+            LiquidGlassSurfaceHighlightBrush());
         g_popupXamlBackdropSurfaceHighlight.BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlBackdropRimHighlight) {
-        g_popupXamlBackdropRimHighlight.Background(Brush(Color(0x00, 0x00, 0x00, 0x00)));
-        g_popupXamlBackdropRimHighlight.BorderBrush(LiquidGlassRimHighlightBrush());
-        g_popupXamlBackdropRimHighlight.BorderThickness(IsLiquidGlassMaterial()
-                                                            ? Thickness{1.0, 1.0, 1.0, 1.0}
-                                                            : Thickness{0.0, 0.0, 0.0, 0.0});
+        g_popupXamlBackdropRimHighlight.Background(
+            Brush(Color(0x00, 0x00, 0x00, 0x00)));
+        g_popupXamlBackdropRimHighlight.BorderBrush(
+            LiquidGlassRimHighlightBrush());
+        g_popupXamlBackdropRimHighlight.BorderThickness(
+            IsLiquidGlassMaterial() ? Thickness{1.0, 1.0, 1.0, 1.0}
+                                    : Thickness{0.0, 0.0, 0.0, 0.0});
     }
     if (g_popupXamlDropShadow) {
-        float strength = static_cast<float>(PopupShadowOpacityPercent()) / 100.0f;
-        g_popupXamlDropShadow.BlurRadius(28.0f + static_cast<float>(PopupShadowDepth()) * 0.35f);
+        float strength =
+            static_cast<float>(PopupShadowOpacityPercent()) / 100.0f;
+        g_popupXamlDropShadow.BlurRadius(
+            28.0f + static_cast<float>(PopupShadowDepth()) * 0.35f);
         g_popupXamlDropShadow.Opacity((dark ? 0.70f : 0.56f) * strength);
-        g_popupXamlDropShadow.Offset({0.0f, 6.0f + static_cast<float>(PopupShadowDepth()) * 0.08f, 0.0f});
+        g_popupXamlDropShadow.Offset(
+            {0.0f, 6.0f + static_cast<float>(PopupShadowDepth()) * 0.08f,
+             0.0f});
         g_popupXamlDropShadow.Color(Color(0xFF, 0x00, 0x00, 0x00));
     }
     if (g_popupXamlPanelCoverFrame) {
-        g_popupXamlPanelCoverFrame.Background(Brush(Color(0x00, 0x00, 0x00, 0x00)));
+        g_popupXamlPanelCoverFrame.Background(
+            Brush(Color(0x00, 0x00, 0x00, 0x00)));
         g_popupXamlPanelCoverFrame.BorderThickness({0, 0, 0, 0});
-        g_popupXamlPanelCoverFrame.BorderBrush(Brush(Color(0x00, 0x00, 0x00, 0x00)));
+        g_popupXamlPanelCoverFrame.BorderBrush(
+            Brush(Color(0x00, 0x00, 0x00, 0x00)));
     }
     if (g_popupXamlArtFrame) {
         g_popupXamlArtFrame.BorderThickness({0.0, 0.0, 0.0, 0.0});
-        g_popupXamlArtFrame.BorderBrush(
-            Brush(Color(0x00, 0x00, 0x00, 0x00)));
+        g_popupXamlArtFrame.BorderBrush(Brush(Color(0x00, 0x00, 0x00, 0x00)));
     }
     // The reference uses one uninterrupted glass sheet. Text and controls sit
     // directly on it; there is no second rectangular card below the artwork.
@@ -8081,12 +8314,14 @@ void ApplyPopupXamlTheme(bool force = false) {
     auto softCore = PopupProgressBrightSoftColor();
     if (g_popupXamlProgress) {
         g_popupXamlProgress.Foreground(accentBrush);
-        g_popupXamlProgress.Background(Brush(dark ? Color(0x00, 0xFF, 0xFF, 0xFF)
-                                             : Color(0x00, 0x00, 0x00, 0x00)));
+        g_popupXamlProgress.Background(
+            Brush(dark ? Color(0x00, 0xFF, 0xFF, 0xFF)
+                       : Color(0x00, 0x00, 0x00, 0x00)));
     }
     if (g_popupXamlProgressTrack) {
-        g_popupXamlProgressTrack.Background(Brush(dark ? Color(0x34, 0xFF, 0xFF, 0xFF)
-                                                  : Color(0x24, 0x00, 0x00, 0x00)));
+        g_popupXamlProgressTrack.Background(
+            Brush(dark ? Color(0x34, 0xFF, 0xFF, 0xFF)
+                       : Color(0x24, 0x00, 0x00, 0x00)));
     }
     if (g_popupXamlProgressFill) {
         g_popupXamlProgressFill.Background(MakePopupProgressGradientBrush());
@@ -8094,17 +8329,20 @@ void ApplyPopupXamlTheme(bool force = false) {
     for (size_t i = 0; i < g_popupXamlProgressGlowLayers.size(); ++i) {
         static constexpr BYTE kAlpha[] = {0x14, 0x20, 0x32, 0x4A, 0x68, 0x86};
         BYTE a = kAlpha[std::min(i, (sizeof(kAlpha) / sizeof(kAlpha[0])) - 1)];
-        g_popupXamlProgressGlowLayers[i].Background(Brush(Color(a, vividGlow.R, vividGlow.G, vividGlow.B)));
+        g_popupXamlProgressGlowLayers[i].Background(
+            Brush(Color(a, vividGlow.R, vividGlow.G, vividGlow.B)));
         g_popupXamlProgressGlowLayers[i].BorderThickness({0, 0, 0, 0});
     }
     for (size_t i = 0; i < g_popupXamlProgressCoreBlurLayers.size(); ++i) {
         static constexpr BYTE kAlpha[] = {0x08, 0x0E, 0x16, 0x24, 0x38, 0x58};
         BYTE a = kAlpha[std::min(i, (sizeof(kAlpha) / sizeof(kAlpha[0])) - 1)];
-        g_popupXamlProgressCoreBlurLayers[i].Background(Brush(Color(a, softCore.R, softCore.G, softCore.B)));
+        g_popupXamlProgressCoreBlurLayers[i].Background(
+            Brush(Color(a, softCore.R, softCore.G, softCore.B)));
         g_popupXamlProgressCoreBlurLayers[i].BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlProgressGlowCore) {
-        g_popupXamlProgressGlowCore.Background(Brush(Color(0xFF, softCore.R, softCore.G, softCore.B)));
+        g_popupXamlProgressGlowCore.Background(
+            Brush(Color(0xFF, softCore.R, softCore.G, softCore.B)));
         g_popupXamlProgressGlowCore.BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlControls) {
@@ -8145,8 +8383,9 @@ void ApplyPopupDynamicAccentVisuals() {
     }
     if (g_popupXamlProgress) {
         g_popupXamlProgress.Foreground(accentBrush);
-        g_popupXamlProgress.Background(Brush(dark ? Color(0x30, 0xFF, 0xFF, 0xFF)
-                                             : Color(0x22, 0x00, 0x00, 0x00)));
+        g_popupXamlProgress.Background(
+            Brush(dark ? Color(0x30, 0xFF, 0xFF, 0xFF)
+                       : Color(0x22, 0x00, 0x00, 0x00)));
     }
     if (g_popupXamlProgressFill) {
         g_popupXamlProgressFill.Background(MakePopupProgressGradientBrush());
@@ -8156,17 +8395,20 @@ void ApplyPopupDynamicAccentVisuals() {
     for (size_t i = 0; i < g_popupXamlProgressGlowLayers.size(); ++i) {
         static constexpr BYTE kAlpha[] = {0x14, 0x20, 0x32, 0x4A, 0x68, 0x86};
         BYTE a = kAlpha[std::min(i, (sizeof(kAlpha) / sizeof(kAlpha[0])) - 1)];
-        g_popupXamlProgressGlowLayers[i].Background(Brush(Color(a, vividGlow.R, vividGlow.G, vividGlow.B)));
+        g_popupXamlProgressGlowLayers[i].Background(
+            Brush(Color(a, vividGlow.R, vividGlow.G, vividGlow.B)));
         g_popupXamlProgressGlowLayers[i].BorderThickness({0, 0, 0, 0});
     }
     for (size_t i = 0; i < g_popupXamlProgressCoreBlurLayers.size(); ++i) {
         static constexpr BYTE kAlpha[] = {0x08, 0x0E, 0x16, 0x24, 0x38, 0x58};
         BYTE a = kAlpha[std::min(i, (sizeof(kAlpha) / sizeof(kAlpha[0])) - 1)];
-        g_popupXamlProgressCoreBlurLayers[i].Background(Brush(Color(a, softCore.R, softCore.G, softCore.B)));
+        g_popupXamlProgressCoreBlurLayers[i].Background(
+            Brush(Color(a, softCore.R, softCore.G, softCore.B)));
         g_popupXamlProgressCoreBlurLayers[i].BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlProgressGlowCore) {
-        g_popupXamlProgressGlowCore.Background(Brush(Color(0xFF, softCore.R, softCore.G, softCore.B)));
+        g_popupXamlProgressGlowCore.Background(
+            Brush(Color(0xFF, softCore.R, softCore.G, softCore.B)));
         g_popupXamlProgressGlowCore.BorderThickness({0, 0, 0, 0});
     }
     if (g_popupXamlControls) {
@@ -8181,19 +8423,22 @@ void ApplyPopupDynamicAccentVisuals() {
 void ApplyPopupMediaTransitionVisuals() {
     // Use a higher-order easing and a longer transition window so artwork,
     // album-wash, accent and text changes feel less abrupt during track switches.
-    double fade = g_popupMediaTransitionActive
-                      ? SmootherStep(Clamp(g_popupMediaTransitionProgress, 0.0, 1.0))
-                      : 1.0;
+    double fade =
+        g_popupMediaTransitionActive
+            ? SmootherStep(Clamp(g_popupMediaTransitionProgress, 0.0, 1.0))
+            : 1.0;
 
     // Only fade artwork and album-wash layers when the artwork source really
     // changed. Text-only or accent-only transitions should not dim the cover;
     // otherwise a brief empty thumbnail state during track switches exposes the
     // placeholder/background as a visible flash.
-    bool coverTransitionActive = g_popupCoverTransitionActive && g_popupMediaTransitionActive;
+    bool coverTransitionActive =
+        g_popupCoverTransitionActive && g_popupMediaTransitionActive;
     double coverFade = coverTransitionActive ? fade : 1.0;
-    double backdropWashProgress = g_popupClosing
-                                      ? SmootherStep(Clamp((PopupProgress() - 0.001) / 0.065, 0.0, 1.0))
-                                      : 1.0;
+    double backdropWashProgress =
+        g_popupClosing
+            ? SmootherStep(Clamp((PopupProgress() - 0.001) / 0.065, 0.0, 1.0))
+            : 1.0;
     if (g_popupXamlArt) {
         g_popupXamlArt.Opacity(coverFade);
     }
@@ -8202,20 +8447,22 @@ void ApplyPopupMediaTransitionVisuals() {
     }
     bool backdropCoverEnabled = PopupBackdropCoverEffectEnabled();
     if (g_popupXamlBackdropCover) {
-        g_popupXamlBackdropCover.Opacity(backdropCoverEnabled
-                                             ? coverFade * backdropWashProgress
-                                             : 0.0);
+        g_popupXamlBackdropCover.Opacity(
+            backdropCoverEnabled ? coverFade * backdropWashProgress : 0.0);
     }
     if (g_popupXamlBackdropCoverFade) {
-        g_popupXamlBackdropCoverFade.Opacity(backdropCoverEnabled && coverTransitionActive
-                                            ? (1.0 - fade) * backdropWashProgress
-                                            : 0.0);
+        g_popupXamlBackdropCoverFade.Opacity(
+            backdropCoverEnabled && coverTransitionActive
+                ? (1.0 - fade) * backdropWashProgress
+                : 0.0);
     }
     if (g_popupXamlPanelCover) {
-        g_popupXamlPanelCover.Opacity(PopupPanelCoverEffectEnabled() ? coverFade : 0.0);
+        g_popupXamlPanelCover.Opacity(PopupPanelCoverEffectEnabled() ? coverFade
+                                                                     : 0.0);
     }
     if (g_popupXamlPanelCoverFade) {
-        g_popupXamlPanelCoverFade.Opacity(PopupPanelCoverEffectEnabled() && coverTransitionActive
+        g_popupXamlPanelCoverFade.Opacity(PopupPanelCoverEffectEnabled() &&
+                                                  coverTransitionActive
                                               ? (1.0 - fade)
                                               : 0.0);
     }
@@ -8226,16 +8473,24 @@ void ApplyPopupMediaTransitionVisuals() {
     constexpr double kPopupTextSlideOffset = 28.0;
     if (g_popupTextTransitionActive) {
         double p = Clamp(g_popupMediaTransitionProgress, 0.0, 1.0);
-        double titleIn = PopupTextMotionEase(Clamp((p - 0.02) / 0.92, 0.0, 1.0));
-        double artistIn = PopupTextMotionEase(Clamp((p - 0.28) / 0.70, 0.0, 1.0));
-        double titleOut = PopupTextMotionEase(Clamp((p + 0.02) / 0.84, 0.0, 1.0));
-        double artistOut = PopupTextMotionEase(Clamp((p - 0.12) / 0.80, 0.0, 1.0));
+        double titleIn =
+            PopupTextMotionEase(Clamp((p - 0.02) / 0.92, 0.0, 1.0));
+        double artistIn =
+            PopupTextMotionEase(Clamp((p - 0.28) / 0.70, 0.0, 1.0));
+        double titleOut =
+            PopupTextMotionEase(Clamp((p + 0.02) / 0.84, 0.0, 1.0));
+        double artistOut =
+            PopupTextMotionEase(Clamp((p - 0.12) / 0.80, 0.0, 1.0));
 
         if (g_popupXamlTitleTranslate) {
-            g_popupXamlTitleTranslate.X(kPopupTextSlideOffset * g_popupTextTransitionDirection * (1.0 - titleIn));
+            g_popupXamlTitleTranslate.X(kPopupTextSlideOffset *
+                                        g_popupTextTransitionDirection *
+                                        (1.0 - titleIn));
         }
         if (g_popupXamlArtistTranslate) {
-            g_popupXamlArtistTranslate.X(kPopupTextSlideOffset * g_popupTextTransitionDirection * (1.0 - artistIn));
+            g_popupXamlArtistTranslate.X(kPopupTextSlideOffset *
+                                         g_popupTextTransitionDirection *
+                                         (1.0 - artistIn));
         }
         if (g_popupXamlTitle) {
             g_popupXamlTitle.Opacity(g_popupTextBaseOpacity * titleIn);
@@ -8245,29 +8500,44 @@ void ApplyPopupMediaTransitionVisuals() {
         }
 
         if (g_popupXamlOutgoingTitleTranslate) {
-            g_popupXamlOutgoingTitleTranslate.X(-kPopupTextSlideOffset * g_popupTextTransitionDirection * titleOut);
+            g_popupXamlOutgoingTitleTranslate.X(-kPopupTextSlideOffset *
+                                                g_popupTextTransitionDirection *
+                                                titleOut);
         }
         if (g_popupXamlOutgoingArtistTranslate) {
-            g_popupXamlOutgoingArtistTranslate.X(-kPopupTextSlideOffset * g_popupTextTransitionDirection * artistOut);
+            g_popupXamlOutgoingArtistTranslate.X(
+                -kPopupTextSlideOffset * g_popupTextTransitionDirection *
+                artistOut);
         }
         if (g_popupXamlOutgoingTitle) {
-            g_popupXamlOutgoingTitle.Opacity(g_popupTextBaseOpacity * (1.0 - titleOut));
+            g_popupXamlOutgoingTitle.Opacity(g_popupTextBaseOpacity *
+                                             (1.0 - titleOut));
         }
         if (g_popupXamlOutgoingArtist) {
-            g_popupXamlOutgoingArtist.Opacity(g_popupTextBaseOpacity * (1.0 - artistOut));
+            g_popupXamlOutgoingArtist.Opacity(g_popupTextBaseOpacity *
+                                              (1.0 - artistOut));
         }
-        double popupEdgeFadeIn = PopupTextMotionEase(Clamp((p - 0.08) / 0.20, 0.0, 1.0));
-        double popupEdgeFadeOut = 1.0 - PopupTextMotionEase(Clamp((p - 0.72) / 0.22, 0.0, 1.0));
+        double popupEdgeFadeIn =
+            PopupTextMotionEase(Clamp((p - 0.08) / 0.20, 0.0, 1.0));
+        double popupEdgeFadeOut =
+            1.0 - PopupTextMotionEase(Clamp((p - 0.72) / 0.22, 0.0, 1.0));
         double popupEdgeFade = popupEdgeFadeIn * popupEdgeFadeOut;
-        ApplyPopupTextForegroundFade(popupEdgeFade < 0.01 ? 0.0 : popupEdgeFade);
+        ApplyPopupTextForegroundFade(popupEdgeFade < 0.01 ? 0.0
+                                                          : popupEdgeFade);
         SetPopupTextEdgeFadeOpacity(0.0);
     } else {
-        if (g_popupXamlTitleTranslate) g_popupXamlTitleTranslate.X(0.0);
-        if (g_popupXamlArtistTranslate) g_popupXamlArtistTranslate.X(0.0);
-        if (g_popupXamlOutgoingTitleTranslate) g_popupXamlOutgoingTitleTranslate.X(0.0);
-        if (g_popupXamlOutgoingArtistTranslate) g_popupXamlOutgoingArtistTranslate.X(0.0);
-        if (g_popupXamlOutgoingTitle) g_popupXamlOutgoingTitle.Opacity(0.0);
-        if (g_popupXamlOutgoingArtist) g_popupXamlOutgoingArtist.Opacity(0.0);
+        if (g_popupXamlTitleTranslate)
+            g_popupXamlTitleTranslate.X(0.0);
+        if (g_popupXamlArtistTranslate)
+            g_popupXamlArtistTranslate.X(0.0);
+        if (g_popupXamlOutgoingTitleTranslate)
+            g_popupXamlOutgoingTitleTranslate.X(0.0);
+        if (g_popupXamlOutgoingArtistTranslate)
+            g_popupXamlOutgoingArtistTranslate.X(0.0);
+        if (g_popupXamlOutgoingTitle)
+            g_popupXamlOutgoingTitle.Opacity(0.0);
+        if (g_popupXamlOutgoingArtist)
+            g_popupXamlOutgoingArtist.Opacity(0.0);
         ApplyPopupTextForegrounds(false);
         SetPopupTextEdgeFadeOpacity(0.0);
     }
@@ -8283,8 +8553,7 @@ void TickPopupMediaTransition(double dt) {
         Clamp(g_popupMediaTransitionProgress + dt * 8.0, 0.0, 1.0);
     double eased = SmootherStep(g_popupMediaTransitionProgress);
     g_popupDisplayedAccentColor = LerpColor(g_popupAccentTransitionFrom,
-                                            g_popupAccentTransitionTo,
-                                            eased);
+                                            g_popupAccentTransitionTo, eased);
     g_popupDisplayedAccentColorValid = true;
     ApplyPopupDynamicAccentVisuals();
     ApplyPopupMediaTransitionVisuals();
@@ -8313,10 +8582,14 @@ void TickPopupMediaTransition(double dt) {
         if (g_popupXamlOutgoingArtist) {
             g_popupXamlOutgoingArtist.Opacity(0.0);
         }
-        if (g_popupXamlTitleTranslate) g_popupXamlTitleTranslate.X(0.0);
-        if (g_popupXamlArtistTranslate) g_popupXamlArtistTranslate.X(0.0);
-        if (g_popupXamlOutgoingTitleTranslate) g_popupXamlOutgoingTitleTranslate.X(0.0);
-        if (g_popupXamlOutgoingArtistTranslate) g_popupXamlOutgoingArtistTranslate.X(0.0);
+        if (g_popupXamlTitleTranslate)
+            g_popupXamlTitleTranslate.X(0.0);
+        if (g_popupXamlArtistTranslate)
+            g_popupXamlArtistTranslate.X(0.0);
+        if (g_popupXamlOutgoingTitleTranslate)
+            g_popupXamlOutgoingTitleTranslate.X(0.0);
+        if (g_popupXamlOutgoingArtistTranslate)
+            g_popupXamlOutgoingArtistTranslate.X(0.0);
         ApplyPopupDynamicAccentVisuals();
         ApplyPopupMediaTransitionVisuals();
     }
@@ -8335,9 +8608,11 @@ void InitializePopupCompositionShadow() {
     }
 
     try {
-        int depth = static_cast<int>(std::lround(
-            PopupShadowDepth() * (0.25 + 1.75 * PopupShadowOpacityPercent() / 100.0)));
-        if (PopupShadowDepth() <= 0 || PopupShadowOpacityPercent() <= 0 || depth <= 0) {
+        int depth = static_cast<int>(
+            std::lround(PopupShadowDepth() *
+                        (0.25 + 1.75 * PopupShadowOpacityPercent() / 100.0)));
+        if (PopupShadowDepth() <= 0 || PopupShadowOpacityPercent() <= 0 ||
+            depth <= 0) {
             g_popupXamlBackdrop.Shadow(mediax::Shadow{nullptr});
             g_popupXamlBackdrop.Translation(
                 winrt::Windows::Foundation::Numerics::float3{0.0f, 0.0f, 0.0f});
@@ -8458,8 +8733,8 @@ void ResetPopupXamlElementState() {
     g_popupXamlThemeValid = false;
     g_popupXamlThemeMaterial.clear();
     g_popupXamlThemeButtonStyle.clear();
-        g_popupXamlThemeShadowDepth = -1;
-        g_popupXamlThemeShadowOpacity = -1;
+    g_popupXamlThemeShadowDepth = -1;
+    g_popupXamlThemeShadowOpacity = -1;
 }
 
 // ===== Popup XAML host =====
@@ -8482,8 +8757,9 @@ bool InitializePopupXamlHost(HWND hwnd) {
         Border shadow{nullptr};
 
         Border backdrop;
-        backdrop.CornerRadius({kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
-                               kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
+        backdrop.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         backdrop.BorderThickness({0, 0, 0, 0});
         backdrop.Opacity(kPopupBackdropOpacity);
         Grid backdropCoverHost;
@@ -8499,19 +8775,17 @@ bool InitializePopupXamlHost(HWND hwnd) {
         Border backdropTint;
         backdropTint.Background(PopupBackdropCardTintBrush());
         backdropTint.BorderThickness({0, 0, 0, 0});
-        backdropTint.CornerRadius({kPopupUnifiedCornerRadius,
-                                   kPopupUnifiedCornerRadius,
-                                   kPopupUnifiedCornerRadius,
-                                   kPopupUnifiedCornerRadius});
+        backdropTint.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         backdropTint.IsHitTestVisible(false);
         backdropCoverHost.Children().Append(backdropTint);
         Border backdropSurfaceHighlight;
         backdropSurfaceHighlight.Background(LiquidGlassSurfaceHighlightBrush());
         backdropSurfaceHighlight.BorderThickness({0, 0, 0, 0});
-        backdropSurfaceHighlight.CornerRadius({kPopupUnifiedCornerRadius,
-                                               kPopupUnifiedCornerRadius,
-                                               kPopupUnifiedCornerRadius,
-                                               kPopupUnifiedCornerRadius});
+        backdropSurfaceHighlight.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         backdropSurfaceHighlight.IsHitTestVisible(false);
         backdropSurfaceHighlight.Opacity(0.0);
         backdropCoverHost.Children().Append(backdropSurfaceHighlight);
@@ -8519,23 +8793,25 @@ bool InitializePopupXamlHost(HWND hwnd) {
         backdropRimHighlight.Background(Brush(Color(0x00, 0x00, 0x00, 0x00)));
         backdropRimHighlight.BorderBrush(LiquidGlassRimHighlightBrush());
         backdropRimHighlight.BorderThickness({1.0, 1.0, 1.0, 1.0});
-        backdropRimHighlight.CornerRadius({kPopupUnifiedCornerRadius,
-                                           kPopupUnifiedCornerRadius,
-                                           kPopupUnifiedCornerRadius,
-                                           kPopupUnifiedCornerRadius});
+        backdropRimHighlight.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         backdropRimHighlight.IsHitTestVisible(false);
         backdropRimHighlight.Opacity(0.0);
         backdropCoverHost.Children().Append(backdropRimHighlight);
         backdrop.Child(backdropCoverHost);
-        AttachGpuFriendlyTransform(backdrop, g_popupXamlBackdropScale, g_popupXamlBackdropTranslate);
+        AttachGpuFriendlyTransform(backdrop, g_popupXamlBackdropScale,
+                                   g_popupXamlBackdropTranslate);
         canvas.Children().Append(backdrop);
 
         Border panelCoverFrame;
-        panelCoverFrame.CornerRadius({kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
-                                      kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
+        panelCoverFrame.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         panelCoverFrame.BorderThickness({0, 0, 0, 0});
         panelCoverFrame.Opacity(0.0);
-        AttachGpuFriendlyTransform(panelCoverFrame, g_popupXamlPanelCoverScale, g_popupXamlPanelCoverTranslate);
+        AttachGpuFriendlyTransform(panelCoverFrame, g_popupXamlPanelCoverScale,
+                                   g_popupXamlPanelCoverTranslate);
         Grid panelCoverHost;
         Image panelCoverFade;
         panelCoverFade.Stretch(mediax::Stretch::UniformToFill);
@@ -8549,23 +8825,28 @@ bool InitializePopupXamlHost(HWND hwnd) {
         canvas.Children().Append(panelCoverFrame);
 
         Border panel;
-        panel.CornerRadius({kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
-                            kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
+        panel.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         panel.BorderThickness({1, 1, 1, 1});
         panel.BorderBrush(PopupSurfaceStrokeBrush());
         panel.Opacity(0.0);
-        AttachGpuFriendlyTransform(panel, g_popupXamlPanelScale, g_popupXamlPanelTranslate);
+        AttachGpuFriendlyTransform(panel, g_popupXamlPanelScale,
+                                   g_popupXamlPanelTranslate);
         canvas.Children().Append(panel);
 
         Border artFrame;
-        artFrame.CornerRadius({kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
-                               kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
+        artFrame.CornerRadius(
+            {kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius,
+             kPopupUnifiedCornerRadius, kPopupUnifiedCornerRadius});
         artFrame.Background(Brush(Color(0x00, 0x00, 0x00, 0x00)));
         artFrame.BorderThickness({0.0, 0.0, 0.0, 0.0});
         artFrame.BorderBrush(Brush(Color(0x00, 0x00, 0x00, 0x00)));
-        AttachGpuFriendlyTransform(artFrame, g_popupXamlArtScale, g_popupXamlArtTranslate);
+        AttachGpuFriendlyTransform(artFrame, g_popupXamlArtScale,
+                                   g_popupXamlArtTranslate);
         try {
-            auto artVisual = hosting::ElementCompositionPreview::GetElementVisual(artFrame);
+            auto artVisual =
+                hosting::ElementCompositionPreview::GetElementVisual(artFrame);
             auto compositor = artVisual.Compositor();
             g_popupXamlArtClipGeometry =
                 compositor.CreateRoundedRectangleGeometry();
@@ -8620,7 +8901,8 @@ bool InitializePopupXamlHost(HWND hwnd) {
         Grid outgoingArtistHost;
         outgoingArtistHost.IsHitTestVisible(false);
         TextBlock outgoingArtist;
-        outgoingArtist.FontFamily(mediax::FontFamily(L"Segoe UI Variable Text"));
+        outgoingArtist.FontFamily(
+            mediax::FontFamily(L"Segoe UI Variable Text"));
         outgoingArtist.TextTrimming(xaml::TextTrimming::CharacterEllipsis);
         outgoingArtist.VerticalAlignment(VerticalAlignment::Center);
         outgoingArtist.Opacity(0.0);
@@ -8680,14 +8962,14 @@ bool InitializePopupXamlHost(HWND hwnd) {
         mediax::SolidColorBrush popupPlaybackAccentBrush;
         popupPlaybackAccentBrush.Color(g_compactPlaybackAccentDisplayed);
         g_popupXamlPlaybackBars.clear();
-        constexpr double kPopupPausedFractions[5] = {
-            0.27, 0.43, 0.60, 0.43, 0.27};
+        constexpr double kPopupPausedFractions[5] = {0.27, 0.43, 0.60, 0.43,
+                                                     0.27};
         for (size_t i = 0; i < 5; ++i) {
             Border bar;
             bar.Width(compactSpec.playbackBarWidth);
-            double barHeight = std::max(
-                2.0, compactSpec.playbackIndicatorHeight *
-                         kPopupPausedFractions[i]);
+            double barHeight =
+                std::max(2.0, compactSpec.playbackIndicatorHeight *
+                                  kPopupPausedFractions[i]);
             bar.Height(barHeight);
             bar.Margin({compactSpec.playbackBarGap * 0.5, 0,
                         compactSpec.playbackBarGap * 0.5, 0});
@@ -8727,19 +9009,17 @@ bool InitializePopupXamlHost(HWND hwnd) {
 
         Border progressTrack;
         progressTrack.Height(6);
-        progressTrack.CornerRadius({kPopupG2ProgressCornerRadius,
-                                    kPopupG2ProgressCornerRadius,
-                                    kPopupG2ProgressCornerRadius,
-                                    kPopupG2ProgressCornerRadius});
+        progressTrack.CornerRadius(
+            {kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius,
+             kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius});
         progressTrack.IsHitTestVisible(false);
         canvas.Children().Append(progressTrack);
 
         Border progressFill;
         progressFill.Height(6);
-        progressFill.CornerRadius({kPopupG2ProgressCornerRadius,
-                                   kPopupG2ProgressCornerRadius,
-                                   kPopupG2ProgressCornerRadius,
-                                   kPopupG2ProgressCornerRadius});
+        progressFill.CornerRadius(
+            {kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius,
+             kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius});
         progressFill.IsHitTestVisible(false);
         canvas.Children().Append(progressFill);
 
@@ -8783,10 +9063,9 @@ bool InitializePopupXamlHost(HWND hwnd) {
         Border progressGlowCore;
         progressGlowCore.Width(6);
         progressGlowCore.Height(6);
-        progressGlowCore.CornerRadius({kPopupG2ProgressCornerRadius,
-                                       kPopupG2ProgressCornerRadius,
-                                       kPopupG2ProgressCornerRadius,
-                                       kPopupG2ProgressCornerRadius});
+        progressGlowCore.CornerRadius(
+            {kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius,
+             kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius});
         progressGlowCore.IsHitTestVisible(false);
         progressGlowCore.Opacity(0.0);
         canvas.Children().Append(progressGlowCore);
@@ -8800,19 +9079,19 @@ bool InitializePopupXamlHost(HWND hwnd) {
         controlsPanel.Width(PopupControlsWidth());
         controlsPanel.Height(PopupControlsHeight());
 
-        Border prevButton = MakePopupXamlButton(
-            L"Popup_Prev", [] {
-                RunMediaTransportCommand(MediaTransportCommand::Previous);
-            });
+        Border prevButton = MakePopupXamlButton(L"Popup_Prev", [] {
+            RunMediaTransportCommand(MediaTransportCommand::Previous);
+        });
         Border playButton = MakePopupXamlButton(
-            L"Popup_Play", [] {
+            L"Popup_Play",
+            [] {
                 RunMediaTransportCommand(
                     MediaTransportCommand::TogglePlayPause);
-            }, true);
-        Border nextButton = MakePopupXamlButton(
-            L"Popup_Next", [] {
-                RunMediaTransportCommand(MediaTransportCommand::Next);
-            });
+            },
+            true);
+        Border nextButton = MakePopupXamlButton(L"Popup_Next", [] {
+            RunMediaTransportCommand(MediaTransportCommand::Next);
+        });
         controls::Canvas::SetLeft(prevButton, PopupButtonLeft(0));
         controls::Canvas::SetTop(prevButton, PopupButtonTop());
         controls::Canvas::SetLeft(playButton, PopupButtonLeft(1));
@@ -8858,20 +9137,22 @@ bool InitializePopupXamlHost(HWND hwnd) {
         volumeHighIcon.IsHitTestVisible(false);
         canvas.Children().Append(volumeHighIcon);
 
-        auto updateVolumeFromPointer = [](input::PointerRoutedEventArgs const& e) {
-            if (!g_popupXamlVolumeTrack) {
-                return;
-            }
-            double width = g_popupXamlVolumeTrack.ActualWidth();
-            if (width <= 0.0) {
-                return;
-            }
-            auto point = e.GetCurrentPoint(g_popupXamlVolumeTrack).Position();
-            double ratio = Clamp(point.X / width, 0.0, 1.0);
-            if (WriteDefaultOutputVolume(ratio) && g_popupXamlVolumeFill) {
-                g_popupXamlVolumeFill.Width(width * ratio);
-            }
-        };
+        auto updateVolumeFromPointer =
+            [](input::PointerRoutedEventArgs const& e) {
+                if (!g_popupXamlVolumeTrack) {
+                    return;
+                }
+                double width = g_popupXamlVolumeTrack.ActualWidth();
+                if (width <= 0.0) {
+                    return;
+                }
+                auto point =
+                    e.GetCurrentPoint(g_popupXamlVolumeTrack).Position();
+                double ratio = Clamp(point.X / width, 0.0, 1.0);
+                if (WriteDefaultOutputVolume(ratio) && g_popupXamlVolumeFill) {
+                    g_popupXamlVolumeFill.Width(width * ratio);
+                }
+            };
         volumeHitTarget.PointerPressed(
             [updateVolumeFromPointer](auto const& sender,
                                       input::PointerRoutedEventArgs const& e) {
@@ -8889,7 +9170,8 @@ bool InitializePopupXamlHost(HWND hwnd) {
         volumeHitTarget.PointerMoved(
             [updateVolumeFromPointer](auto const&,
                                       input::PointerRoutedEventArgs const& e) {
-                if (!g_popupVolumeDragging) return;
+                if (!g_popupVolumeDragging)
+                    return;
                 try {
                     updateVolumeFromPointer(e);
                     e.Handled(true);
@@ -8912,107 +9194,113 @@ bool InitializePopupXamlHost(HWND hwnd) {
                 g_popupVolumeDragging = false;
             });
 
-        progressHitTarget.PointerPressed([](auto const& sender,
-                                            input::PointerRoutedEventArgs const& e) {
-            try {
-                if (!g_popupXamlProgressTrack || PopupProgress() < 0.75) {
-                    return;
-                }
-
-                auto point = e.GetCurrentPoint(g_popupXamlProgressTrack).Position();
-                double width = g_popupXamlProgressTrack.ActualWidth();
-                double height = g_popupXamlProgressTrack.ActualHeight();
-                if (width <= 0.0) {
-                    return;
-                }
-
-                constexpr double hitPadding = 8.0;
-                if (point.X >= 0.0 && point.X <= width &&
-                    point.Y >= -hitPadding && point.Y <= height + hitPadding) {
-                    UpdatePopupSeekPreview(point.X / width);
-                    if (auto element = sender.template try_as<UIElement>()) {
-                        if (!element.CapturePointer(e.Pointer())) {
-                            EndPopupSeek(false);
-                            return;
-                        }
-                    }
-                    e.Handled(true);
-                }
-            } catch (...) {
+        progressHitTarget.PointerPressed(
+            [](auto const& sender, input::PointerRoutedEventArgs const& e) {
                 try {
-                    EndPopupSeek(false);
-                } catch (...) {
-                }
-            }
-        });
-        progressHitTarget.PointerMoved([](auto const&,
-                                          input::PointerRoutedEventArgs const& e) {
-            try {
-                if (!g_popupSeekDragging || !g_popupXamlProgressTrack) {
-                    return;
-                }
+                    if (!g_popupXamlProgressTrack || PopupProgress() < 0.75) {
+                        return;
+                    }
 
-                double width = g_popupXamlProgressTrack.ActualWidth();
-                if (width > 0.0) {
-                    auto point = e.GetCurrentPoint(g_popupXamlProgressTrack).Position();
-                    UpdatePopupSeekPreview(point.X / width);
-                    e.Handled(true);
+                    auto point =
+                        e.GetCurrentPoint(g_popupXamlProgressTrack).Position();
+                    double width = g_popupXamlProgressTrack.ActualWidth();
+                    double height = g_popupXamlProgressTrack.ActualHeight();
+                    if (width <= 0.0) {
+                        return;
+                    }
+
+                    constexpr double hitPadding = 8.0;
+                    if (point.X >= 0.0 && point.X <= width &&
+                        point.Y >= -hitPadding &&
+                        point.Y <= height + hitPadding) {
+                        UpdatePopupSeekPreview(point.X / width);
+                        if (auto element =
+                                sender.template try_as<UIElement>()) {
+                            if (!element.CapturePointer(e.Pointer())) {
+                                EndPopupSeek(false);
+                                return;
+                            }
+                        }
+                        e.Handled(true);
+                    }
+                } catch (...) {
+                    try {
+                        EndPopupSeek(false);
+                    } catch (...) {
+                    }
                 }
-            } catch (...) {
-            }
-        });
-        progressHitTarget.PointerReleased([](auto const& sender,
-                                             input::PointerRoutedEventArgs const& e) {
-            if (!g_popupSeekDragging) {
-                return;
-            }
-            try {
-                if (g_popupXamlProgressTrack) {
+            });
+        progressHitTarget.PointerMoved(
+            [](auto const&, input::PointerRoutedEventArgs const& e) {
+                try {
+                    if (!g_popupSeekDragging || !g_popupXamlProgressTrack) {
+                        return;
+                    }
+
                     double width = g_popupXamlProgressTrack.ActualWidth();
                     if (width > 0.0) {
-                        auto point = e.GetCurrentPoint(g_popupXamlProgressTrack).Position();
+                        auto point = e.GetCurrentPoint(g_popupXamlProgressTrack)
+                                         .Position();
                         UpdatePopupSeekPreview(point.X / width);
+                        e.Handled(true);
                     }
+                } catch (...) {
                 }
-            } catch (...) {
-                // Commit the last valid preview even if the final pointer sample
-                // can't be resolved while the popup is being relaid out.
-            }
-            try {
-                EndPopupSeek(true);
-            } catch (...) {
-            }
-            try {
-                if (auto element = sender.template try_as<UIElement>()) {
-                    element.ReleasePointerCapture(e.Pointer());
-                }
-                e.Handled(true);
-            } catch (...) {
-            }
-        });
-        progressHitTarget.PointerCanceled([](auto const& sender,
-                                             input::PointerRoutedEventArgs const& e) {
-            try {
+            });
+        progressHitTarget.PointerReleased(
+            [](auto const& sender, input::PointerRoutedEventArgs const& e) {
                 if (!g_popupSeekDragging) {
                     return;
                 }
-                EndPopupSeek(false);
-                if (auto element = sender.template try_as<UIElement>()) {
-                    element.ReleasePointerCapture(e.Pointer());
+                try {
+                    if (g_popupXamlProgressTrack) {
+                        double width = g_popupXamlProgressTrack.ActualWidth();
+                        if (width > 0.0) {
+                            auto point =
+                                e.GetCurrentPoint(g_popupXamlProgressTrack)
+                                    .Position();
+                            UpdatePopupSeekPreview(point.X / width);
+                        }
+                    }
+                } catch (...) {
+                    // Commit the last valid preview even if the final pointer sample
+                    // can't be resolved while the popup is being relaid out.
                 }
-                e.Handled(true);
-            } catch (...) {
-            }
-        });
-        progressHitTarget.PointerCaptureLost([](auto const&,
-                                                input::PointerRoutedEventArgs const&) {
-            try {
-                if (g_popupSeekDragging) {
+                try {
+                    EndPopupSeek(true);
+                } catch (...) {
+                }
+                try {
+                    if (auto element = sender.template try_as<UIElement>()) {
+                        element.ReleasePointerCapture(e.Pointer());
+                    }
+                    e.Handled(true);
+                } catch (...) {
+                }
+            });
+        progressHitTarget.PointerCanceled(
+            [](auto const& sender, input::PointerRoutedEventArgs const& e) {
+                try {
+                    if (!g_popupSeekDragging) {
+                        return;
+                    }
                     EndPopupSeek(false);
+                    if (auto element = sender.template try_as<UIElement>()) {
+                        element.ReleasePointerCapture(e.Pointer());
+                    }
+                    e.Handled(true);
+                } catch (...) {
                 }
-            } catch (...) {
-            }
-        });
+            });
+        progressHitTarget.PointerCaptureLost(
+            [](auto const&, input::PointerRoutedEventArgs const&) {
+                try {
+                    if (g_popupSeekDragging) {
+                        EndPopupSeek(false);
+                    }
+                } catch (...) {
+                }
+            });
 
         root.Children().Append(canvas);
         g_popupXamlSource.Content(root);
@@ -9022,9 +9310,8 @@ bool InitializePopupXamlHost(HWND hwnd) {
         // synchronously before the first frame is committed, so the popup has
         // Gaussian blur from its first visible frame.
         if (IsLiquidGlassMaterial()) {
-            backdrop.Background(
-                winrt::make<ImmediateBackdropBlurBrush>(
-                    backdrop, 25.0f, Color(0x25, 0x32, 0x32, 0x32)));
+            backdrop.Background(winrt::make<ImmediateBackdropBlurBrush>(
+                backdrop, 25.0f, Color(0x25, 0x32, 0x32, 0x32)));
         }
 
         g_popupXamlRoot = root;
@@ -9127,15 +9414,23 @@ void UpdatePopupXamlVisuals() {
 
     double dpiScale = PopupDpiScale(g_expandedPopup);
     int width = std::max(1, static_cast<int>(std::lround(widthPx / dpiScale)));
-    int height = std::max(1, static_cast<int>(std::lround(heightPx / dpiScale)));
+    int height =
+        std::max(1, static_cast<int>(std::lround(heightPx / dpiScale)));
     RECT popupScreen{0, 0, static_cast<LONG>(width), static_cast<LONG>(height)};
-    DipRect sourceRect = PopupScreenRectToLocalDip(g_popupSourceRect, popupScreenPx, dpiScale);
-    DipRect sourceArtRect = PopupScreenRectToLocalDip(g_popupSourceArtRect, popupScreenPx, dpiScale);
-    DipRect sourceTitleRect = PopupScreenRectToLocalDip(g_popupSourceTitleRect, popupScreenPx, dpiScale);
-    DipRect sourceArtistRect = PopupScreenRectToLocalDip(g_popupSourceArtistRect, popupScreenPx, dpiScale);
-    DipRect sourceProgressRect = PopupScreenRectToLocalDip(g_popupSourceProgressRect, popupScreenPx, dpiScale);
-    DipRect sourceControlsRect = PopupScreenRectToLocalDip(g_popupSourceControlsRect, popupScreenPx, dpiScale);
-    DipRect finalRectDip = PopupScreenRectToLocalDip(g_popupFinalRect, popupScreenPx, dpiScale);
+    DipRect sourceRect =
+        PopupScreenRectToLocalDip(g_popupSourceRect, popupScreenPx, dpiScale);
+    DipRect sourceArtRect = PopupScreenRectToLocalDip(g_popupSourceArtRect,
+                                                      popupScreenPx, dpiScale);
+    DipRect sourceTitleRect = PopupScreenRectToLocalDip(
+        g_popupSourceTitleRect, popupScreenPx, dpiScale);
+    DipRect sourceArtistRect = PopupScreenRectToLocalDip(
+        g_popupSourceArtistRect, popupScreenPx, dpiScale);
+    DipRect sourceProgressRect = PopupScreenRectToLocalDip(
+        g_popupSourceProgressRect, popupScreenPx, dpiScale);
+    DipRect sourceControlsRect = PopupScreenRectToLocalDip(
+        g_popupSourceControlsRect, popupScreenPx, dpiScale);
+    DipRect finalRectDip =
+        PopupScreenRectToLocalDip(g_popupFinalRect, popupScreenPx, dpiScale);
     // The expanded layout stays on the rounded-DIP grid; the compact endpoint
     // is the part that must match the native island pixel-for-pixel.
     RECT finalRect{static_cast<LONG>(std::lround(finalRectDip.left)),
@@ -9209,43 +9504,50 @@ void UpdatePopupXamlVisuals() {
     RECT targetDuration{};
     RECT targetControls{};
     CalculatePopupFinalLayout(finalRect, targetArtScreen, targetCard,
-                              targetTitle, targetArtist,
-                              targetProgress, targetElapsed, targetDuration,
-                              targetControls);
-    RECT targetBackdrop = PopupBackdropRectFromParts(targetArtScreen, targetCard);
+                              targetTitle, targetArtist, targetProgress,
+                              targetElapsed, targetDuration, targetControls);
+    RECT targetBackdrop =
+        PopupBackdropRectFromParts(targetArtScreen, targetCard);
     DipRect backdropScreen{
         LerpDouble(sourceRect.left, targetBackdrop.left, progress),
         LerpDouble(sourceRect.top, targetBackdrop.top, progress),
         LerpDouble(sourceRect.right, targetBackdrop.right, progress),
         LerpDouble(sourceRect.bottom, targetBackdrop.bottom, progress),
     };
-    double backdropWidth = std::max(1L, targetBackdrop.right - targetBackdrop.left);
-    double backdropHeight = std::max(1L, targetBackdrop.bottom - targetBackdrop.top);
+    double backdropWidth =
+        std::max(1L, targetBackdrop.right - targetBackdrop.left);
+    double backdropHeight =
+        std::max(1L, targetBackdrop.bottom - targetBackdrop.top);
     double sourceShellRadius = compactSpec.cornerRadius;
     if (g_popupXamlShadowVisual) {
         float shadowOpacity = static_cast<float>(visibilityProgress);
         g_popupXamlShadowVisual.Size({static_cast<float>(backdropWidth),
                                       static_cast<float>(backdropHeight)});
-        g_popupXamlShadowVisual.Offset({static_cast<float>(targetBackdrop.left - popupScreen.left +
-                                                           backdropScreen.left - targetBackdrop.left),
-                                        static_cast<float>(targetBackdrop.top - popupScreen.top +
-                                                           backdropScreen.top - targetBackdrop.top),
-                                        0.0f});
+        g_popupXamlShadowVisual.Offset(
+            {static_cast<float>(targetBackdrop.left - popupScreen.left +
+                                backdropScreen.left - targetBackdrop.left),
+             static_cast<float>(targetBackdrop.top - popupScreen.top +
+                                backdropScreen.top - targetBackdrop.top),
+             0.0f});
         g_popupXamlShadowVisual.Opacity(shadowOpacity);
     }
     if (g_popupXamlBackdrop) {
         try {
-            bool wantBackdropBlur =
-                IsLiquidGlassMaterial() && morphProgress > 0.55 &&
-                !g_popupRestingCompact;
+            bool wantBackdropBlur = IsLiquidGlassMaterial() &&
+                                    morphProgress > 0.55 &&
+                                    !g_popupRestingCompact;
             EnsurePopupLiquidGlassBlur(g_popupXamlBackdrop, wantBackdropBlur);
             int shadowDepth = static_cast<int>(std::lround(
-                PopupShadowDepth() * (0.25 + 1.75 * PopupShadowOpacityPercent() / 100.0)));
-            float shadowZ = PopupShadowDepth() <= 0 || PopupShadowOpacityPercent() <= 0
-                                ? 0.0f
-                                : static_cast<float>(shadowDepth * PopupShadowMorphOpacity(morphProgress));
+                PopupShadowDepth() *
+                (0.25 + 1.75 * PopupShadowOpacityPercent() / 100.0)));
+            float shadowZ =
+                PopupShadowDepth() <= 0 || PopupShadowOpacityPercent() <= 0
+                    ? 0.0f
+                    : static_cast<float>(
+                          shadowDepth * PopupShadowMorphOpacity(morphProgress));
             g_popupXamlBackdrop.Translation(
-                winrt::Windows::Foundation::Numerics::float3{0.0f, 0.0f, shadowZ});
+                winrt::Windows::Foundation::Numerics::float3{0.0f, 0.0f,
+                                                             shadowZ});
         } catch (...) {
         }
         double targetShellRadius =
@@ -9254,13 +9556,15 @@ void UpdatePopupXamlVisuals() {
                 : (IsLiquidGlassMaterial()
                        ? static_cast<double>(g_settings.liquidGlassCornerRadius)
                        : kPopupUnifiedCornerRadius);
-        double shellVisualRadius = LerpDouble(sourceShellRadius,
-                                              targetShellRadius,
-                                              morphProgress);
-        double shellRadius = Clamp(shellVisualRadius, 1.0,
-                                   std::min(backdropScreen.right - backdropScreen.left,
-                                            backdropScreen.bottom - backdropScreen.top) * 0.5);
-        g_popupXamlBackdrop.CornerRadius({shellRadius, shellRadius, shellRadius, shellRadius});
+        double shellVisualRadius =
+            LerpDouble(sourceShellRadius, targetShellRadius, morphProgress);
+        double shellRadius =
+            Clamp(shellVisualRadius, 1.0,
+                  std::min(backdropScreen.right - backdropScreen.left,
+                           backdropScreen.bottom - backdropScreen.top) *
+                      0.5);
+        g_popupXamlBackdrop.CornerRadius(
+            {shellRadius, shellRadius, shellRadius, shellRadius});
         double backdropOpacity = kPopupBackdropOpacity * visibilityProgress;
         // The compact island has no full-surface cover wash. Grow the wash
         // from zero with the same geometry progress so the p=0 popup frame is
@@ -9274,10 +9578,12 @@ void UpdatePopupXamlVisuals() {
         bool backdropCoverEnabled = PopupBackdropCoverEffectEnabled();
         if (g_popupXamlBackdropCover) {
             g_popupXamlBackdropCover.Stretch(mediax::Stretch::UniformToFill);
-            g_popupXamlBackdropCover.Opacity(backdropCoverEnabled ? washOpacity : 0.0);
+            g_popupXamlBackdropCover.Opacity(backdropCoverEnabled ? washOpacity
+                                                                  : 0.0);
         }
         if (g_popupXamlBackdropCoverFade) {
-            g_popupXamlBackdropCoverFade.Stretch(mediax::Stretch::UniformToFill);
+            g_popupXamlBackdropCoverFade.Stretch(
+                mediax::Stretch::UniformToFill);
             g_popupXamlBackdropCoverFade.Opacity(0.0);
         }
         if (g_popupXamlBackdropTint) {
@@ -9286,7 +9592,9 @@ void UpdatePopupXamlVisuals() {
             g_popupXamlBackdropTint.Opacity(SmootherStep(morphProgress));
         }
         double liquidHighlightOpacity =
-            IsLiquidGlassMaterial() ? backdropOpacity * SmootherStep(morphProgress) : 0.0;
+            IsLiquidGlassMaterial()
+                ? backdropOpacity * SmootherStep(morphProgress)
+                : 0.0;
         double liquidSurfaceHighlightOpacity =
             IsLiquidGlassMaterial()
                 ? backdropOpacity * (IsDarkModeApprox() ? 0.45 : 0.78) *
@@ -9295,7 +9603,8 @@ void UpdatePopupXamlVisuals() {
         if (g_popupXamlBackdropSurfaceHighlight) {
             g_popupXamlBackdropSurfaceHighlight.CornerRadius(
                 {shellRadius, shellRadius, shellRadius, shellRadius});
-            g_popupXamlBackdropSurfaceHighlight.Opacity(liquidSurfaceHighlightOpacity);
+            g_popupXamlBackdropSurfaceHighlight.Opacity(
+                liquidSurfaceHighlightOpacity);
         }
         if (g_popupXamlBackdropRimHighlight) {
             g_popupXamlBackdropRimHighlight.CornerRadius(
@@ -9305,10 +9614,8 @@ void UpdatePopupXamlVisuals() {
                                         : Thickness{0.0, 0.0, 0.0, 0.0});
             g_popupXamlBackdropRimHighlight.Opacity(liquidHighlightOpacity);
         }
-        ApplyLayoutRect(g_popupXamlBackdrop,
-                        g_popupXamlBackdropScale,
-                        g_popupXamlBackdropTranslate,
-                        backdropScreen,
+        ApplyLayoutRect(g_popupXamlBackdrop, g_popupXamlBackdropScale,
+                        g_popupXamlBackdropTranslate, backdropScreen,
                         popupScreen);
     }
     DipRect artScreen{
@@ -9317,31 +9624,29 @@ void UpdatePopupXamlVisuals() {
         LerpDouble(sourceArtRect.right, targetArtScreen.right, progress),
         LerpDouble(sourceArtRect.bottom, targetArtScreen.bottom, progress),
     };
-    double popupArtTargetSize =
-        static_cast<double>(std::max(1L, targetArtScreen.right - targetArtScreen.left));
-    double popupArtTargetRadius = std::min(
-        kPopupArtworkCornerRadius, popupArtTargetSize * 0.5);
-    double sourceArtRadius = SourceScaledRadius(compactSpec.artCornerRadius,
-                                                compactSpec.artSize,
-                                                sourceArtRect);
-    double popupArtVisualRadius = LerpDouble(sourceArtRadius,
-                                             popupArtTargetRadius,
-                                             morphProgress);
+    double popupArtTargetSize = static_cast<double>(
+        std::max(1L, targetArtScreen.right - targetArtScreen.left));
+    double popupArtTargetRadius =
+        std::min(kPopupArtworkCornerRadius, popupArtTargetSize * 0.5);
+    double sourceArtRadius = SourceScaledRadius(
+        compactSpec.artCornerRadius, compactSpec.artSize, sourceArtRect);
+    double popupArtVisualRadius =
+        LerpDouble(sourceArtRadius, popupArtTargetRadius, morphProgress);
     double popupArtRadius = Clamp(popupArtVisualRadius, 1.0,
                                   std::min(artScreen.right - artScreen.left,
-                                           artScreen.bottom - artScreen.top) * 0.5);
+                                           artScreen.bottom - artScreen.top) *
+                                      0.5);
     g_popupXamlArtFrame.CornerRadius(
         {popupArtRadius, popupArtRadius, popupArtRadius, popupArtRadius});
     g_popupXamlArtFrame.BorderThickness({0.0, 0.0, 0.0, 0.0});
-    g_popupXamlArtFrame.BorderBrush(
-        Brush(Color(0x00, 0x00, 0x00, 0x00)));
+    g_popupXamlArtFrame.BorderBrush(Brush(Color(0x00, 0x00, 0x00, 0x00)));
     g_popupXamlArtFrame.Clip(nullptr);
     // The frame itself is compositor-scaled from the final layout, so its
     // contents must remain at that same fixed base size.
-    double artWidth = std::max(
-        1.0, static_cast<double>(artScreen.right - artScreen.left));
-    double artHeight = std::max(
-        1.0, static_cast<double>(artScreen.bottom - artScreen.top));
+    double artWidth =
+        std::max(1.0, static_cast<double>(artScreen.right - artScreen.left));
+    double artHeight =
+        std::max(1.0, static_cast<double>(artScreen.bottom - artScreen.top));
     if (g_popupXamlArtClipGeometry) {
         g_popupXamlArtClipGeometry.Size(
             {static_cast<float>(artWidth), static_cast<float>(artHeight)});
@@ -9349,9 +9654,9 @@ void UpdatePopupXamlVisuals() {
             {static_cast<float>(popupArtRadius),
              static_cast<float>(popupArtRadius)});
     }
-    double sourceArtOverscan = std::min(
-        SourceScaledRadius(1.0, g_layout.artSize, sourceArtRect),
-        std::min(artWidth, artHeight) * 0.12);
+    double sourceArtOverscan =
+        std::min(SourceScaledRadius(1.0, g_layout.artSize, sourceArtRect),
+                 std::min(artWidth, artHeight) * 0.12);
     double artOverscan = LerpDouble(sourceArtOverscan, 0.0, morphProgress);
     if (auto artHost = g_popupXamlArtFrame.Child().try_as<FrameworkElement>()) {
         artHost.Width(artWidth);
@@ -9364,8 +9669,7 @@ void UpdatePopupXamlVisuals() {
         }
         image.Width(artWidth + artOverscan * 2.0);
         image.Height(artHeight + artOverscan * 2.0);
-        image.Margin({-artOverscan, -artOverscan,
-                      -artOverscan, -artOverscan});
+        image.Margin({-artOverscan, -artOverscan, -artOverscan, -artOverscan});
         image.Stretch(mediax::Stretch::UniformToFill);
     };
     alignPopupArtImage(g_popupXamlArtFade);
@@ -9373,11 +9677,8 @@ void UpdatePopupXamlVisuals() {
     // Artwork exists in both layouts, so fading it before the compact handoff
     // creates a blank-cover flash. Keep it opaque and only morph its bounds.
     g_popupXamlArtFrame.Opacity(1.0);
-    ApplyLayoutRect(g_popupXamlArtFrame,
-                    g_popupXamlArtScale,
-                    g_popupXamlArtTranslate,
-                    artScreen,
-                    popupScreen);
+    ApplyLayoutRect(g_popupXamlArtFrame, g_popupXamlArtScale,
+                    g_popupXamlArtTranslate, artScreen, popupScreen);
 
     DipRect cardScreen{
         LerpDouble(sourceRect.left, targetCard.left, progress),
@@ -9390,39 +9691,33 @@ void UpdatePopupXamlVisuals() {
             ? PopupG2CornerRadius(targetCard.right - targetCard.left,
                                   targetCard.bottom - targetCard.top)
             : kPopupInnerPanelCornerRadius;
-    double panelVisualRadius = LerpDouble(sourceShellRadius,
-                                          panelTargetRadius,
-                                          morphProgress);
+    double panelVisualRadius =
+        LerpDouble(sourceShellRadius, panelTargetRadius, morphProgress);
     double panelRadius = Clamp(panelVisualRadius, 1.0,
                                std::min(cardScreen.right - cardScreen.left,
-                                        cardScreen.bottom - cardScreen.top) * 0.5);
-    double expandedLayerOpacity = g_popupClosing ? closingTailFade : morphProgress;
+                                        cardScreen.bottom - cardScreen.top) *
+                                   0.5);
+    double expandedLayerOpacity =
+        g_popupClosing ? closingTailFade : morphProgress;
     double cardOpacity = expandedLayerOpacity;
     if (g_popupXamlPanelCoverFrame) {
-        g_popupXamlPanelCoverFrame.CornerRadius({panelRadius, panelRadius, panelRadius, panelRadius});
+        g_popupXamlPanelCoverFrame.CornerRadius(
+            {panelRadius, panelRadius, panelRadius, panelRadius});
         g_popupXamlPanelCoverFrame.Opacity(0.0);
-        ApplyLayoutRect(g_popupXamlPanelCoverFrame,
-                        g_popupXamlPanelCoverScale,
-                        g_popupXamlPanelCoverTranslate,
-                        cardScreen,
+        ApplyLayoutRect(g_popupXamlPanelCoverFrame, g_popupXamlPanelCoverScale,
+                        g_popupXamlPanelCoverTranslate, cardScreen,
                         popupScreen);
     }
-    g_popupXamlPanel.CornerRadius({panelRadius, panelRadius, panelRadius, panelRadius});
+    g_popupXamlPanel.CornerRadius(
+        {panelRadius, panelRadius, panelRadius, panelRadius});
     g_popupXamlPanel.Opacity(g_settings.compact ? 0.0 : cardOpacity);
-    ApplyLayoutRect(g_popupXamlPanel,
-                    g_popupXamlPanelScale,
-                    g_popupXamlPanelTranslate,
-                    cardScreen,
-                    popupScreen);
+    ApplyLayoutRect(g_popupXamlPanel, g_popupXamlPanelScale,
+                    g_popupXamlPanelTranslate, cardScreen, popupScreen);
 
-    auto placeText = [&](FrameworkElement const& host,
-                         TextBlock const& text,
-                         Border const& leftFade,
-                         Border const& rightFade,
-                         DipRect const& source,
-                         RECT const& target,
-                         double compactSize,
-                         double expandedSize) {
+    auto placeText = [&](FrameworkElement const& host, TextBlock const& text,
+                         Border const& leftFade, Border const& rightFade,
+                         DipRect const& source, RECT const& target,
+                         double compactSize, double expandedSize) {
         if (!host || !text) {
             return;
         }
@@ -9456,14 +9751,16 @@ void UpdatePopupXamlVisuals() {
         controls::Canvas::SetTop(host, screen.top - popupScreen.top);
     };
     placeText(g_popupXamlOutgoingTitleHost, g_popupXamlOutgoingTitle,
-              g_popupXamlOutgoingTitleLeftFade, g_popupXamlOutgoingTitleRightFade,
-              sourceTitleRect, targetTitle, compactSpec.titleFontSize, 16);
+              g_popupXamlOutgoingTitleLeftFade,
+              g_popupXamlOutgoingTitleRightFade, sourceTitleRect, targetTitle,
+              compactSpec.titleFontSize, 16);
     placeText(g_popupXamlOutgoingArtistHost, g_popupXamlOutgoingArtist,
-              g_popupXamlOutgoingArtistLeftFade, g_popupXamlOutgoingArtistRightFade,
-              sourceArtistRect, targetArtist, compactSpec.artistFontSize, 13);
-    placeText(g_popupXamlTitleHost, g_popupXamlTitle,
-              g_popupXamlTitleLeftFade, g_popupXamlTitleRightFade,
-              sourceTitleRect, targetTitle, compactSpec.titleFontSize, 16);
+              g_popupXamlOutgoingArtistLeftFade,
+              g_popupXamlOutgoingArtistRightFade, sourceArtistRect,
+              targetArtist, compactSpec.artistFontSize, 13);
+    placeText(g_popupXamlTitleHost, g_popupXamlTitle, g_popupXamlTitleLeftFade,
+              g_popupXamlTitleRightFade, sourceTitleRect, targetTitle,
+              compactSpec.titleFontSize, 16);
     placeText(g_popupXamlArtistHost, g_popupXamlArtist,
               g_popupXamlArtistLeftFade, g_popupXamlArtistRightFade,
               sourceArtistRect, targetArtist, compactSpec.artistFontSize, 13);
@@ -9473,20 +9770,18 @@ void UpdatePopupXamlVisuals() {
         g_popupRestingCompact || g_popupClosing || morphProgress < 0.999;
     double openingProgressHandoff =
         !g_popupClosing && !g_popupRestingCompact
-            ? SmootherStep(Clamp((morphProgress - 0.82) / 0.18,
-                                 0.0, 1.0))
+            ? SmootherStep(Clamp((morphProgress - 0.82) / 0.18, 0.0, 1.0))
             : 0.0;
     double indicatorMorphOpacity =
         g_popupClosing || g_popupRestingCompact
             ? 1.0
-            : (progressToIndicatorMorphActive
-                   ? 1.0 - openingProgressHandoff
-                   : 0.0);
+            : (progressToIndicatorMorphActive ? 1.0 - openingProgressHandoff
+                                              : 0.0);
     if (g_popupXamlPlaybackIndicator) {
-        double indicatorWidth = std::max(
-            1.0, sourceIndicatorRect.right - sourceIndicatorRect.left);
-        double indicatorHeight = std::max(
-            1.0, sourceIndicatorRect.bottom - sourceIndicatorRect.top);
+        double indicatorWidth =
+            std::max(1.0, sourceIndicatorRect.right - sourceIndicatorRect.left);
+        double indicatorHeight =
+            std::max(1.0, sourceIndicatorRect.bottom - sourceIndicatorRect.top);
         double left = sourceIndicatorRect.left;
         double top = sourceIndicatorRect.top;
         g_popupXamlPlaybackIndicator.Width(indicatorWidth);
@@ -9500,15 +9795,14 @@ void UpdatePopupXamlVisuals() {
         double indicatorReveal = indicatorMorphOpacity;
         g_popupXamlPlaybackIndicator.Opacity(indicatorReveal);
         if (g_popupXamlPlaybackRevealClip) {
-            double clipWidth =
-                std::max(16.0, g_layout.playbackIndicatorWidth);
+            double clipWidth = std::max(16.0, g_layout.playbackIndicatorWidth);
             double clipHeight =
                 std::max(12.0, g_layout.playbackIndicatorHeight);
             double visibleWidth = clipWidth * indicatorReveal;
-            g_popupXamlPlaybackRevealClip.Rect({
-                static_cast<float>(clipWidth - visibleWidth), 0,
-                static_cast<float>(visibleWidth),
-                static_cast<float>(clipHeight)});
+            g_popupXamlPlaybackRevealClip.Rect(
+                {static_cast<float>(clipWidth - visibleWidth), 0,
+                 static_cast<float>(visibleWidth),
+                 static_cast<float>(clipHeight)});
         }
     }
     if (g_popupXamlCompactHoverScale) {
@@ -9527,12 +9821,18 @@ void UpdatePopupXamlVisuals() {
     double textOpacity = PopupClosingTextOpacity(morphProgress);
     g_popupTextBaseOpacity = textOpacity;
     if (!g_popupTextTransitionActive) {
-        if (g_popupXamlTitle) g_popupXamlTitle.Opacity(textOpacity);
-        if (g_popupXamlArtist) g_popupXamlArtist.Opacity(textOpacity);
-        if (g_popupXamlTitleTranslate) g_popupXamlTitleTranslate.X(0.0);
-        if (g_popupXamlArtistTranslate) g_popupXamlArtistTranslate.X(0.0);
-        if (g_popupXamlOutgoingTitle) g_popupXamlOutgoingTitle.Opacity(0.0);
-        if (g_popupXamlOutgoingArtist) g_popupXamlOutgoingArtist.Opacity(0.0);
+        if (g_popupXamlTitle)
+            g_popupXamlTitle.Opacity(textOpacity);
+        if (g_popupXamlArtist)
+            g_popupXamlArtist.Opacity(textOpacity);
+        if (g_popupXamlTitleTranslate)
+            g_popupXamlTitleTranslate.X(0.0);
+        if (g_popupXamlArtistTranslate)
+            g_popupXamlArtistTranslate.X(0.0);
+        if (g_popupXamlOutgoingTitle)
+            g_popupXamlOutgoingTitle.Opacity(0.0);
+        if (g_popupXamlOutgoingArtist)
+            g_popupXamlOutgoingArtist.Opacity(0.0);
         ApplyPopupTextForegrounds(false);
         SetPopupTextEdgeFadeOpacity(0.0);
     }
@@ -9553,7 +9853,8 @@ void UpdatePopupXamlVisuals() {
     double buttonProgress = controlsProgress;
     bool showControls = controlsOpacity > 0.002;
 
-    auto lerpRect = [&](DipRect const& source, RECT const& target, double amount) {
+    auto lerpRect = [&](DipRect const& source, RECT const& target,
+                        double amount) {
         return DipRect{LerpDouble(source.left, target.left, amount),
                        LerpDouble(source.top, target.top, amount),
                        LerpDouble(source.right, target.right, amount),
@@ -9569,10 +9870,8 @@ void UpdatePopupXamlVisuals() {
     DipRect progressSource = sourceIndicatorRect;
     if (progressSource.right <= progressSource.left ||
         progressSource.bottom <= progressSource.top) {
-        progressSource = {sourceCenterX - 10,
-                          sourceCenterY - 2,
-                          sourceCenterX + 10,
-                          sourceCenterY + 2};
+        progressSource = {sourceCenterX - 10, sourceCenterY - 2,
+                          sourceCenterX + 10, sourceCenterY + 2};
     } else {
         double indicatorCenterY =
             (progressSource.top + progressSource.bottom) * 0.5;
@@ -9580,35 +9879,53 @@ void UpdatePopupXamlVisuals() {
         progressSource.top = indicatorCenterY - seedHeight * 0.5;
         progressSource.bottom = indicatorCenterY + seedHeight * 0.5;
     }
-    DipRect progressScreen = lerpRect(progressSource, targetProgress, controlsProgress);
+    DipRect progressScreen =
+        lerpRect(progressSource, targetProgress, controlsProgress);
     // Keep a clearly visible colored seed almost all the way to the compact
     // endpoint. Only hand it to the five bars after it has actually arrived.
     double progressMorphOpacity = controlsOpacity;
     double progressTrackOpacity = controlsOpacity;
     double progressRatio = 0.0;
     if (g_popupXamlProgress && g_popupXamlProgress.Maximum() > 0.0) {
-        progressRatio = Clamp(g_popupXamlProgress.Value() / g_popupXamlProgress.Maximum(), 0.0, 1.0);
-        g_popupXamlProgress.Visibility(showControls ? Visibility::Visible : Visibility::Collapsed);
+        progressRatio =
+            Clamp(g_popupXamlProgress.Value() / g_popupXamlProgress.Maximum(),
+                  0.0, 1.0);
+        g_popupXamlProgress.Visibility(showControls ? Visibility::Visible
+                                                    : Visibility::Collapsed);
         g_popupXamlProgress.Opacity(0.0);
-        g_popupXamlProgress.Width(std::max(1.0, progressScreen.right - progressScreen.left));
-        g_popupXamlProgress.Height(std::max(1.0, progressScreen.bottom - progressScreen.top));
+        g_popupXamlProgress.Width(
+            std::max(1.0, progressScreen.right - progressScreen.left));
+        g_popupXamlProgress.Height(
+            std::max(1.0, progressScreen.bottom - progressScreen.top));
         if (g_popupXamlProgressScale) {
             g_popupXamlProgressScale.ScaleX(controlsScale);
             g_popupXamlProgressScale.ScaleY(controlsScale);
         }
-        controls::Canvas::SetLeft(g_popupXamlProgress, progressScreen.left - popupScreen.left);
-        controls::Canvas::SetTop(g_popupXamlProgress, progressScreen.top - popupScreen.top);
+        controls::Canvas::SetLeft(g_popupXamlProgress,
+                                  progressScreen.left - popupScreen.left);
+        controls::Canvas::SetTop(g_popupXamlProgress,
+                                 progressScreen.top - popupScreen.top);
     }
-    double progressWidth = std::max(1.0, progressScreen.right - progressScreen.left) * controlsScale;
-    double progressHeight = std::max(1.0, progressScreen.bottom - progressScreen.top) * controlsScale;
-    double progressLeft = (progressScreen.left - popupScreen.left) +
-                          (std::max(1.0, progressScreen.right - progressScreen.left) - progressWidth) * 0.5;
-    double progressTop = (progressScreen.top - popupScreen.top) +
-                         (std::max(1.0, progressScreen.bottom - progressScreen.top) - progressHeight) * 0.5;
+    double progressWidth =
+        std::max(1.0, progressScreen.right - progressScreen.left) *
+        controlsScale;
+    double progressHeight =
+        std::max(1.0, progressScreen.bottom - progressScreen.top) *
+        controlsScale;
+    double progressLeft =
+        (progressScreen.left - popupScreen.left) +
+        (std::max(1.0, progressScreen.right - progressScreen.left) -
+         progressWidth) *
+            0.5;
+    double progressTop =
+        (progressScreen.top - popupScreen.top) +
+        (std::max(1.0, progressScreen.bottom - progressScreen.top) -
+         progressHeight) *
+            0.5;
     if (g_popupXamlProgressTrack) {
-        g_popupXamlProgressTrack.Visibility(
-            progressMorphOpacity > 0.002 ? Visibility::Visible
-                                         : Visibility::Collapsed);
+        g_popupXamlProgressTrack.Visibility(progressMorphOpacity > 0.002
+                                                ? Visibility::Visible
+                                                : Visibility::Collapsed);
         g_popupXamlProgressTrack.Opacity(progressTrackOpacity);
         g_popupXamlProgressTrack.Width(progressWidth);
         g_popupXamlProgressTrack.Height(std::max(4.0, progressHeight));
@@ -9639,15 +9956,15 @@ void UpdatePopupXamlVisuals() {
                 : (progressToIndicatorMorphActive
                        ? progressMorphOpacity * openingProgressHandoff
                        : progressMorphOpacity);
-        g_popupXamlProgressFill.Visibility(
-            fillOpacity > 0.002 && hasAnyProgress
-                ? Visibility::Visible
-                : Visibility::Collapsed);
+        g_popupXamlProgressFill.Visibility(fillOpacity > 0.002 && hasAnyProgress
+                                               ? Visibility::Visible
+                                               : Visibility::Collapsed);
         g_popupXamlProgressFill.Opacity(fillOpacity);
         g_popupXamlProgressFill.Width(fillWidth);
         g_popupXamlProgressFill.Height(progressThickness);
         double fillRadius = kPopupG2ProgressCornerRadius;
-        g_popupXamlProgressFill.CornerRadius({fillRadius, fillRadius, fillRadius, fillRadius});
+        g_popupXamlProgressFill.CornerRadius(
+            {fillRadius, fillRadius, fillRadius, fillRadius});
         controls::Canvas::SetLeft(g_popupXamlProgressFill, progressLeft);
         controls::Canvas::SetTop(g_popupXamlProgressFill, progressTop);
     }
@@ -9656,14 +9973,16 @@ void UpdatePopupXamlVisuals() {
     // colored progress fill itself: at the expanded endpoint they are wide,
     // gapless slices of one pill; while collapsing they travel together,
     // separate, narrow and grow into their frozen compact heights.
-    if (g_popupXamlPlaybackIndicator &&
-        g_popupXamlPlaybackBars.size() == 5 &&
+    if (g_popupXamlPlaybackIndicator && g_popupXamlPlaybackBars.size() == 5 &&
         progressToIndicatorMorphActive) {
-        double targetTrackWidth =
-            std::max(1.0, static_cast<double>(targetProgress.right - targetProgress.left));
-        double targetFillWidth = std::max(4.0, targetTrackWidth * progressRatio);
+        double targetTrackWidth = std::max(
+            1.0,
+            static_cast<double>(targetProgress.right - targetProgress.left));
+        double targetFillWidth =
+            std::max(4.0, targetTrackWidth * progressRatio);
         double targetCenterY =
-            (static_cast<double>(targetProgress.top) + targetProgress.bottom) * 0.5;
+            (static_cast<double>(targetProgress.top) + targetProgress.bottom) *
+            0.5;
         double expandedSeedHeight = std::max(
             4.0,
             static_cast<double>(targetProgress.bottom - targetProgress.top));
@@ -9692,34 +10011,30 @@ void UpdatePopupXamlVisuals() {
         g_popupXamlPlaybackIndicator.Width(indicatorWidth);
         g_popupXamlPlaybackIndicator.Height(indicatorHeight);
         g_popupXamlPlaybackIndicator.Opacity(indicatorMorphOpacity);
-        controls::Canvas::SetLeft(
-            g_popupXamlPlaybackIndicator,
-            indicatorScreen.left - popupScreen.left);
-        controls::Canvas::SetTop(
-            g_popupXamlPlaybackIndicator,
-            indicatorScreen.top - popupScreen.top);
+        controls::Canvas::SetLeft(g_popupXamlPlaybackIndicator,
+                                  indicatorScreen.left - popupScreen.left);
+        controls::Canvas::SetTop(g_popupXamlPlaybackIndicator,
+                                 indicatorScreen.top - popupScreen.top);
         controls::Canvas::SetZIndex(g_popupXamlPlaybackIndicator, 20);
         if (g_popupXamlPlaybackRevealClip) {
             g_popupXamlPlaybackRevealClip.Rect(
-                {0.0f, 0.0f,
-                 static_cast<float>(indicatorWidth),
+                {0.0f, 0.0f, static_cast<float>(indicatorWidth),
                  static_cast<float>(indicatorHeight)});
         }
 
         double splitProgress = 1.0 - morphProgress;
         double compactGap = compactSpec.playbackBarGap;
         double gap = compactGap * splitProgress;
-        double compactBarsWidth = 5.0 *
-            (compactSpec.playbackBarWidth + compactGap);
+        double compactBarsWidth =
+            5.0 * (compactSpec.playbackBarWidth + compactGap);
         double compactOuterPadding =
-            std::max(0.0,
-                     (std::max(1.0,
-                               sourceIndicatorRect.right - sourceIndicatorRect.left) -
-                      compactBarsWidth) * 0.5);
+            std::max(0.0, (std::max(1.0, sourceIndicatorRect.right -
+                                             sourceIndicatorRect.left) -
+                           compactBarsWidth) *
+                              0.5);
         double outerPadding = compactOuterPadding * splitProgress;
         double barWidth = std::max(
-            0.8,
-            (indicatorWidth - outerPadding * 2.0 - gap * 5.0) / 5.0);
+            0.8, (indicatorWidth - outerPadding * 2.0 - gap * 5.0) / 5.0);
 
         for (size_t i = 0; i < 5; ++i) {
             double compactHeight =
@@ -9733,19 +10048,15 @@ void UpdatePopupXamlVisuals() {
 
             double compactRadius = barWidth * 0.5;
             double seedRadius = expandedSeedHeight * 0.5;
-            double topLeft = LerpDouble(
-                i == 0 ? seedRadius : 0.0,
-                compactRadius, splitProgress);
-            double topRight = LerpDouble(
-                i == 4 ? seedRadius : 0.0,
-                compactRadius, splitProgress);
+            double topLeft = LerpDouble(i == 0 ? seedRadius : 0.0,
+                                        compactRadius, splitProgress);
+            double topRight = LerpDouble(i == 4 ? seedRadius : 0.0,
+                                         compactRadius, splitProgress);
             double bottomRight = topRight;
             double bottomLeft = topLeft;
-            bar.CornerRadius(
-                {topLeft, topRight, bottomRight, bottomLeft});
+            bar.CornerRadius({topLeft, topRight, bottomRight, bottomLeft});
             double compactOpacity =
-                i == 0 || i == 4 ? 0.86
-                                 : (i == 1 || i == 3 ? 0.94 : 1.0);
+                i == 0 || i == 4 ? 0.86 : (i == 1 || i == 3 ? 0.94 : 1.0);
             bar.Opacity(LerpDouble(1.0, compactOpacity, splitProgress));
             g_popupPlaybackBarHeights[i] = barHeight;
         }
@@ -9774,15 +10085,14 @@ void UpdatePopupXamlVisuals() {
         g_popupXamlProgressGlowCore.Opacity(0.0);
     }
 
-    auto placeTimeText = [&](TextBlock const& text,
-                             DipRect const& source,
-                             RECT const& target,
-                             bool alignRight) {
+    auto placeTimeText = [&](TextBlock const& text, DipRect const& source,
+                             RECT const& target, bool alignRight) {
         if (!text) {
             return;
         }
         DipRect screen = lerpRect(source, target, controlsProgress);
-        text.Visibility(showControls ? Visibility::Visible : Visibility::Collapsed);
+        text.Visibility(showControls ? Visibility::Visible
+                                     : Visibility::Collapsed);
         text.Opacity(controlsOpacity);
         text.Width(std::max(1.0, screen.right - screen.left));
         text.Height(std::max(1.0, screen.bottom - screen.top));
@@ -9792,14 +10102,10 @@ void UpdatePopupXamlVisuals() {
         controls::Canvas::SetTop(text, screen.top - popupScreen.top);
     };
 
-    DipRect elapsedSource{progressSource.left,
-                          progressSource.bottom + 2,
-                          progressSource.left + 12,
-                          progressSource.bottom + 16};
-    DipRect durationSource{progressSource.right - 12,
-                           progressSource.bottom + 2,
-                           progressSource.right,
-                           progressSource.bottom + 16};
+    DipRect elapsedSource{progressSource.left, progressSource.bottom + 2,
+                          progressSource.left + 12, progressSource.bottom + 16};
+    DipRect durationSource{progressSource.right - 12, progressSource.bottom + 2,
+                           progressSource.right, progressSource.bottom + 16};
     placeTimeText(g_popupXamlElapsed, elapsedSource, targetElapsed, false);
     placeTimeText(g_popupXamlDuration, durationSource, targetDuration, true);
 
@@ -9808,20 +10114,22 @@ void UpdatePopupXamlVisuals() {
     DipRect controlsSource = sourceControlsRect;
     if (controlsSource.right <= controlsSource.left ||
         controlsSource.bottom <= controlsSource.top) {
-        controlsSource = {sourceCenterX - 14,
-                          sourceCenterY - 10,
-                          sourceCenterX + 14,
-                          sourceCenterY + 10};
+        controlsSource = {sourceCenterX - 14, sourceCenterY - 10,
+                          sourceCenterX + 14, sourceCenterY + 10};
     }
-    DipRect controlsScreen = lerpRect(controlsSource, targetControls, controlsProgress);
+    DipRect controlsScreen =
+        lerpRect(controlsSource, targetControls, controlsProgress);
     if (g_popupXamlControls) {
-        g_popupXamlControls.Visibility(showControls ? Visibility::Visible : Visibility::Collapsed);
+        g_popupXamlControls.Visibility(showControls ? Visibility::Visible
+                                                    : Visibility::Collapsed);
         g_popupXamlControls.Opacity(controlsOpacity);
         g_popupXamlControls.Width(controlsWidth);
         g_popupXamlControls.Height(controlsHeight);
 
-        double screenWidth = std::max(1.0, controlsScreen.right - controlsScreen.left);
-        double screenHeight = std::max(1.0, controlsScreen.bottom - controlsScreen.top);
+        double screenWidth =
+            std::max(1.0, controlsScreen.right - controlsScreen.left);
+        double screenHeight =
+            std::max(1.0, controlsScreen.bottom - controlsScreen.top);
         double left = controlsScreen.left - popupScreen.left +
                       (screenWidth - controlsWidth) * 0.5;
         double top = controlsScreen.top - popupScreen.top +
@@ -9837,18 +10145,18 @@ void UpdatePopupXamlVisuals() {
         int index = 0;
         for (auto const& child : g_popupXamlControls.Children()) {
             if (auto buttonSurface = child.try_as<Border>()) {
-                double buttonWidth = LerpDouble(32.0,
-                                                PopupButtonWidth(),
-                                                buttonProgress);
-                double buttonHeight = LerpDouble(28.0,
-                                                 PopupButtonHeight(),
-                                                 buttonProgress);
-                double finalButtonLeft = PopupButtonLeft(index) +
+                double buttonWidth =
+                    LerpDouble(32.0, PopupButtonWidth(), buttonProgress);
+                double buttonHeight =
+                    LerpDouble(28.0, PopupButtonHeight(), buttonProgress);
+                double finalButtonLeft =
+                    PopupButtonLeft(index) +
                     (PopupButtonWidth() - buttonWidth) * 0.5;
-                double finalButtonTop = PopupButtonTop() +
+                double finalButtonTop =
+                    PopupButtonTop() +
                     (PopupButtonHeight() - buttonHeight) * 0.5;
-                double sourceGroupWidth = std::max(1.0,
-                    controlsSource.right - controlsSource.left);
+                double sourceGroupWidth =
+                    std::max(1.0, controlsSource.right - controlsSource.left);
                 double buttonCount = std::max(
                     1.0,
                     static_cast<double>(g_popupXamlControls.Children().Size()));
@@ -9859,9 +10167,11 @@ void UpdatePopupXamlVisuals() {
                     (sourceSlotWidth - buttonWidth) * 0.5;
                 double sourceButtonTop =
                     controlsHeight * 0.5 - buttonHeight * 0.5;
-                double buttonLeft = sourceButtonLeft +
+                double buttonLeft =
+                    sourceButtonLeft +
                     (finalButtonLeft - sourceButtonLeft) * buttonProgress;
-                double buttonTop = sourceButtonTop +
+                double buttonTop =
+                    sourceButtonTop +
                     (finalButtonTop - sourceButtonTop) * buttonProgress;
                 controls::Canvas::SetLeft(buttonSurface, buttonLeft);
                 controls::Canvas::SetTop(buttonSurface, buttonTop);
@@ -9869,7 +10179,8 @@ void UpdatePopupXamlVisuals() {
                 buttonSurface.Height(buttonHeight);
                 buttonSurface.Opacity(1.0);
                 buttonSurface.Visibility(Visibility::Visible);
-                if (auto icon = buttonSurface.Child().try_as<controls::FontIcon>()) {
+                if (auto icon =
+                        buttonSurface.Child().try_as<controls::FontIcon>()) {
                     icon.Visibility(Visibility::Visible);
                     icon.Opacity(1.0);
                     icon.Width(buttonWidth);
@@ -9877,7 +10188,8 @@ void UpdatePopupXamlVisuals() {
                     icon.Margin({0, 0, 0, 0});
                     icon.HorizontalAlignment(HorizontalAlignment::Center);
                     icon.VerticalAlignment(VerticalAlignment::Center);
-                } else if (auto text = buttonSurface.Child().try_as<TextBlock>()) {
+                } else if (auto text =
+                               buttonSurface.Child().try_as<TextBlock>()) {
                     text.Visibility(Visibility::Visible);
                     text.Opacity(1.0);
                     text.Width(buttonWidth);
@@ -9891,50 +10203,49 @@ void UpdatePopupXamlVisuals() {
 
     // System volume row from the reference, without the AirPlay capsule.
     double volumeOpacity = controlsOpacity;
-    RECT volumeTarget{
-        targetCard.left + 46,
-        targetCard.top + 218,
-        targetCard.right - 46,
-        targetCard.top + 224};
-    DipRect volumeSource{
-        sourceCenterX - 1,
-        sourceCenterY - 1,
-        sourceCenterX + 1,
-        sourceCenterY + 1};
-    DipRect volumeScreen = lerpRect(volumeSource, volumeTarget, controlsProgress);
+    RECT volumeTarget{targetCard.left + 46, targetCard.top + 218,
+                      targetCard.right - 46, targetCard.top + 224};
+    DipRect volumeSource{sourceCenterX - 1, sourceCenterY - 1,
+                         sourceCenterX + 1, sourceCenterY + 1};
+    DipRect volumeScreen =
+        lerpRect(volumeSource, volumeTarget, controlsProgress);
     double volumeTop = volumeScreen.top;
     double volumeLeft = volumeScreen.left;
     double volumeRight = volumeScreen.right;
     double volumeWidth = std::max(1.0, volumeRight - volumeLeft);
-    auto setVolumeElement = [&](FrameworkElement const& element,
-                                double left, double top,
-                                double width, double height) {
-        if (!element) return;
-        element.Visibility(showControls ? Visibility::Visible : Visibility::Collapsed);
+    auto setVolumeElement = [&](FrameworkElement const& element, double left,
+                                double top, double width, double height) {
+        if (!element)
+            return;
+        element.Visibility(showControls ? Visibility::Visible
+                                        : Visibility::Collapsed);
         element.Opacity(volumeOpacity);
         element.Width(width);
         element.Height(height);
         controls::Canvas::SetLeft(element, left - popupScreen.left);
         controls::Canvas::SetTop(element, top - popupScreen.top);
     };
-    setVolumeElement(g_popupXamlVolumeTrack,
-                     volumeLeft, volumeTop, volumeWidth, 6.0);
-    setVolumeElement(g_popupXamlVolumeFill,
-                     volumeLeft, volumeTop,
+    setVolumeElement(g_popupXamlVolumeTrack, volumeLeft, volumeTop, volumeWidth,
+                     6.0);
+    setVolumeElement(g_popupXamlVolumeFill, volumeLeft, volumeTop,
                      volumeWidth * Clamp(g_popupSystemVolume, 0.0, 1.0), 6.0);
-    setVolumeElement(g_popupXamlVolumeHitTarget,
-                     volumeLeft, volumeTop - 11.0, volumeWidth, 28.0);
+    setVolumeElement(g_popupXamlVolumeHitTarget, volumeLeft, volumeTop - 11.0,
+                     volumeWidth, 28.0);
     double iconSpread = 29.0 * controlsProgress;
-    setVolumeElement(g_popupXamlVolumeLowIcon,
-                     volumeLeft - iconSpread, volumeTop - 7.0, 20.0, 20.0);
-    setVolumeElement(g_popupXamlVolumeHighIcon,
-                     volumeRight + iconSpread - 27.0, volumeTop - 9.0, 27.0, 24.0);
+    setVolumeElement(g_popupXamlVolumeLowIcon, volumeLeft - iconSpread,
+                     volumeTop - 7.0, 20.0, 20.0);
+    setVolumeElement(g_popupXamlVolumeHighIcon, volumeRight + iconSpread - 27.0,
+                     volumeTop - 9.0, 27.0, 24.0);
 
     ApplyPopupMediaTransitionVisuals();
 }
 
-bool IsInsideRoundedPopupSample(double x, double y, int width, int height,
-                                double radius, double inset) {
+bool IsInsideRoundedPopupSample(double x,
+                                double y,
+                                int width,
+                                int height,
+                                double radius,
+                                double inset) {
     double left = inset;
     double top = inset;
     double right = width - inset;
@@ -9950,14 +10261,18 @@ bool IsInsideRoundedPopupSample(double x, double y, int width, int height,
     return dx * dx + dy * dy <= radius * radius;
 }
 
-double RoundedPopupCoverage(int x, int y, int width, int height,
-                            double radius, double inset) {
+double RoundedPopupCoverage(int x,
+                            int y,
+                            int width,
+                            int height,
+                            double radius,
+                            double inset) {
     constexpr double offsets[] = {0.25, 0.75};
     int samples = 0;
     for (double offsetY : offsets) {
         for (double offsetX : offsets) {
-            if (IsInsideRoundedPopupSample(x + offsetX, y + offsetY,
-                                           width, height, radius, inset)) {
+            if (IsInsideRoundedPopupSample(x + offsetX, y + offsetY, width,
+                                           height, radius, inset)) {
                 ++samples;
             }
         }
@@ -9996,9 +10311,12 @@ void RenderExpandedPopupLayer() {
     HBITMAP surface = CreateDIBSection(screenDc, &info, DIB_RGB_COLORS,
                                        &pixelMemory, nullptr, 0);
     if (!memoryDc || !surface || !pixelMemory) {
-        if (surface) DeleteObject(surface);
-        if (memoryDc) DeleteDC(memoryDc);
-        if (screenDc) ReleaseDC(nullptr, screenDc);
+        if (surface)
+            DeleteObject(surface);
+        if (memoryDc)
+            DeleteDC(memoryDc);
+        if (screenDc)
+            ReleaseDC(nullptr, screenDc);
         return;
     }
 
@@ -10006,8 +10324,8 @@ void RenderExpandedPopupLayer() {
     memset(pixelMemory, 0, static_cast<size_t>(width) * height * 4);
     bool dark = IsDarkModeApprox();
     RECT fullSurface{0, 0, width, height};
-    HBRUSH baseBrush = CreateSolidBrush(
-        dark ? RGB(42, 42, 47) : RGB(243, 243, 246));
+    HBRUSH baseBrush =
+        CreateSolidBrush(dark ? RGB(42, 42, 47) : RGB(243, 243, 246));
     FillRect(memoryDc, &fullSurface, baseBrush);
     DeleteObject(baseBrush);
     PaintExpandedPopup(g_expandedPopup, memoryDc);
@@ -10020,8 +10338,8 @@ void RenderExpandedPopupLayer() {
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             BYTE* pixel = pixels + (static_cast<size_t>(y) * width + x) * 4;
-            double outerCoverage = RoundedPopupCoverage(x, y, width, height,
-                                                        20.0, 0.0);
+            double outerCoverage =
+                RoundedPopupCoverage(x, y, width, height, 20.0, 0.0);
             if (outerCoverage <= 0.0) {
                 pixel[0] = 0;
                 pixel[1] = 0;
@@ -10035,16 +10353,24 @@ void RenderExpandedPopupLayer() {
                 std::abs(static_cast<int>(pixel[1]) - backgroundG) <= 2 &&
                 std::abs(static_cast<int>(pixel[0]) - backgroundB) <= 2;
             if (isBackground) {
-                BYTE alpha = static_cast<BYTE>(std::lround(backgroundAlpha * outerCoverage));
-                pixel[0] = static_cast<BYTE>(std::lround(backgroundB * alpha / 255.0));
-                pixel[1] = static_cast<BYTE>(std::lround(backgroundG * alpha / 255.0));
-                pixel[2] = static_cast<BYTE>(std::lround(backgroundR * alpha / 255.0));
+                BYTE alpha = static_cast<BYTE>(
+                    std::lround(backgroundAlpha * outerCoverage));
+                pixel[0] =
+                    static_cast<BYTE>(std::lround(backgroundB * alpha / 255.0));
+                pixel[1] =
+                    static_cast<BYTE>(std::lround(backgroundG * alpha / 255.0));
+                pixel[2] =
+                    static_cast<BYTE>(std::lround(backgroundR * alpha / 255.0));
                 pixel[3] = alpha;
             } else {
-                BYTE alpha = static_cast<BYTE>(std::lround(255.0 * outerCoverage));
-                pixel[0] = static_cast<BYTE>(std::lround(pixel[0] * alpha / 255.0));
-                pixel[1] = static_cast<BYTE>(std::lround(pixel[1] * alpha / 255.0));
-                pixel[2] = static_cast<BYTE>(std::lround(pixel[2] * alpha / 255.0));
+                BYTE alpha =
+                    static_cast<BYTE>(std::lround(255.0 * outerCoverage));
+                pixel[0] =
+                    static_cast<BYTE>(std::lround(pixel[0] * alpha / 255.0));
+                pixel[1] =
+                    static_cast<BYTE>(std::lround(pixel[1] * alpha / 255.0));
+                pixel[2] =
+                    static_cast<BYTE>(std::lround(pixel[2] * alpha / 255.0));
                 pixel[3] = alpha;
             }
         }
@@ -10084,14 +10410,15 @@ bool GetElementScreenRect(FrameworkElement const& element, RECT& result) {
         // Round both physical edges from the same DIP coordinate space. Never
         // round the origin and size independently: at fractional DPI that can
         // make the popup endpoint one pixel wider/taller than the native item.
-        result.left = host.left +
-                      static_cast<int>(std::lround(point.X * scale));
-        result.top = host.top +
-                     static_cast<int>(std::lround(point.Y * scale));
-        result.right = host.left + static_cast<int>(std::lround(
-                                          (point.X + element.ActualWidth()) * scale));
-        result.bottom = host.top + static_cast<int>(std::lround(
-                                           (point.Y + element.ActualHeight()) * scale));
+        result.left =
+            host.left + static_cast<int>(std::lround(point.X * scale));
+        result.top = host.top + static_cast<int>(std::lround(point.Y * scale));
+        result.right =
+            host.left + static_cast<int>(std::lround(
+                            (point.X + element.ActualWidth()) * scale));
+        result.bottom =
+            host.top + static_cast<int>(std::lround(
+                           (point.Y + element.ActualHeight()) * scale));
         return result.right > result.left && result.bottom > result.top;
     } catch (...) {
         return false;
@@ -10099,7 +10426,8 @@ bool GetElementScreenRect(FrameworkElement const& element, RECT& result) {
 }
 
 double PopupDpiScale(HWND hwnd) {
-    HWND source = hwnd ? hwnd : (g_expandedPopup ? g_expandedPopup : g_taskbarWnd);
+    HWND source =
+        hwnd ? hwnd : (g_expandedPopup ? g_expandedPopup : g_taskbarWnd);
     UINT dpi = source ? GetDpiForWindow(source) : 96;
     if (dpi == 0) {
         dpi = 96;
@@ -10114,11 +10442,10 @@ int PopupDipToPx(double value, HWND hwnd) {
 DipRect PopupScreenRectToLocalDip(RECT const& rect,
                                   RECT const& popupScreenPx,
                                   double scale) {
-    return {
-        (rect.left - popupScreenPx.left) / scale,
-        (rect.top - popupScreenPx.top) / scale,
-        (rect.right - popupScreenPx.left) / scale,
-        (rect.bottom - popupScreenPx.top) / scale};
+    return {(rect.left - popupScreenPx.left) / scale,
+            (rect.top - popupScreenPx.top) / scale,
+            (rect.right - popupScreenPx.left) / scale,
+            (rect.bottom - popupScreenPx.top) / scale};
 }
 
 bool TaskbarPopupOpensDown(RECT const& taskbarRect,
@@ -10128,16 +10455,14 @@ bool TaskbarPopupOpensDown(RECT const& taskbarRect,
         return false;
     }
 
-    int distanceToTop =
-        std::abs(taskbarRect.top - monitorInfo.rcMonitor.top);
+    int distanceToTop = std::abs(taskbarRect.top - monitorInfo.rcMonitor.top);
     int distanceToBottom =
         std::abs(monitorInfo.rcMonitor.bottom - taskbarRect.bottom);
     if (distanceToTop != distanceToBottom) {
         return distanceToTop < distanceToBottom;
     }
 
-    int taskbarCenter =
-        (taskbarRect.top + taskbarRect.bottom) / 2;
+    int taskbarCenter = (taskbarRect.top + taskbarRect.bottom) / 2;
     int monitorCenter =
         (monitorInfo.rcMonitor.top + monitorInfo.rcMonitor.bottom) / 2;
     return taskbarCenter <= monitorCenter;
@@ -10149,10 +10474,11 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
         RECT taskbar{};
         GetWindowRect(g_taskbarWnd, &taskbar);
         g_popupSourceRect = {
-            taskbar.left,
-            taskbar.top,
-            taskbar.left + static_cast<LONG>(PopupDipToPx(compactSpec.width, g_taskbarWnd)),
-            taskbar.top + static_cast<LONG>(PopupDipToPx(compactSpec.height, g_taskbarWnd))};
+            taskbar.left, taskbar.top,
+            taskbar.left + static_cast<LONG>(
+                               PopupDipToPx(compactSpec.width, g_taskbarWnd)),
+            taskbar.top + static_cast<LONG>(
+                              PopupDipToPx(compactSpec.height, g_taskbarWnd))};
     }
     auto art = FindChildByName(g_playerGrid, L"Island_ArtFallback");
     if (!GetElementScreenRect(art, g_popupSourceArtRect)) {
@@ -10186,7 +10512,8 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
     RECT textHostRect{};
     if (g_compactTextHost &&
         GetElementScreenRect(g_compactTextHost, textHostRect) &&
-        textHostRect.right - textHostRect.left > PopupDipToPx(20.0, g_taskbarWnd)) {
+        textHostRect.right - textHostRect.left >
+            PopupDipToPx(20.0, g_taskbarWnd)) {
         g_popupSourceTitleRect.left = textHostRect.left;
         g_popupSourceTitleRect.right = textHostRect.right;
         g_popupSourceArtistRect.left = textHostRect.left;
@@ -10196,15 +10523,14 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
     auto progress = FindChildByName(g_playerGrid, L"Island_Progress");
     if (!GetElementScreenRect(progress, g_popupSourceProgressRect)) {
         int progressWidth = PopupDipToPx(g_layout.progressWidth, g_taskbarWnd);
-        int progressHeight = std::max(1, PopupDipToPx(g_layout.progressHeight, g_taskbarWnd));
+        int progressHeight =
+            std::max(1, PopupDipToPx(g_layout.progressHeight, g_taskbarWnd));
         int contentRight = g_popupSourceRect.right -
-            PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd);
+                           PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd);
         int centerY = (g_popupSourceRect.top + g_popupSourceRect.bottom) / 2;
         g_popupSourceProgressRect = {
-            contentRight - progressWidth,
-            centerY - progressHeight / 2,
-            contentRight,
-            centerY - progressHeight / 2 + progressHeight};
+            contentRight - progressWidth, centerY - progressHeight / 2,
+            contentRight, centerY - progressHeight / 2 + progressHeight};
     }
 
     auto details = FindChildByName(g_playerGrid, L"Island_Details");
@@ -10215,21 +10541,19 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
         int controlsWidth = compactButtonWidth * 4 + compactButtonGap * 3;
         int centerY = (g_popupSourceRect.top + g_popupSourceRect.bottom) / 2;
         int right = g_popupSourceProgressRect.left -
-            PopupDipToPx(g_layout.progressMarginLeft, g_taskbarWnd);
+                    PopupDipToPx(g_layout.progressMarginLeft, g_taskbarWnd);
         if (right <= g_popupSourceRect.left) {
             right = g_popupSourceRect.right -
-                PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd);
+                    PopupDipToPx(g_layout.contentMarginX, g_taskbarWnd);
         }
         g_popupSourceControlsRect = {
-            right - controlsWidth,
-            centerY - compactButtonHeight / 2,
-            right,
+            right - controlsWidth, centerY - compactButtonHeight / 2, right,
             centerY - compactButtonHeight / 2 + compactButtonHeight};
         if (g_popupSourceControlsRect.left < g_popupSourceRect.left) {
-            int centerX = (g_popupSourceRect.left + g_popupSourceRect.right) / 2;
+            int centerX =
+                (g_popupSourceRect.left + g_popupSourceRect.right) / 2;
             g_popupSourceControlsRect = {
-                centerX - controlsWidth / 2,
-                centerY - compactButtonHeight / 2,
+                centerX - controlsWidth / 2, centerY - compactButtonHeight / 2,
                 centerX - controlsWidth / 2 + controlsWidth,
                 centerY - compactButtonHeight / 2 + compactButtonHeight};
         }
@@ -10237,17 +10561,15 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
 
     auto indicator = FindChildByName(g_playerGrid, L"Island_PlaybackIndicator");
     if (!GetElementScreenRect(indicator, g_popupSourcePlaybackIndicatorRect)) {
-        int indicatorWidth = PopupDipToPx(
-            compactSpec.playbackIndicatorWidth, g_taskbarWnd);
-        int indicatorHeight = PopupDipToPx(
-            compactSpec.playbackIndicatorHeight, g_taskbarWnd);
+        int indicatorWidth =
+            PopupDipToPx(compactSpec.playbackIndicatorWidth, g_taskbarWnd);
+        int indicatorHeight =
+            PopupDipToPx(compactSpec.playbackIndicatorHeight, g_taskbarWnd);
         int right = g_popupSourceRect.right -
                     PopupDipToPx(compactSpec.contentMarginX, g_taskbarWnd);
         int centerY = (g_popupSourceRect.top + g_popupSourceRect.bottom) / 2;
         g_popupSourcePlaybackIndicatorRect = {
-            right - indicatorWidth,
-            centerY - indicatorHeight / 2,
-            right,
+            right - indicatorWidth, centerY - indicatorHeight / 2, right,
             centerY - indicatorHeight / 2 + indicatorHeight};
     }
 
@@ -10255,12 +10577,15 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
         return;
     }
 
-    HMONITOR monitor = MonitorFromRect(&g_popupSourceRect, MONITOR_DEFAULTTONEAREST);
+    HMONITOR monitor =
+        MonitorFromRect(&g_popupSourceRect, MONITOR_DEFAULTTONEAREST);
     MONITORINFO monitorInfo{sizeof(monitorInfo)};
     if (GetMonitorInfoW(monitor, &monitorInfo)) {
         double dpiScale = PopupDpiScale(g_taskbarWnd);
-        int monitorWidthPx = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-        int monitorWidthDip = std::max(1, static_cast<int>(std::floor(monitorWidthPx / dpiScale)));
+        int monitorWidthPx =
+            monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+        int monitorWidthDip = std::max(
+            1, static_cast<int>(std::floor(monitorWidthPx / dpiScale)));
         RECT taskbar{};
         GetWindowRect(g_taskbarWnd, &taskbar);
         bool opensDown = TaskbarPopupOpensDown(taskbar, monitorInfo);
@@ -10271,36 +10596,37 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
         int finalTop = taskbar.bottom + popupGap;
         int finalBottom = taskbar.top - popupGap;
         int availableHeightPx =
-            opensDown
-                ? monitorInfo.rcMonitor.bottom - finalTop - edgePad
-                : finalBottom - monitorInfo.rcMonitor.top - edgePad;
-        int availableHeightDip = std::max(1, static_cast<int>(std::floor(availableHeightPx / dpiScale)));
+            opensDown ? monitorInfo.rcMonitor.bottom - finalTop - edgePad
+                      : finalBottom - monitorInfo.rcMonitor.top - edgePad;
+        int availableHeightDip = std::max(
+            1, static_cast<int>(std::floor(availableHeightPx / dpiScale)));
 
         int finalWidthDip = 0;
         int finalHeightDip = 0;
         if (g_settings.compact) {
-            int maxCardWidth = std::max(
-                kPopupCompactMinimumCardWidth,
-                monitorWidthDip - 24 - kPopupHostShadowMargin * 2);
-            int cardWidth = Clamp(
-                std::min(g_settings.expandedWidth, maxCardWidth),
-                kPopupCompactMinimumCardWidth,
-                640);
+            int maxCardWidth =
+                std::max(kPopupCompactMinimumCardWidth,
+                         monitorWidthDip - 24 - kPopupHostShadowMargin * 2);
+            int cardWidth =
+                Clamp(std::min(g_settings.expandedWidth, maxCardWidth),
+                      kPopupCompactMinimumCardWidth, 640);
             finalWidthDip = PopupCompactFinalWidth(cardWidth);
             finalHeightDip = PopupCompactFinalHeight();
         } else {
-            int maxArtBySetting = std::max(96, g_settings.expandedWidth -
-                (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
-            int maxArtByMonitorWidth = std::max(96, monitorWidthDip - 24 -
-                (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
-            int maxArtByHeight = std::max(96, availableHeightDip -
-                (kPopupCardHeight + PopupArtCardGap() +
-                 PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
-            int targetArt = Clamp(std::min({maxArtBySetting,
-                                            maxArtByMonitorWidth,
-                                            maxArtByHeight,
-                                            kPopupMaximumArtSize}),
-                                  96, kPopupMaximumArtSize);
+            int maxArtBySetting = std::max(
+                96, g_settings.expandedWidth -
+                        (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
+            int maxArtByMonitorWidth = std::max(
+                96, monitorWidthDip - 24 -
+                        (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
+            int maxArtByHeight = std::max(
+                96, availableHeightDip -
+                        (kPopupCardHeight + PopupArtCardGap() +
+                         PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2));
+            int targetArt =
+                Clamp(std::min({maxArtBySetting, maxArtByMonitorWidth,
+                                maxArtByHeight, kPopupMaximumArtSize}),
+                      96, kPopupMaximumArtSize);
             if (targetArt < kPopupMinimumArtSize &&
                 maxArtByHeight >= kPopupMinimumArtSize) {
                 targetArt = kPopupMinimumArtSize;
@@ -10319,18 +10645,19 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
             g_settings.position.rfind(L"taskbar_", 0) == 0) {
             g_popupExpandsRight = PopupShouldExpandRight(monitorInfo);
         } else {
-            g_popupExpandsRight = rightSpace >= static_cast<int>(g_popupExpandedWidth) ||
-                                  rightSpace >= leftSpace;
+            g_popupExpandsRight =
+                rightSpace >= static_cast<int>(g_popupExpandedWidth) ||
+                rightSpace >= leftSpace;
         }
         int finalLeft = g_popupExpandsRight
                             ? g_popupSourceRect.left
                             : g_popupSourceRect.right - finalWidth;
-        finalLeft = Clamp(finalLeft,
-                          static_cast<int>(monitorInfo.rcMonitor.left) + edgePad,
-                          static_cast<int>(monitorInfo.rcMonitor.right) - finalWidth - edgePad);
+        finalLeft = Clamp(
+            finalLeft, static_cast<int>(monitorInfo.rcMonitor.left) + edgePad,
+            static_cast<int>(monitorInfo.rcMonitor.right) - finalWidth -
+                edgePad);
         if (opensDown) {
-            g_popupFinalRect = {finalLeft, finalTop,
-                                finalLeft + finalWidth,
+            g_popupFinalRect = {finalLeft, finalTop, finalLeft + finalWidth,
                                 finalTop + finalHeight};
         } else {
             g_popupFinalRect = {finalLeft, finalBottom - finalHeight,
@@ -10345,19 +10672,20 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
             finalWidthDip = PopupCompactFinalWidth(cardWidth);
             finalHeightDip = PopupCompactFinalHeight();
         } else {
-            int targetArt = Clamp(g_settings.expandedWidth -
-                                      (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2),
-                                  96, kPopupMaximumArtSize);
+            int targetArt =
+                Clamp(g_settings.expandedWidth -
+                          (PopupSurfaceGap() * 2 + kPopupHostShadowMargin * 2),
+                      96, kPopupMaximumArtSize);
             finalWidthDip = PopupFinalWidthFromArtSize(targetArt);
             finalHeightDip = PopupFinalHeightFromArtSize(targetArt);
         }
         int finalWidth = PopupDipToPx(finalWidthDip, g_taskbarWnd);
         int finalHeight = PopupDipToPx(finalHeightDip, g_taskbarWnd);
         RECT taskbar{};
-        bool opensDown = GetWindowRect(g_taskbarWnd, &taskbar) &&
-                         g_popupSourceRect.top <=
-                             (GetSystemMetrics(SM_YVIRTUALSCREEN) +
-                              GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2);
+        bool opensDown =
+            GetWindowRect(g_taskbarWnd, &taskbar) &&
+            g_popupSourceRect.top <= (GetSystemMetrics(SM_YVIRTUALSCREEN) +
+                                      GetSystemMetrics(SM_CYVIRTUALSCREEN) / 2);
         g_popupOpensDown = opensDown;
         g_taskbarAtTop = opensDown;
         int popupGap = PopupDipToPx(opensDown ? 2.0 : 8.0, g_taskbarWnd);
@@ -10366,8 +10694,7 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
         g_popupExpandsRight = true;
         if (opensDown) {
             int finalTop = taskbar.bottom + popupGap;
-            g_popupFinalRect = {g_popupSourceRect.left,
-                                finalTop,
+            g_popupFinalRect = {g_popupSourceRect.left, finalTop,
                                 g_popupSourceRect.left + finalWidth,
                                 finalTop + finalHeight};
         } else {
@@ -10407,7 +10734,8 @@ void PositionExpandedPopup() {
         // HWND every frame, which is expensive in Explorer and looked like
         // dropped frames. The visible morph now happens entirely inside XAML.
         RECT hostRect = g_popupHostRect;
-        if (hostRect.right <= hostRect.left || hostRect.bottom <= hostRect.top) {
+        if (hostRect.right <= hostRect.left ||
+            hostRect.bottom <= hostRect.top) {
             hostRect = UnionPopupRects(g_popupSourceRect, g_popupFinalRect);
         }
         int width = std::max(1L, hostRect.right - hostRect.left);
@@ -10417,8 +10745,8 @@ void PositionExpandedPopup() {
 
         if (!EqualRect(&hostRect, &g_lastPopupWindowRect)) {
             g_lastPopupWindowRect = hostRect;
-            SetWindowPos(g_expandedPopup, HWND_TOPMOST,
-                         hostRect.left, hostRect.top, width, height,
+            SetWindowPos(g_expandedPopup, HWND_TOPMOST, hostRect.left,
+                         hostRect.top, width, height,
                          SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOZORDER |
                              SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
             if (g_popupXamlChild) {
@@ -10433,8 +10761,10 @@ void PositionExpandedPopup() {
     double progress = PopupProgress();
     int left = LerpInt(g_popupSourceRect.left, g_popupFinalRect.left, progress);
     int top = LerpInt(g_popupSourceRect.top, g_popupFinalRect.top, progress);
-    int right = LerpInt(g_popupSourceRect.right, g_popupFinalRect.right, progress);
-    int bottom = LerpInt(g_popupSourceRect.bottom, g_popupFinalRect.bottom, progress);
+    int right =
+        LerpInt(g_popupSourceRect.right, g_popupFinalRect.right, progress);
+    int bottom =
+        LerpInt(g_popupSourceRect.bottom, g_popupFinalRect.bottom, progress);
     int width = std::max(1, right - left);
     int height = std::max(1, bottom - top);
     g_popupCurrentWidth = width;
@@ -10481,21 +10811,20 @@ bool UpdateCompactProgressFromSnapshot() {
     if (state.hasSession && state.isPlaying && state.durationTicks > 0 &&
         timestamp.time_since_epoch().count() != 0) {
         double ageSeconds =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - timestamp)
+            std::chrono::duration_cast<std::chrono::milliseconds>(now -
+                                                                  timestamp)
                 .count() /
             1000.0;
         // The event-driven media worker has a 30-second safety refresh, so local
         // interpolation can remain smooth between provider timeline events.
         ageSeconds = Clamp(ageSeconds, 0.0, 30.0);
-        positionTicks +=
-            static_cast<int64_t>(ageSeconds * 10000000.0);
+        positionTicks += static_cast<int64_t>(ageSeconds * 10000000.0);
     }
 
     double value = 0.0;
     if (state.hasSession && state.durationTicks > 0) {
-        positionTicks = std::clamp<int64_t>(
-            positionTicks, 0, state.durationTicks);
+        positionTicks =
+            std::clamp<int64_t>(positionTicks, 0, state.durationTicks);
         value = Clamp(static_cast<double>(positionTicks) /
                           static_cast<double>(state.durationTicks) * 1000.0,
                       0.0, 1000.0);
@@ -10509,8 +10838,7 @@ void StopCompactProgressRenderLoop() {
         return;
     }
     try {
-        mediax::CompositionTarget::Rendering(
-            g_compactProgressRenderingToken);
+        mediax::CompositionTarget::Rendering(g_compactProgressRenderingToken);
     } catch (...) {
     }
     g_compactProgressRenderingHooked = false;
@@ -10543,13 +10871,13 @@ void OnCompactProgressRendering(
 }
 
 void StartCompactProgressRenderLoop() {
-    if (!g_compactProgress || g_compactProgressRenderingHooked ||
-        g_expanded || g_unloading) {
+    if (!g_compactProgress || g_compactProgressRenderingHooked || g_expanded ||
+        g_unloading) {
         return;
     }
     g_lastCompactProgressFrameTime = {};
     g_compactProgressRenderingToken =
-    mediax::CompositionTarget::Rendering(OnCompactProgressRendering);
+        mediax::CompositionTarget::Rendering(OnCompactProgressRendering);
     g_compactProgressRenderingHooked = true;
 }
 
@@ -10574,13 +10902,11 @@ winrt::Windows::UI::Color CompactPlaybackReadableAccent(
     } else {
         s = Clamp(s * 1.05 + 0.02, 0.44, 0.82);
     }
-    v = dark ? Clamp(v + 0.10, 0.74, 0.96)
-             : Clamp(v - 0.03, 0.50, 0.78);
+    v = dark ? Clamp(v + 0.10, 0.74, 0.96) : Clamp(v - 0.03, 0.50, 0.78);
     return ColorFromHsv(h, s, v);
 }
 
-void ApplyCompactPlaybackAccentColor(
-    winrt::Windows::UI::Color color) {
+void ApplyCompactPlaybackAccentColor(winrt::Windows::UI::Color color) {
     g_compactPlaybackAccentDisplayed = color;
     if (g_compactPlaybackAccentBrush) {
         g_compactPlaybackAccentBrush.Color(color);
@@ -10596,15 +10922,13 @@ bool TickCompactPlaybackAccentTransition(
         return false;
     }
 
-    double elapsedMs =
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            now - g_compactPlaybackAccentTransitionStart)
-            .count();
+    double elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           now - g_compactPlaybackAccentTransitionStart)
+                           .count();
     double progress = Clamp(elapsedMs / 420.0, 0.0, 1.0);
     double eased = SmootherStep(progress);
-    ApplyCompactPlaybackAccentColor(
-        LerpColor(g_compactPlaybackAccentFrom,
-                  g_compactPlaybackAccentTo, eased));
+    ApplyCompactPlaybackAccentColor(LerpColor(
+        g_compactPlaybackAccentFrom, g_compactPlaybackAccentTo, eased));
     if (progress >= 1.0) {
         g_compactPlaybackAccentTransitionActive = false;
         ApplyCompactPlaybackAccentColor(g_compactPlaybackAccentTo);
@@ -10617,8 +10941,7 @@ void ApplyCompactPlaybackStaticFrame() {
         return;
     }
 
-    constexpr double kPausedFractions[5] = {
-        0.27, 0.43, 0.60, 0.43, 0.27};
+    constexpr double kPausedFractions[5] = {0.27, 0.43, 0.60, 0.43, 0.27};
     double height = CompactPlaybackIndicatorHeight();
     for (size_t i = 0; i < g_compactPlaybackBars.size(); ++i) {
         double barHeight = std::max(2.0, height * kPausedFractions[i]);
@@ -10633,8 +10956,7 @@ void StopCompactPlaybackIndicatorRenderLoop() {
         return;
     }
     try {
-        mediax::CompositionTarget::Rendering(
-            g_compactPlaybackRenderingToken);
+        mediax::CompositionTarget::Rendering(g_compactPlaybackRenderingToken);
     } catch (...) {
     }
     g_compactPlaybackRenderingHooked = false;
@@ -10661,16 +10983,13 @@ void OnCompactPlaybackIndicatorRendering(
 
         double indicatorHeight = CompactPlaybackIndicatorHeight();
         double maxDelta = 0.0;
-        bool accentTransitionActive =
-            TickCompactPlaybackAccentTransition(now);
+        bool accentTransitionActive = TickCompactPlaybackAccentTransition(now);
         if (g_compactPlaybackDesiredPlaying) {
             double elapsed = std::chrono::duration<double>(
                                  now - g_compactPlaybackAnimationStart)
                                  .count();
-            constexpr double kPhases[5] = {
-                0.10, 1.22, 2.46, 3.72, 4.86};
-            constexpr double kSpeeds[5] = {
-                0.94, 1.08, 0.89, 1.13, 0.98};
+            constexpr double kPhases[5] = {0.10, 1.22, 2.46, 3.72, 4.86};
+            constexpr double kSpeeds[5] = {0.94, 1.08, 0.89, 1.13, 0.98};
             double minHeight =
                 std::max(g_layout.playbackBarWidth, indicatorHeight * 0.18);
             double heightRange = indicatorHeight * 0.88 - minHeight;
@@ -10679,8 +10998,8 @@ void OnCompactPlaybackIndicatorRendering(
                 // Two blended waves give each pill fluid, non-repeating motion
                 // without the visual jitter of random heights.
                 double primary =
-                    0.5 + 0.5 * std::sin(elapsed * 6.2 * kSpeeds[i] +
-                                         kPhases[i]);
+                    0.5 +
+                    0.5 * std::sin(elapsed * 6.2 * kSpeeds[i] + kPhases[i]);
                 double secondary =
                     0.5 + 0.5 * std::sin(elapsed * 10.4 +
                                          kPhases[(i + 1) % 4] * 0.83);
@@ -10696,8 +11015,7 @@ void OnCompactPlaybackIndicatorRendering(
             return;
         }
 
-        constexpr double kPausedFractions[5] = {
-            0.27, 0.43, 0.60, 0.43, 0.27};
+        constexpr double kPausedFractions[5] = {0.27, 0.43, 0.60, 0.43, 0.27};
         for (size_t i = 0; i < g_compactPlaybackBars.size(); ++i) {
             double target =
                 std::max(2.0, indicatorHeight * kPausedFractions[i]);
@@ -10723,15 +11041,13 @@ void OnCompactPlaybackIndicatorRendering(
 }
 
 void StartCompactPlaybackIndicatorRenderLoop() {
-    if (!g_compactPlaybackIndicator ||
-        g_compactPlaybackBars.size() != 5 ||
+    if (!g_compactPlaybackIndicator || g_compactPlaybackBars.size() != 5 ||
         g_compactPlaybackRenderingHooked || g_expanded || g_unloading) {
         return;
     }
     g_lastCompactPlaybackFrameTime = {};
-    g_compactPlaybackRenderingToken =
-        mediax::CompositionTarget::Rendering(
-            OnCompactPlaybackIndicatorRendering);
+    g_compactPlaybackRenderingToken = mediax::CompositionTarget::Rendering(
+        OnCompactPlaybackIndicatorRendering);
     g_compactPlaybackRenderingHooked = true;
 }
 
@@ -10747,11 +11063,9 @@ void UpdateCompactPlaybackIndicatorAccent(
     }
 
     auto nextColor = CompactPlaybackReadableAccent(
-        artworkBytes.empty()
-            ? DefaultPopupAccentColor()
-            : ExtractAlbumAccentColor(artworkBytes));
-    bool firstColor =
-        g_compactPlaybackAccentThumbnailHash == UINT64_MAX;
+        artworkBytes.empty() ? DefaultPopupAccentColor()
+                             : ExtractAlbumAccentColor(artworkBytes));
+    bool firstColor = g_compactPlaybackAccentThumbnailHash == UINT64_MAX;
     g_compactPlaybackAccentThumbnailHash = artworkHash;
 
     if (firstColor || immediate) {
@@ -10764,8 +11078,7 @@ void UpdateCompactPlaybackIndicatorAccent(
 
     g_compactPlaybackAccentFrom = g_compactPlaybackAccentDisplayed;
     g_compactPlaybackAccentTo = nextColor;
-    g_compactPlaybackAccentTransitionStart =
-        std::chrono::steady_clock::now();
+    g_compactPlaybackAccentTransitionStart = std::chrono::steady_clock::now();
     g_compactPlaybackAccentTransitionActive = true;
     StartCompactPlaybackIndicatorRenderLoop();
 }
@@ -10781,8 +11094,7 @@ void SetCompactPlaybackIndicatorState(bool playing) {
         }
     }
 
-    if (!g_compactPlaybackIndicator ||
-        g_compactPlaybackBars.size() != 5) {
+    if (!g_compactPlaybackIndicator || g_compactPlaybackBars.size() != 5) {
         return;
     }
 
@@ -10852,8 +11164,7 @@ void ResetCompactTextAnimationVisuals() {
 
 double CompactTextClipWidthFallback() {
     double width = g_layout.compactWidth -
-                   (g_layout.contentMarginX * 2.0 +
-                    g_layout.artColumnWidth +
+                   (g_layout.contentMarginX * 2.0 + g_layout.artColumnWidth +
                     g_layout.textMarginX * 2.0 + 4.0);
     return std::max(1.0, width);
 }
@@ -10906,11 +11217,14 @@ void RefreshCompactTextHostClip(bool forceLayout = false) {
             if (!fade) {
                 return;
             }
-            double leftCoverOffset = leftEdge ? Clamp(g_layout.textMarginX + 4.0, 8.0, 16.0) : 0.0;
+            double leftCoverOffset =
+                leftEdge ? Clamp(g_layout.textMarginX + 4.0, 8.0, 16.0) : 0.0;
             fade.Width(fadeWidth + leftCoverOffset);
             fade.Height(clipHeight);
-            fade.Margin(leftEdge ? xaml::Thickness{-(clipPadding + leftCoverOffset), 0, 0, 0}
-                                 : xaml::Thickness{0, 0, -clipPadding, 0});
+            fade.Margin(
+                leftEdge
+                    ? xaml::Thickness{-(clipPadding + leftCoverOffset), 0, 0, 0}
+                    : xaml::Thickness{0, 0, -clipPadding, 0});
             fade.Background(CompactTextEdgeFadeBrush(leftEdge));
         };
         configureFade(g_compactTextLeftFade, true);
@@ -10934,8 +11248,9 @@ void StopCompactTextRenderLoop() {
 void OnCompactTextRendering(winrt::Windows::Foundation::IInspectable const&,
                             winrt::Windows::Foundation::IInspectable const&) {
     try {
-        if (!g_playerGrid || !g_compactTitleTranslate || !g_compactArtistTranslate ||
-            !g_compactTitleText || !g_compactArtistText || g_unloading) {
+        if (!g_playerGrid || !g_compactTitleTranslate ||
+            !g_compactArtistTranslate || !g_compactTitleText ||
+            !g_compactArtistText || g_unloading) {
             StopCompactTextRenderLoop();
             ResetCompactTextAnimationVisuals();
             return;
@@ -10959,16 +11274,22 @@ void OnCompactTextRendering(winrt::Windows::Foundation::IInspectable const&,
         constexpr double kTextSlideOffset = 21.0;
         RefreshCompactTextHostClip(false);
 
-        double titleIn = PopupTextMotionEase(Clamp((g_compactTextProgress - 0.02) / 0.92, 0.0, 1.0));
-        double artistIn = PopupTextMotionEase(Clamp((g_compactTextProgress - 0.28) / 0.70, 0.0, 1.0));
-        double titleOut = PopupTextMotionEase(Clamp((g_compactTextProgress + 0.02) / 0.84, 0.0, 1.0));
-        double artistOut = PopupTextMotionEase(Clamp((g_compactTextProgress - 0.12) / 0.80, 0.0, 1.0));
-        double artIn = PopupTextMotionEase(Clamp(g_compactTextProgress / 0.96, 0.0, 1.0));
+        double titleIn = PopupTextMotionEase(
+            Clamp((g_compactTextProgress - 0.02) / 0.92, 0.0, 1.0));
+        double artistIn = PopupTextMotionEase(
+            Clamp((g_compactTextProgress - 0.28) / 0.70, 0.0, 1.0));
+        double titleOut = PopupTextMotionEase(
+            Clamp((g_compactTextProgress + 0.02) / 0.84, 0.0, 1.0));
+        double artistOut = PopupTextMotionEase(
+            Clamp((g_compactTextProgress - 0.12) / 0.80, 0.0, 1.0));
+        double artIn =
+            PopupTextMotionEase(Clamp(g_compactTextProgress / 0.96, 0.0, 1.0));
         if (g_compactTextEdgeFadeActive) {
-            double edgeFadeIn = PopupTextMotionEase(Clamp((g_compactTextProgress - 0.08) / 0.20,
-                                                          0.0, 1.0));
-            double edgeFadeOut = 1.0 - PopupTextMotionEase(Clamp((g_compactTextProgress - 0.78) / 0.18,
-                                                                 0.0, 1.0));
+            double edgeFadeIn = PopupTextMotionEase(
+                Clamp((g_compactTextProgress - 0.08) / 0.20, 0.0, 1.0));
+            double edgeFadeOut =
+                1.0 - PopupTextMotionEase(Clamp(
+                          (g_compactTextProgress - 0.78) / 0.18, 0.0, 1.0));
             SetCompactTextEdgeFadeOpacity(edgeFadeIn * edgeFadeOut);
         }
 
@@ -10988,8 +11309,10 @@ void OnCompactTextRendering(winrt::Windows::Foundation::IInspectable const&,
                 g_compactOutgoingTitleTranslate.X(-kTextSlideOffset * titleOut);
                 g_compactOutgoingTitleText.Opacity(1.0 - titleOut);
             }
-            if (g_compactOutgoingArtistText && g_compactOutgoingArtistTranslate) {
-                g_compactOutgoingArtistTranslate.X(-kTextSlideOffset * artistOut);
+            if (g_compactOutgoingArtistText &&
+                g_compactOutgoingArtistTranslate) {
+                g_compactOutgoingArtistTranslate.X(-kTextSlideOffset *
+                                                   artistOut);
                 g_compactOutgoingArtistText.Opacity(1.0 - artistOut);
             }
         }
@@ -11050,12 +11373,18 @@ void StartCompactTrackTransition(std::wstring const& oldTitle,
         g_compactTextEdgeFadeActive = true;
         SetCompactTextEdgeFadeOpacity(0.0);
     } else {
-        if (g_compactTitleTranslate) g_compactTitleTranslate.X(0.0);
-        if (g_compactArtistTranslate) g_compactArtistTranslate.X(0.0);
-        if (g_compactTitleText) g_compactTitleText.Opacity(1.0);
-        if (g_compactArtistText) g_compactArtistText.Opacity(1.0);
-        if (g_compactOutgoingTitleText) g_compactOutgoingTitleText.Opacity(0.0);
-        if (g_compactOutgoingArtistText) g_compactOutgoingArtistText.Opacity(0.0);
+        if (g_compactTitleTranslate)
+            g_compactTitleTranslate.X(0.0);
+        if (g_compactArtistTranslate)
+            g_compactArtistTranslate.X(0.0);
+        if (g_compactTitleText)
+            g_compactTitleText.Opacity(1.0);
+        if (g_compactArtistText)
+            g_compactArtistText.Opacity(1.0);
+        if (g_compactOutgoingTitleText)
+            g_compactOutgoingTitleText.Opacity(0.0);
+        if (g_compactOutgoingArtistText)
+            g_compactOutgoingArtistText.Opacity(0.0);
         g_compactTextEdgeFadeActive = false;
         SetCompactTextEdgeFadeOpacity(0.0);
     }
@@ -11065,11 +11394,14 @@ void StartCompactTrackTransition(std::wstring const& oldTitle,
             g_compactAlbumArtImage.Opacity(0.0);
         }
         if (g_compactAlbumArtFade) {
-            g_compactAlbumArtFade.Opacity(g_compactAlbumArtFade.Source() != nullptr ? 1.0 : 0.0);
+            g_compactAlbumArtFade.Opacity(
+                g_compactAlbumArtFade.Source() != nullptr ? 1.0 : 0.0);
         }
     } else {
-        if (g_compactAlbumArtImage) g_compactAlbumArtImage.Opacity(1.0);
-        if (g_compactAlbumArtFade) g_compactAlbumArtFade.Opacity(0.0);
+        if (g_compactAlbumArtImage)
+            g_compactAlbumArtImage.Opacity(1.0);
+        if (g_compactAlbumArtFade)
+            g_compactAlbumArtFade.Opacity(0.0);
     }
 
     if (!g_compactTextRenderingHooked) {
@@ -11093,8 +11425,7 @@ void UpdatePlayerContents();
 void SetPopupProgressVisualRatio(double ratio) {
     ratio = Clamp(ratio, 0.0, 1.0);
     if (g_popupXamlProgress) {
-        g_popupLiveProgressValue =
-            ratio * g_popupXamlProgress.Maximum();
+        g_popupLiveProgressValue = ratio * g_popupXamlProgress.Maximum();
         g_popupXamlProgress.Value(g_popupLiveProgressValue);
     }
 
@@ -11111,9 +11442,9 @@ void SetPopupProgressVisualRatio(double ratio) {
         g_popupXamlProgressFill.Width(fillWidth);
         bool trackVisible =
             g_popupXamlProgressTrack.Visibility() == Visibility::Visible;
-        g_popupXamlProgressFill.Visibility(
-            trackVisible && fillWidth > 0.5 ? Visibility::Visible
-                                            : Visibility::Collapsed);
+        g_popupXamlProgressFill.Visibility(trackVisible && fillWidth > 0.5
+                                               ? Visibility::Visible
+                                               : Visibility::Collapsed);
     }
 }
 
@@ -11202,8 +11533,8 @@ void UpdatePopupLiveProgressFromSnapshot() {
         return;
     }
 
-    std::wstring key = MediaTrackKey(state) + L"\n" +
-                       std::to_wstring(state.durationTicks);
+    std::wstring key =
+        MediaTrackKey(state) + L"\n" + std::to_wstring(state.durationTicks);
 
     // After Previous/Next, ignore every refresh carrying the old track key.
     // NetEase can keep publishing the completed song for several polling
@@ -11232,7 +11563,8 @@ void UpdatePopupLiveProgressFromSnapshot() {
             }
         }
     }
-    bool trackChanged = !g_popupLiveProgressValid || key != g_popupLiveProgressKey;
+    bool trackChanged =
+        !g_popupLiveProgressValid || key != g_popupLiveProgressKey;
     if (trackChanged) {
         g_popupSeekDragging = false;
         g_popupSeekPreviewUntil = {};
@@ -11271,10 +11603,10 @@ void UpdatePopupLiveProgressFromSnapshot() {
             if (now < g_popupSeekCommitUntil) {
                 int64_t targetTicks = std::clamp<int64_t>(
                     g_popupSeekCommitTargetTicks, 0, state.durationTicks);
-                g_popupLiveProgressValue = Clamp(
-                    static_cast<double>(targetTicks) /
-                        static_cast<double>(state.durationTicks) * 1000.0,
-                    0.0, 1000.0);
+                g_popupLiveProgressValue =
+                    Clamp(static_cast<double>(targetTicks) /
+                              static_cast<double>(state.durationTicks) * 1000.0,
+                          0.0, 1000.0);
                 SetPopupProgressVisualRatio(
                     static_cast<double>(targetTicks) /
                     static_cast<double>(state.durationTicks));
@@ -11282,7 +11614,8 @@ void UpdatePopupLiveProgressFromSnapshot() {
                     g_popupXamlElapsed.Text(FormatMediaTime(targetTicks));
                 }
                 if (g_popupXamlDuration) {
-                    g_popupXamlDuration.Text(FormatMediaTime(state.durationTicks));
+                    g_popupXamlDuration.Text(
+                        FormatMediaTime(state.durationTicks));
                 }
                 return;
             }
@@ -11307,14 +11640,15 @@ void UpdatePopupLiveProgressFromSnapshot() {
         livePositionTicks += static_cast<int64_t>(ageSec * 10000000.0);
     }
 
-    livePositionTicks = std::clamp<int64_t>(livePositionTicks, 0, state.durationTicks);
-    g_popupLiveProgressValue = Clamp(static_cast<double>(livePositionTicks) /
-                                         static_cast<double>(state.durationTicks) * 1000.0,
-                                     0.0, 1000.0);
+    livePositionTicks =
+        std::clamp<int64_t>(livePositionTicks, 0, state.durationTicks);
+    g_popupLiveProgressValue =
+        Clamp(static_cast<double>(livePositionTicks) /
+                  static_cast<double>(state.durationTicks) * 1000.0,
+              0.0, 1000.0);
 
-    SetPopupProgressVisualRatio(
-        static_cast<double>(livePositionTicks) /
-        static_cast<double>(state.durationTicks));
+    SetPopupProgressVisualRatio(static_cast<double>(livePositionTicks) /
+                                static_cast<double>(state.durationTicks));
     if (g_popupXamlElapsed) {
         g_popupXamlElapsed.Text(FormatMediaTime(livePositionTicks));
     }
@@ -11333,11 +11667,12 @@ void EndPopupSeek(bool commit) {
     if (commit) {
         auto now = std::chrono::steady_clock::now();
         MediaState state = SnapshotMedia();
-        int64_t targetTicks = state.durationTicks > 0
-                                  ? static_cast<int64_t>(std::llround(
-                                        static_cast<double>(state.durationTicks) *
-                                        Clamp(ratio, 0.0, 1.0)))
-                                  : 0;
+        int64_t targetTicks =
+            state.durationTicks > 0
+                ? static_cast<int64_t>(
+                      std::llround(static_cast<double>(state.durationTicks) *
+                                   Clamp(ratio, 0.0, 1.0)))
+                : 0;
         g_popupSeekPreviewUntil = now + std::chrono::milliseconds(2600);
         double commitRatio = Clamp(ratio, 0.0, 1.0);
         {
@@ -11350,8 +11685,8 @@ void EndPopupSeek(bool commit) {
         {
             std::lock_guard lock(g_mediaMutex);
             if (g_media.hasSession && g_media.durationTicks > 0) {
-                g_media.positionTicks = std::clamp<int64_t>(
-                    targetTicks, 0, g_media.durationTicks);
+                g_media.positionTicks =
+                    std::clamp<int64_t>(targetTicks, 0, g_media.durationTicks);
                 g_mediaStateTimestamp = now;
             }
         }
@@ -11398,10 +11733,9 @@ void RefreshPopupTextOnly() {
                                        ? winrt::hstring(state.title)
                                        : winrt::hstring(L"No media");
         winrt::hstring nextArtist =
-            state.artist.empty()
-                ? (state.isPlaying ? winrt::hstring(L"Playing")
-                                   : winrt::hstring(L"Paused"))
-                : winrt::hstring(state.artist);
+            state.artist.empty() ? (state.isPlaying ? winrt::hstring(L"Playing")
+                                                    : winrt::hstring(L"Paused"))
+                                 : winrt::hstring(state.artist);
         g_popupXamlTitle.Text(nextTitle);
         g_popupXamlArtist.Text(nextArtist);
         if (g_popupXamlOutgoingTitle) {
@@ -11445,8 +11779,10 @@ void BeginCloseExpandedPopup() {
             g_playerGrid.IsHitTestVisible(true);
         }
         g_popupTextTransitionActive = false;
-        if (g_popupXamlOutgoingTitle) g_popupXamlOutgoingTitle.Opacity(0.0);
-        if (g_popupXamlOutgoingArtist) g_popupXamlOutgoingArtist.Opacity(0.0);
+        if (g_popupXamlOutgoingTitle)
+            g_popupXamlOutgoingTitle.Opacity(0.0);
+        if (g_popupXamlOutgoingArtist)
+            g_popupXamlOutgoingArtist.Opacity(0.0);
     } catch (...) {
     }
     // Make the popup's closing text match the island's current text before
@@ -11502,8 +11838,12 @@ void ApplyPopupCompactWindowRegions() {
     // clipping the enlarged antialiased surface without reviving the old
     // full-screen/union transparent blocker.
     double maxScale = std::max(1.0, g_settings.hoverScale);
-    int growX = static_cast<int>(std::ceil((right - left) * (maxScale - 1.0) * 0.5)) + 2;
-    int growY = static_cast<int>(std::ceil((bottom - top) * (maxScale - 1.0) * 0.5)) + 2;
+    int growX =
+        static_cast<int>(std::ceil((right - left) * (maxScale - 1.0) * 0.5)) +
+        2;
+    int growY =
+        static_cast<int>(std::ceil((bottom - top) * (maxScale - 1.0) * 0.5)) +
+        2;
     left -= growX;
     right += growX;
     top -= growY;
@@ -11524,7 +11864,8 @@ void ApplyPopupCompactWindowRegions() {
 }
 
 void StopPopupPlaybackIndicatorRenderLoop() {
-    if (!g_popupPlaybackRenderingHooked) return;
+    if (!g_popupPlaybackRenderingHooked)
+        return;
     try {
         mediax::CompositionTarget::Rendering(g_popupPlaybackRenderingToken);
     } catch (...) {
@@ -11544,7 +11885,8 @@ void OnPopupPlaybackIndicatorRendering(
         }
         auto now = std::chrono::steady_clock::now();
         if (g_lastPopupPlaybackFrameTime.time_since_epoch().count() != 0 &&
-            now - g_lastPopupPlaybackFrameTime < std::chrono::milliseconds(12)) {
+            now - g_lastPopupPlaybackFrameTime <
+                std::chrono::milliseconds(12)) {
             return;
         }
         g_lastPopupPlaybackFrameTime = now;
@@ -11568,7 +11910,8 @@ void OnPopupPlaybackIndicatorRendering(
                  static_cast<float>(height)});
         }
         if (g_popupXamlCompactHoverScale) {
-            double alpha = 1.0 - std::exp(-g_settings.hoverLerpSpeed * (1.0 / 80.0));
+            double alpha =
+                1.0 - std::exp(-g_settings.hoverLerpSpeed * (1.0 / 80.0));
             g_popupCompactHoverCurrent +=
                 (g_popupCompactHoverTarget - g_popupCompactHoverCurrent) *
                 Clamp(alpha, 0.0, 1.0);
@@ -11580,15 +11923,19 @@ void OnPopupPlaybackIndicatorRendering(
             g_popupXamlCompactHoverScale.ScaleY(g_popupCompactHoverCurrent);
         }
         constexpr double paused[5] = {0.27, 0.43, 0.60, 0.43, 0.27};
-        double elapsed = std::chrono::duration<double>(
-                             now - g_popupPlaybackAnimationStart).count();
+        double elapsed =
+            std::chrono::duration<double>(now - g_popupPlaybackAnimationStart)
+                .count();
         constexpr double phase[5] = {0.10, 1.22, 2.46, 3.72, 4.86};
         for (size_t i = 0; i < 5; ++i) {
             double target = std::max(2.0, height * paused[i]);
             if (g_compactPlaybackDesiredPlaying) {
-                double a = 0.5 + 0.5 * std::sin(elapsed * (5.8 + i * 0.16) + phase[i]);
-                double b = 0.5 + 0.5 * std::sin(elapsed * 9.6 + phase[(i + 1) % 5]);
-                double level = SmootherStep(Clamp(a * 0.72 + b * 0.28, 0.0, 1.0));
+                double a =
+                    0.5 + 0.5 * std::sin(elapsed * (5.8 + i * 0.16) + phase[i]);
+                double b =
+                    0.5 + 0.5 * std::sin(elapsed * 9.6 + phase[(i + 1) % 5]);
+                double level =
+                    SmootherStep(Clamp(a * 0.72 + b * 0.28, 0.0, 1.0));
                 target = std::max(2.0, height * (0.18 + 0.70 * level));
             }
             double current = g_popupPlaybackBarHeights[i];
@@ -11614,8 +11961,8 @@ void StartPopupPlaybackIndicatorRenderLoop() {
     g_popupCompactHoverCurrent = 1.0;
     g_popupCompactHoverTarget = 1.0;
     g_lastPopupPlaybackFrameTime = {};
-    g_popupPlaybackRenderingToken = mediax::CompositionTarget::Rendering(
-        OnPopupPlaybackIndicatorRendering);
+    g_popupPlaybackRenderingToken =
+        mediax::CompositionTarget::Rendering(OnPopupPlaybackIndicatorRendering);
     g_popupPlaybackRenderingHooked = true;
 }
 
@@ -11658,8 +12005,8 @@ void ResumeOpenExpandedPopup() {
     if (g_popupXamlRoot) {
         StartPopupXamlRenderLoop();
     }
-    SetTimer(g_expandedPopup, kPopupTimerId,
-             g_popupXamlRoot ? 30 : 15, nullptr);
+    SetTimer(g_expandedPopup, kPopupTimerId, g_popupXamlRoot ? 30 : 15,
+             nullptr);
 }
 
 void SetCompactIslandSuppressed(bool suppressed) {
@@ -11855,24 +12202,26 @@ bool IsTaskbarCurrentlyAutoHidden() {
         return false;
     }
     RECT taskbar{};
-    if (!GetWindowRect(g_taskbarWnd, &taskbar)) return false;
-    HMONITOR monitor = MonitorFromWindow(g_taskbarWnd,
-                                         MONITOR_DEFAULTTONEAREST);
+    if (!GetWindowRect(g_taskbarWnd, &taskbar))
+        return false;
+    HMONITOR monitor =
+        MonitorFromWindow(g_taskbarWnd, MONITOR_DEFAULTTONEAREST);
     MONITORINFO info{sizeof(info)};
-    if (!GetMonitorInfoW(monitor, &info)) return false;
+    if (!GetMonitorInfoW(monitor, &info))
+        return false;
     int width = taskbar.right - taskbar.left;
     int height = taskbar.bottom - taskbar.top;
     bool horizontal = width >= height;
     int visible = 0;
     if (horizontal) {
-        LONG topOverlap = std::max<LONG>(
-            0, std::min(taskbar.bottom, info.rcMonitor.bottom) -
-                   std::max(taskbar.top, info.rcMonitor.top));
+        LONG topOverlap =
+            std::max<LONG>(0, std::min(taskbar.bottom, info.rcMonitor.bottom) -
+                                  std::max(taskbar.top, info.rcMonitor.top));
         visible = static_cast<int>(topOverlap);
     } else {
-        LONG sideOverlap = std::max<LONG>(
-            0, std::min(taskbar.right, info.rcMonitor.right) -
-                   std::max(taskbar.left, info.rcMonitor.left));
+        LONG sideOverlap =
+            std::max<LONG>(0, std::min(taskbar.right, info.rcMonitor.right) -
+                                  std::max(taskbar.left, info.rcMonitor.left));
         visible = static_cast<int>(sideOverlap);
     }
     return visible <= PopupDipToPx(3.0, g_taskbarWnd);
@@ -12002,10 +12351,10 @@ void MovePopupHostBy(int dx, int dy) {
     GetWindowRect(g_expandedPopup, &rect);
     int width = std::max(1L, rect.right - rect.left);
     int height = std::max(1L, rect.bottom - rect.top);
-    SetWindowPos(g_expandedPopup, HWND_TOPMOST,
-                 rect.left + dx, rect.top + dy, width, height,
-                 SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER |
-                     SWP_NOSENDCHANGING);
+    SetWindowPos(
+        g_expandedPopup, HWND_TOPMOST, rect.left + dx, rect.top + dy, width,
+        height,
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
     if (g_popupXamlChild && IsWindow(g_popupXamlChild)) {
         MoveWindow(g_popupXamlChild, 0, 0, width, height, FALSE);
     }
@@ -12017,9 +12366,8 @@ void MovePopupHostBy(int dx, int dy) {
         GetWindowRect(g_popupToggleHitWindow, &toggleRect);
         int toggleWidth = std::max(1L, toggleRect.right - toggleRect.left);
         int toggleHeight = std::max(1L, toggleRect.bottom - toggleRect.top);
-        SetWindowPos(g_popupToggleHitWindow, HWND_TOPMOST,
-                     toggleRect.left + dx, toggleRect.top + dy,
-                     toggleWidth, toggleHeight,
+        SetWindowPos(g_popupToggleHitWindow, HWND_TOPMOST, toggleRect.left + dx,
+                     toggleRect.top + dy, toggleWidth, toggleHeight,
                      SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER |
                          SWP_NOSENDCHANGING);
     }
@@ -12045,9 +12393,8 @@ void ApplyPendingPopupDelta() {
 // it auto-hides). This is event-driven only - never called per tick - so it
 // cannot cause the repeated backdrop re-sampling that looked like a flash.
 void AnchorIslandAboveTaskbar() {
-    if (!g_expandedPopup || !IsWindow(g_expandedPopup) ||
-        !g_taskbarWnd || !IsWindow(g_taskbarWnd) ||
-        !IsWindowVisible(g_expandedPopup)) {
+    if (!g_expandedPopup || !IsWindow(g_expandedPopup) || !g_taskbarWnd ||
+        !IsWindow(g_taskbarWnd) || !IsWindowVisible(g_expandedPopup)) {
         return;
     }
     HWND insertAfter = GetWindow(g_taskbarWnd, GW_HWNDPREV);
@@ -12055,8 +12402,8 @@ void AnchorIslandAboveTaskbar() {
         insertAfter = HWND_TOP;
     }
     SetWindowPos(g_expandedPopup, insertAfter, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
-                     SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
+                     SWP_NOSENDCHANGING);
     if (g_popupToggleHitWindow && IsWindow(g_popupToggleHitWindow)) {
         HWND toggleAfter = GetWindow(g_expandedPopup, GW_HWNDPREV);
         if (!toggleAfter) {
@@ -12085,8 +12432,8 @@ void KeepPopupOnTop() {
     // click); it never changes topmost membership, so it cannot drag the
     // taskbar above a fullscreen app and cannot cause the flash.
     SetWindowPos(g_expandedPopup, HWND_TOP, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
-                     SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER |
+                     SWP_NOSENDCHANGING);
     if (g_popupToggleHitWindow && IsWindow(g_popupToggleHitWindow)) {
         SetWindowPos(g_popupToggleHitWindow, HWND_TOP, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE |
@@ -12094,9 +12441,12 @@ void KeepPopupOnTop() {
     }
 }
 
-LRESULT CALLBACK TaskbarVisibilitySubclassProc(
-    HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
-    UINT_PTR, DWORD_PTR) {
+LRESULT CALLBACK TaskbarVisibilitySubclassProc(HWND hwnd,
+                                               UINT message,
+                                               WPARAM wParam,
+                                               LPARAM lParam,
+                                               UINT_PTR,
+                                               DWORD_PTR) {
     if (message == WM_WINDOWPOSCHANGING) {
         auto* windowPos = reinterpret_cast<WINDOWPOS*>(lParam);
         if (windowPos && (windowPos->flags & SWP_HIDEWINDOW) != 0) {
@@ -12118,8 +12468,8 @@ LRESULT CALLBACK TaskbarVisibilitySubclassProc(
         // taskbar after the taskbar comes back. Only actual z-order changes
         // (SWP_NOZORDER absent) trigger this, never the per-frame move
         // animation, so there is no repeated backdrop re-sampling flash.
-        bool zOrderChanged = windowPos &&
-                             (windowPos->flags & SWP_NOZORDER) == 0;
+        bool zOrderChanged =
+            windowPos && (windowPos->flags & SWP_NOZORDER) == 0;
         if (zOrderChanged && hwnd == g_taskbarWnd &&
             (g_popupClosing || g_popupRestingCompact)) {
             AnchorIslandAboveTaskbar();
@@ -12146,8 +12496,7 @@ LRESULT CALLBACK TaskbarVisibilitySubclassProc(
                     // First upward movement while the resting island is
                     // hidden: show it right now so it rides up together with
                     // the taskbar instead of popping in after the rise.
-                    bool rising =
-                        g_taskbarAtTop ? (dy > 0) : (dy < 0);
+                    bool rising = g_taskbarAtTop ? (dy > 0) : (dy < 0);
                     if (rising && g_popupRestingCompact &&
                         g_popupRestingHiddenWithTaskbar && g_expandedPopup &&
                         !IsWindowVisible(g_expandedPopup)) {
@@ -12227,7 +12576,8 @@ void UnsubclassTaskbarVisibilityWindows() {
 void KeepPopupOnTop();
 
 void SyncRestingPopupWithTaskbarVisibility() {
-    if (!g_popupRestingCompact || !g_expandedPopup) return;
+    if (!g_popupRestingCompact || !g_expandedPopup)
+        return;
 
     auto stabilizeVisibleTaskbarLayer = [&] {
         if (!TaskbarFullyShown() || !IsWindowVisible(g_expandedPopup)) {
@@ -12276,16 +12626,15 @@ void SyncRestingPopupWithTaskbarVisibility() {
     // with the taskbar instead of popping in after it settles.
     if (g_popupRestingHiddenWithTaskbar && !TaskbarFullyShown()) {
         RECT islandNowRise{};
-        if (g_playerGrid &&
-            GetElementScreenRect(g_playerGrid, islandNowRise) &&
+        if (g_playerGrid && GetElementScreenRect(g_playerGrid, islandNowRise) &&
             IsIslandRectOnScreen(islandNowRise)) {
             g_popupRidingTaskbarUp = true;
             g_popupRestingHiddenWithTaskbar = false;
             g_taskbarFullyShownSince = {};
             g_taskbarShowReanchorStage = 0;
             CapturePopupSourceGeometry();
-            g_popupHostRect = UnionPopupRects(g_popupSourceRect,
-                                              g_popupFinalRect);
+            g_popupHostRect =
+                UnionPopupRects(g_popupSourceRect, g_popupFinalRect);
             g_lastPopupWindowRect = {LONG_MIN, LONG_MIN, LONG_MIN, LONG_MIN};
             PositionExpandedPopup();
             UpdatePopupXamlVisuals();
@@ -12313,9 +12662,8 @@ void SyncRestingPopupWithTaskbarVisibility() {
     // hidden forever.
     bool hidden =
         IsTaskbarCurrentlyAutoHidden() ||
-        (!taskbarFullyVisible &&
-         (!IsIslandXamlVisible() || !haveIsland ||
-          !IsIslandRectOnScreen(islandNow)));
+        (!taskbarFullyVisible && (!IsIslandXamlVisible() || !haveIsland ||
+                                  !IsIslandRectOnScreen(islandNow)));
     // The island is hidden and the taskbar is returning: show RIGHT NOW at
     // the island element's live position. The per-frame follow keeps it
     // riding up together with the taskbar from this very frame.
@@ -12331,7 +12679,8 @@ void SyncRestingPopupWithTaskbarVisibility() {
         g_taskbarFullyShownSince = {};
         g_taskbarShowReanchorStage = 0;
         ShowWindow(g_expandedPopup, SW_HIDE);
-        if (g_popupBackdropOverlay) ShowWindow(g_popupBackdropOverlay, SW_HIDE);
+        if (g_popupBackdropOverlay)
+            ShowWindow(g_popupBackdropOverlay, SW_HIDE);
         HidePopupToggleHitWindow();
         return;
     }
@@ -12352,75 +12701,78 @@ void SyncRestingPopupWithTaskbarVisibility() {
 void OnPopupXamlRendering(winrt::Windows::Foundation::IInspectable const&,
                           winrt::Windows::Foundation::IInspectable const&) {
     try {
-    if (!g_popupXamlRoot || !g_expandedPopup || g_unloading) {
-        StopPopupXamlRenderLoop();
-        return;
-    }
-
-    auto now = std::chrono::steady_clock::now();
-    double dt = 1.0 / 60.0;
-    if (g_lastPopupFrameTime.time_since_epoch().count() != 0) {
-        dt = std::chrono::duration_cast<std::chrono::microseconds>(
-                 now - g_lastPopupFrameTime).count() / 1000000.0;
-    }
-    g_lastPopupFrameTime = now;
-    dt = Clamp(dt, 0.0, 0.05);
-    if (g_popupClosing) {
-        // Apply any pending taskbar-follow deltas before re-measuring.
-        ApplyPendingPopupDelta();
-        // The taskbar-move probe already drags the popup along on every
-        // window move; this island-rect tracking is a second, frame-level
-        // fallback for XAML-transform hides that don't move a window.
-        RECT islandNow{};
-        if (g_playerGrid && GetElementScreenRect(g_playerGrid, islandNow) &&
-            !EqualRect(&islandNow, &g_lastTrackedIslandRect)) {
-            g_lastTrackedIslandRect = islandNow;
-            CapturePopupSourceGeometry(true);
-            if (g_popupXamlRoot) {
-                g_popupHostRect = UnionPopupRects(g_popupSourceRect,
-                                                  g_popupFinalRect);
-                g_lastPopupWindowRect = {
-                    LONG_MIN, LONG_MIN, LONG_MIN, LONG_MIN};
-            }
-        }
-    }
-    TickPopupMediaTransition(dt);
-    bool animationSettled = AdvancePopupSpring(dt);
-    PositionExpandedPopup();
-    UpdatePopupLiveProgressFromSnapshot();
-    RenderExpandedPopupLayer();
-
-    if (animationSettled) {
-        if (g_popupClosing && g_popupAnimationTarget == 0.0) {
-            // Re-align the final frame with the island's current position,
-            // then keep this same surface as the compact island. There is no
-            // handoff swap at all, so no flash: the popup simply stays in
-            // place, follows the taskbar (auto-hide included), and the next
-            // click reverses the same spring to open again.
-            CapturePopupSourceGeometry(true);
-            if (g_popupXamlRoot) {
-                g_popupHostRect = UnionPopupRects(g_popupSourceRect,
-                                                  g_popupFinalRect);
-                g_lastPopupWindowRect = {LONG_MIN, LONG_MIN, LONG_MIN, LONG_MIN};
-                PositionExpandedPopup();
-            }
-            RenderExpandedPopupLayer();
-            g_popupPendingContentRefresh = false;
-            RestExpandedPopupAsCompact();
+        if (!g_popupXamlRoot || !g_expandedPopup || g_unloading) {
+            StopPopupXamlRenderLoop();
             return;
         }
-        if (g_popupMediaTransitionActive) {
-            return;
+
+        auto now = std::chrono::steady_clock::now();
+        double dt = 1.0 / 60.0;
+        if (g_lastPopupFrameTime.time_since_epoch().count() != 0) {
+            dt = std::chrono::duration_cast<std::chrono::microseconds>(
+                     now - g_lastPopupFrameTime)
+                     .count() /
+                 1000000.0;
         }
-        if (g_popupAnimationTarget == 1.0) {
-            g_popupLifecycleState = PopupLifecycleState::Open;
+        g_lastPopupFrameTime = now;
+        dt = Clamp(dt, 0.0, 0.05);
+        if (g_popupClosing) {
+            // Apply any pending taskbar-follow deltas before re-measuring.
+            ApplyPendingPopupDelta();
+            // The taskbar-move probe already drags the popup along on every
+            // window move; this island-rect tracking is a second, frame-level
+            // fallback for XAML-transform hides that don't move a window.
+            RECT islandNow{};
+            if (g_playerGrid && GetElementScreenRect(g_playerGrid, islandNow) &&
+                !EqualRect(&islandNow, &g_lastTrackedIslandRect)) {
+                g_lastTrackedIslandRect = islandNow;
+                CapturePopupSourceGeometry(true);
+                if (g_popupXamlRoot) {
+                    g_popupHostRect =
+                        UnionPopupRects(g_popupSourceRect, g_popupFinalRect);
+                    g_lastPopupWindowRect = {LONG_MIN, LONG_MIN, LONG_MIN,
+                                             LONG_MIN};
+                }
+            }
         }
-        StopPopupXamlRenderLoop();
-        if (g_popupPendingContentRefresh) {
-            g_popupPendingContentRefresh = false;
-            UpdatePlayerContents();
+        TickPopupMediaTransition(dt);
+        bool animationSettled = AdvancePopupSpring(dt);
+        PositionExpandedPopup();
+        UpdatePopupLiveProgressFromSnapshot();
+        RenderExpandedPopupLayer();
+
+        if (animationSettled) {
+            if (g_popupClosing && g_popupAnimationTarget == 0.0) {
+                // Re-align the final frame with the island's current position,
+                // then keep this same surface as the compact island. There is no
+                // handoff swap at all, so no flash: the popup simply stays in
+                // place, follows the taskbar (auto-hide included), and the next
+                // click reverses the same spring to open again.
+                CapturePopupSourceGeometry(true);
+                if (g_popupXamlRoot) {
+                    g_popupHostRect =
+                        UnionPopupRects(g_popupSourceRect, g_popupFinalRect);
+                    g_lastPopupWindowRect = {LONG_MIN, LONG_MIN, LONG_MIN,
+                                             LONG_MIN};
+                    PositionExpandedPopup();
+                }
+                RenderExpandedPopupLayer();
+                g_popupPendingContentRefresh = false;
+                RestExpandedPopupAsCompact();
+                return;
+            }
+            if (g_popupMediaTransitionActive) {
+                return;
+            }
+            if (g_popupAnimationTarget == 1.0) {
+                g_popupLifecycleState = PopupLifecycleState::Open;
+            }
+            StopPopupXamlRenderLoop();
+            if (g_popupPendingContentRefresh) {
+                g_popupPendingContentRefresh = false;
+                UpdatePlayerContents();
+            }
         }
-    }
     } catch (...) {
         Wh_Log(L"Island: exception in popup rendering callback");
         FinishCloseExpandedPopup(g_expandedPopup);
@@ -12434,258 +12786,267 @@ void StartPopupXamlRenderLoop() {
     // Let the first callback use a full 60 Hz step. Seeding this with "now"
     // produced a near-zero first step and made the popup appear to hesitate.
     g_lastPopupFrameTime = {};
-    g_popupRenderingToken = mediax::CompositionTarget::Rendering(OnPopupXamlRendering);
+    g_popupRenderingToken =
+        mediax::CompositionTarget::Rendering(OnPopupXamlRendering);
     g_popupRenderingHooked = true;
 }
 
-LRESULT CALLBACK ExpandedPopupWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK ExpandedPopupWndProc(HWND hwnd,
+                                      UINT message,
+                                      WPARAM wParam,
+                                      LPARAM lParam) {
     try {
-    switch (message) {
-        case WM_ERASEBKGND:
-            return 1;
-        case WM_NCHITTEST:
-            return PopupExpandedHitTest(lParam);
-        case WM_PAINT: {
-            PAINTSTRUCT paint{};
-            BeginPaint(hwnd, &paint);
-            EndPaint(hwnd, &paint);
-            return 0;
-        }
-        case WM_LBUTTONDOWN: {
-            KeepPopupOnTop();
-            POINT screenPoint{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-            ClientToScreen(hwnd, &screenPoint);
-            bool transitionActive =
-                g_popupLifecycleState == PopupLifecycleState::Opening ||
-                g_popupLifecycleState == PopupLifecycleState::Closing ||
-                std::abs(g_popupAnimationTarget - g_popupAnimationProgress) >= 0.006;
-            if ((transitionActive &&
-                 PopupScreenPointIsInsideCurrentSurface(screenPoint)) ||
-                PopupPointIsInsideOriginalToggleArea(screenPoint)) {
-                InterruptPopupAnimationFromOriginalArea();
+        switch (message) {
+            case WM_ERASEBKGND:
+                return 1;
+            case WM_NCHITTEST:
+                return PopupExpandedHitTest(lParam);
+            case WM_PAINT: {
+                PAINTSTRUCT paint{};
+                BeginPaint(hwnd, &paint);
+                EndPaint(hwnd, &paint);
                 return 0;
             }
-            break;
-        }
-        case WM_LBUTTONUP: {
-            POINT originalTogglePoint{
-                GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-            ClientToScreen(hwnd, &originalTogglePoint);
-            if (PopupPointIsInsideOriginalToggleArea(originalTogglePoint)) {
-                return 0;
-            }
-            if (PopupProgress() < 0.75) {
-                if (!g_popupClosing) {
-                    BeginCloseExpandedPopup();
-                }
-                return 0;
-            }
-            RECT client{};
-            GetClientRect(hwnd, &client);
-            POINT point{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-            RECT art{};
-            RECT card{};
-            RECT title{};
-            RECT artist{};
-            RECT progress{};
-            RECT elapsed{};
-            RECT duration{};
-            RECT controls{};
-            CalculatePopupFinalLayout(client, art, card, title, artist, progress,
-                                      elapsed, duration, controls);
-            RECT progressHitTarget = progress;
-            InflateRect(&progressHitTarget, 0, 8);
-            if (PtInRect(&progressHitTarget, point) && progress.right > progress.left) {
-                SeekToMediaPosition(
-                    static_cast<double>(point.x - progress.left) /
-                    static_cast<double>(progress.right - progress.left));
-                return 0;
-            }
-            for (int i = 0; i < 3; ++i) {
-                RECT button = PopupButtonRect(i, client.right, client.bottom);
-                if (!PtInRect(&button, point)) {
-                    continue;
-                }
-                if (i == 0) {
-                    RunMediaTransportCommand(
-                        MediaTransportCommand::Previous);
-                } else if (i == 1) {
-                    RunMediaTransportCommand(
-                        MediaTransportCommand::TogglePlayPause);
-                } else if (i == 2) {
-                    RunMediaTransportCommand(MediaTransportCommand::Next);
-                }
-                return 0;
-            }
-            return 0;
-        }
-        case WM_TIMER: {
-            // Apply taskbar-follow deltas that were accumulated off the
-            // shell's message path.
-            ApplyPendingPopupDelta();
-            // One-shot z-order upkeep on foreground changes:
-            // - Expanded card + shell surface (Start menu, taskbar): lift the
-            //   card above the shell surface once.
-            // - Compact/closing island: anchor it directly above the taskbar
-            //   so it never floats above an app that took the foreground and
-            //   never gets pressed under the taskbar when the taskbar is
-            //   re-shown. Anchoring is event-driven (once per change), so it
-            //   cannot cause the repeated backdrop re-sampling flash.
-            static HWND s_lastForegroundHwnd = nullptr;
-            HWND foregroundHwnd = GetForegroundWindow();
-            if (foregroundHwnd != s_lastForegroundHwnd) {
-                s_lastForegroundHwnd = foregroundHwnd;
-                DWORD foregroundPid = 0;
-                GetWindowThreadProcessId(foregroundHwnd, &foregroundPid);
-                if (foregroundPid == GetCurrentProcessId()) {
-                    // Shell surface (taskbar, Start menu).
-                    if (!g_popupRestingCompact && g_expandedPopup &&
-                        IsWindow(g_expandedPopup) &&
-                        IsWindowVisible(g_expandedPopup)) {
-                        KeepPopupOnTop();
-                    } else {
-                        AnchorIslandAboveTaskbar();
-                    }
-                } else if (g_popupRestingCompact || g_popupClosing) {
-                    // An app took the foreground. Keep the island glued to
-                    // the taskbar's layer so it rides down together with the
-                    // taskbar instead of floating above the app or staying
-                    // behind at the old position.
-                    if (g_expandedPopup && IsWindow(g_expandedPopup) &&
-                        IsWindowVisible(g_expandedPopup)) {
-                        AnchorIslandAboveTaskbar();
-                    }
-                }
-            }
-            // Frame-level 1:1 follow: while closing or resting as the compact
-            // island, re-anchor to the native island element's current screen
-            // rect every tick. This works whether the auto-hide animation
-            // moves Shell_TrayWnd, the XAML bridge, or only the island's
-            // transform, so the island rides down AND up with the taskbar
-            // instead of hiding/showing late in place.
-            if ((g_popupClosing || g_popupRestingCompact) &&
-                g_expandedPopup && IsWindow(g_expandedPopup)) {
-                RECT islandNow{};
-                if (g_playerGrid && GetElementScreenRect(g_playerGrid, islandNow) &&
-                    !EqualRect(&islandNow, &g_lastTrackedIslandRect)) {
-                    g_lastTrackedIslandRect = islandNow;
-                    CapturePopupSourceGeometry(true);
-                    if (g_popupXamlRoot) {
-                        g_popupHostRect = UnionPopupRects(g_popupSourceRect,
-                                                          g_popupFinalRect);
-                        g_lastPopupWindowRect = {LONG_MIN, LONG_MIN, LONG_MIN,
-                                                 LONG_MIN};
-                    }
-                    PositionExpandedPopup();
-                    UpdatePopupXamlVisuals();
-                }
-            }
-            // Keep the click-catch window glued to the island's current
-            // position so rapid continuous clicks always hit the interrupt
-            // target, even after the island moved with the taskbar.
-            if (g_popupToggleHitWindow && IsWindow(g_popupToggleHitWindow) &&
-                IsWindowVisible(g_popupToggleHitWindow) &&
-                !IsRectEmpty(&g_popupSourceRect)) {
-                RECT toggleRect{};
-                GetWindowRect(g_popupToggleHitWindow, &toggleRect);
-                int toggleWidth =
-                    g_popupSourceRect.right - g_popupSourceRect.left;
-                int toggleHeight =
-                    g_popupSourceRect.bottom - g_popupSourceRect.top;
-                if (toggleRect.left != g_popupSourceRect.left ||
-                    toggleRect.top != g_popupSourceRect.top ||
-                    (toggleRect.right - toggleRect.left) != toggleWidth ||
-                    (toggleRect.bottom - toggleRect.top) != toggleHeight) {
-                    SetWindowPos(g_popupToggleHitWindow, HWND_TOP,
-                                 g_popupSourceRect.left, g_popupSourceRect.top,
-                                 toggleWidth, toggleHeight,
-                                 SWP_NOACTIVATE | SWP_NOZORDER |
-                                     SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
-                }
-            }
-            if (g_popupRestingCompact) {
-                SyncRestingPopupWithTaskbarVisibility();
-                return 0;
-            }
-            if (!g_popupSeekDragging) {
-                bool leftDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                if (!leftDown) {
-                    g_popupOutsideClickArmed = true;
-                } else if (g_popupOutsideClickArmed) {
-                    POINT cursor{};
-                    RECT popupRect{};
-                    GetCursorPos(&cursor);
-                    if (g_popupXamlRoot) {
-                        popupRect = CurrentPopupSurfaceScreenRect();
-                        InflateRect(&popupRect, 12, 12);
-                    } else {
-                        GetWindowRect(hwnd, &popupRect);
-                    }
-                    if (!PtInRect(&popupRect, cursor)) {
-                        BeginCloseExpandedPopup();
-                    }
-                }
-            }
-
-            if (g_popupXamlRoot) {
-                UpdatePopupLiveProgressFromSnapshot();
-                // CompositionTarget::Rendering owns XAML animation and visual
-                // updates. Rendering again from this 30 ms timer made many
-                // frames execute twice and produced uneven pacing.
-                return 0;
-            }
-
-            bool animationSettled = AdvancePopupSpring(0.015);
-            if (animationSettled) {
-                if (g_popupClosing && g_popupAnimationTarget == 0.0) {
-                    RestExpandedPopupAsCompact();
+            case WM_LBUTTONDOWN: {
+                KeepPopupOnTop();
+                POINT screenPoint{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                ClientToScreen(hwnd, &screenPoint);
+                bool transitionActive =
+                    g_popupLifecycleState == PopupLifecycleState::Opening ||
+                    g_popupLifecycleState == PopupLifecycleState::Closing ||
+                    std::abs(g_popupAnimationTarget -
+                             g_popupAnimationProgress) >= 0.006;
+                if ((transitionActive &&
+                     PopupScreenPointIsInsideCurrentSurface(screenPoint)) ||
+                    PopupPointIsInsideOriginalToggleArea(screenPoint)) {
+                    InterruptPopupAnimationFromOriginalArea();
                     return 0;
                 }
+                break;
             }
-            PositionExpandedPopup();
-            RenderExpandedPopupLayer();
-            return 0;
-        }
-        case WM_DPICHANGED: {
-            auto suggestedRect = reinterpret_cast<RECT const*>(lParam);
-            if (suggestedRect) {
-                SetWindowPos(hwnd,
-                             nullptr,
-                             suggestedRect->left,
-                             suggestedRect->top,
-                             suggestedRect->right - suggestedRect->left,
-                             suggestedRect->bottom - suggestedRect->top,
-                             SWP_NOACTIVATE | SWP_NOOWNERZORDER |
-                                 SWP_NOZORDER);
+            case WM_LBUTTONUP: {
+                POINT originalTogglePoint{GET_X_LPARAM(lParam),
+                                          GET_Y_LPARAM(lParam)};
+                ClientToScreen(hwnd, &originalTogglePoint);
+                if (PopupPointIsInsideOriginalToggleArea(originalTogglePoint)) {
+                    return 0;
+                }
+                if (PopupProgress() < 0.75) {
+                    if (!g_popupClosing) {
+                        BeginCloseExpandedPopup();
+                    }
+                    return 0;
+                }
+                RECT client{};
+                GetClientRect(hwnd, &client);
+                POINT point{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                RECT art{};
+                RECT card{};
+                RECT title{};
+                RECT artist{};
+                RECT progress{};
+                RECT elapsed{};
+                RECT duration{};
+                RECT controls{};
+                CalculatePopupFinalLayout(client, art, card, title, artist,
+                                          progress, elapsed, duration,
+                                          controls);
+                RECT progressHitTarget = progress;
+                InflateRect(&progressHitTarget, 0, 8);
+                if (PtInRect(&progressHitTarget, point) &&
+                    progress.right > progress.left) {
+                    SeekToMediaPosition(
+                        static_cast<double>(point.x - progress.left) /
+                        static_cast<double>(progress.right - progress.left));
+                    return 0;
+                }
+                for (int i = 0; i < 3; ++i) {
+                    RECT button =
+                        PopupButtonRect(i, client.right, client.bottom);
+                    if (!PtInRect(&button, point)) {
+                        continue;
+                    }
+                    if (i == 0) {
+                        RunMediaTransportCommand(
+                            MediaTransportCommand::Previous);
+                    } else if (i == 1) {
+                        RunMediaTransportCommand(
+                            MediaTransportCommand::TogglePlayPause);
+                    } else if (i == 2) {
+                        RunMediaTransportCommand(MediaTransportCommand::Next);
+                    }
+                    return 0;
+                }
+                return 0;
             }
-            if (g_expandedPopup == hwnd) {
+            case WM_TIMER: {
+                // Apply taskbar-follow deltas that were accumulated off the
+                // shell's message path.
+                ApplyPendingPopupDelta();
+                // One-shot z-order upkeep on foreground changes:
+                // - Expanded card + shell surface (Start menu, taskbar): lift the
+                //   card above the shell surface once.
+                // - Compact/closing island: anchor it directly above the taskbar
+                //   so it never floats above an app that took the foreground and
+                //   never gets pressed under the taskbar when the taskbar is
+                //   re-shown. Anchoring is event-driven (once per change), so it
+                //   cannot cause the repeated backdrop re-sampling flash.
+                static HWND s_lastForegroundHwnd = nullptr;
+                HWND foregroundHwnd = GetForegroundWindow();
+                if (foregroundHwnd != s_lastForegroundHwnd) {
+                    s_lastForegroundHwnd = foregroundHwnd;
+                    DWORD foregroundPid = 0;
+                    GetWindowThreadProcessId(foregroundHwnd, &foregroundPid);
+                    if (foregroundPid == GetCurrentProcessId()) {
+                        // Shell surface (taskbar, Start menu).
+                        if (!g_popupRestingCompact && g_expandedPopup &&
+                            IsWindow(g_expandedPopup) &&
+                            IsWindowVisible(g_expandedPopup)) {
+                            KeepPopupOnTop();
+                        } else {
+                            AnchorIslandAboveTaskbar();
+                        }
+                    } else if (g_popupRestingCompact || g_popupClosing) {
+                        // An app took the foreground. Keep the island glued to
+                        // the taskbar's layer so it rides down together with the
+                        // taskbar instead of floating above the app or staying
+                        // behind at the old position.
+                        if (g_expandedPopup && IsWindow(g_expandedPopup) &&
+                            IsWindowVisible(g_expandedPopup)) {
+                            AnchorIslandAboveTaskbar();
+                        }
+                    }
+                }
+                // Frame-level 1:1 follow: while closing or resting as the compact
+                // island, re-anchor to the native island element's current screen
+                // rect every tick. This works whether the auto-hide animation
+                // moves Shell_TrayWnd, the XAML bridge, or only the island's
+                // transform, so the island rides down AND up with the taskbar
+                // instead of hiding/showing late in place.
+                if ((g_popupClosing || g_popupRestingCompact) &&
+                    g_expandedPopup && IsWindow(g_expandedPopup)) {
+                    RECT islandNow{};
+                    if (g_playerGrid &&
+                        GetElementScreenRect(g_playerGrid, islandNow) &&
+                        !EqualRect(&islandNow, &g_lastTrackedIslandRect)) {
+                        g_lastTrackedIslandRect = islandNow;
+                        CapturePopupSourceGeometry(true);
+                        if (g_popupXamlRoot) {
+                            g_popupHostRect = UnionPopupRects(g_popupSourceRect,
+                                                              g_popupFinalRect);
+                            g_lastPopupWindowRect = {LONG_MIN, LONG_MIN,
+                                                     LONG_MIN, LONG_MIN};
+                        }
+                        PositionExpandedPopup();
+                        UpdatePopupXamlVisuals();
+                    }
+                }
+                // Keep the click-catch window glued to the island's current
+                // position so rapid continuous clicks always hit the interrupt
+                // target, even after the island moved with the taskbar.
+                if (g_popupToggleHitWindow &&
+                    IsWindow(g_popupToggleHitWindow) &&
+                    IsWindowVisible(g_popupToggleHitWindow) &&
+                    !IsRectEmpty(&g_popupSourceRect)) {
+                    RECT toggleRect{};
+                    GetWindowRect(g_popupToggleHitWindow, &toggleRect);
+                    int toggleWidth =
+                        g_popupSourceRect.right - g_popupSourceRect.left;
+                    int toggleHeight =
+                        g_popupSourceRect.bottom - g_popupSourceRect.top;
+                    if (toggleRect.left != g_popupSourceRect.left ||
+                        toggleRect.top != g_popupSourceRect.top ||
+                        (toggleRect.right - toggleRect.left) != toggleWidth ||
+                        (toggleRect.bottom - toggleRect.top) != toggleHeight) {
+                        SetWindowPos(
+                            g_popupToggleHitWindow, HWND_TOP,
+                            g_popupSourceRect.left, g_popupSourceRect.top,
+                            toggleWidth, toggleHeight,
+                            SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER |
+                                SWP_NOSENDCHANGING);
+                    }
+                }
+                if (g_popupRestingCompact) {
+                    SyncRestingPopupWithTaskbarVisibility();
+                    return 0;
+                }
+                if (!g_popupSeekDragging) {
+                    bool leftDown =
+                        (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+                    if (!leftDown) {
+                        g_popupOutsideClickArmed = true;
+                    } else if (g_popupOutsideClickArmed) {
+                        POINT cursor{};
+                        RECT popupRect{};
+                        GetCursorPos(&cursor);
+                        if (g_popupXamlRoot) {
+                            popupRect = CurrentPopupSurfaceScreenRect();
+                            InflateRect(&popupRect, 12, 12);
+                        } else {
+                            GetWindowRect(hwnd, &popupRect);
+                        }
+                        if (!PtInRect(&popupRect, cursor)) {
+                            BeginCloseExpandedPopup();
+                        }
+                    }
+                }
+
+                if (g_popupXamlRoot) {
+                    UpdatePopupLiveProgressFromSnapshot();
+                    // CompositionTarget::Rendering owns XAML animation and visual
+                    // updates. Rendering again from this 30 ms timer made many
+                    // frames execute twice and produced uneven pacing.
+                    return 0;
+                }
+
+                bool animationSettled = AdvancePopupSpring(0.015);
+                if (animationSettled) {
+                    if (g_popupClosing && g_popupAnimationTarget == 0.0) {
+                        RestExpandedPopupAsCompact();
+                        return 0;
+                    }
+                }
                 PositionExpandedPopup();
                 RenderExpandedPopupLayer();
+                return 0;
             }
-            return 0;
-        }
-        case WM_SETTINGCHANGE:
-        case WM_THEMECHANGED:
-            g_popupXamlThemeValid = false;
-            ApplyPopupBackdrop(hwnd);
-            ApplyPopupXamlTheme(true);
-            RenderExpandedPopupLayer();
-            return 0;
-        case WM_DESTROY:
-            StopPopupXamlRenderLoop();
-            KillTimer(hwnd, kPopupTimerId);
-            if (g_expandedPopup == hwnd) {
-                if (g_popupRestingCompact) {
-                    g_popupRestingCompact = false;
-                    g_popupRestingHiddenWithTaskbar = false;
-                    g_popupRidingTaskbarUp = false;
-                    SetCompactIslandSuppressed(false);
+            case WM_DPICHANGED: {
+                auto suggestedRect = reinterpret_cast<RECT const*>(lParam);
+                if (suggestedRect) {
+                    SetWindowPos(
+                        hwnd, nullptr, suggestedRect->left, suggestedRect->top,
+                        suggestedRect->right - suggestedRect->left,
+                        suggestedRect->bottom - suggestedRect->top,
+                        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER);
                 }
-                g_expandedPopup = nullptr;
+                if (g_expandedPopup == hwnd) {
+                    PositionExpandedPopup();
+                    RenderExpandedPopupLayer();
+                }
+                return 0;
             }
-            return 0;
-    }
-    return DefWindowProcW(hwnd, message, wParam, lParam);
+            case WM_SETTINGCHANGE:
+            case WM_THEMECHANGED:
+                g_popupXamlThemeValid = false;
+                ApplyPopupBackdrop(hwnd);
+                ApplyPopupXamlTheme(true);
+                RenderExpandedPopupLayer();
+                return 0;
+            case WM_DESTROY:
+                StopPopupXamlRenderLoop();
+                KillTimer(hwnd, kPopupTimerId);
+                if (g_expandedPopup == hwnd) {
+                    if (g_popupRestingCompact) {
+                        g_popupRestingCompact = false;
+                        g_popupRestingHiddenWithTaskbar = false;
+                        g_popupRidingTaskbarUp = false;
+                        SetCompactIslandSuppressed(false);
+                    }
+                    g_expandedPopup = nullptr;
+                }
+                return 0;
+        }
+        return DefWindowProcW(hwnd, message, wParam, lParam);
     } catch (...) {
         Wh_Log(L"Island: exception in expanded popup window callback");
         FinishCloseExpandedPopup(hwnd);
@@ -12711,8 +13072,9 @@ HINSTANCE ModInstance() {
 
 BYTE PopupRoundedRectAlpha(int x, int y, int width, int height, int radius);
 
-bool CreatePopupOverlayWgcCaptureItemForMonitor(HMONITOR monitor,
-                                                capture::GraphicsCaptureItem& item) {
+bool CreatePopupOverlayWgcCaptureItemForMonitor(
+    HMONITOR monitor,
+    capture::GraphicsCaptureItem& item) {
     item = nullptr;
     g_popupOverlayWgcCreateItemHr = S_OK;
     if (!monitor) {
@@ -12726,42 +13088,43 @@ bool CreatePopupOverlayWgcCaptureItemForMonitor(HMONITOR monitor,
             winrt::get_activation_factory<capture::GraphicsCaptureItem>();
 
         winrt::com_ptr<IGraphicsCaptureItemInterop> interopFactory;
-        HRESULT hr = reinterpret_cast<IUnknown*>(
-                         winrt::get_abi(activationFactory))
-                         ->QueryInterface(
-                             kIID_IGraphicsCaptureItemInterop,
-                             interopFactory.put_void());
+        HRESULT hr =
+            reinterpret_cast<IUnknown*>(winrt::get_abi(activationFactory))
+                ->QueryInterface(kIID_IGraphicsCaptureItemInterop,
+                                 interopFactory.put_void());
         if (FAILED(hr) || !interopFactory) {
             g_popupOverlayWgcCreateItemHr = hr;
-            Wh_Log(L"Island: overlay WGC QI IGraphicsCaptureItemInterop failed hr=0x%08X",
-                   static_cast<unsigned>(hr));
+            Wh_Log(
+                L"Island: overlay WGC QI IGraphicsCaptureItemInterop failed "
+                L"hr=0x%08X",
+                static_cast<unsigned>(hr));
             return false;
         }
 
         void* rawItem = nullptr;
         hr = interopFactory->CreateForMonitor(
-            monitor,
-            kIID_IGraphicsCaptureItem,
-            &rawItem);
+            monitor, kIID_IGraphicsCaptureItem, &rawItem);
         g_popupOverlayWgcCreateItemHr = hr;
         if (FAILED(hr)) {
-            Wh_Log(L"Island: overlay WGC CreateForMonitor failed hr=0x%08X monitor=%p",
-                   static_cast<unsigned>(hr),
-                   monitor);
+            Wh_Log(
+                L"Island: overlay WGC CreateForMonitor failed hr=0x%08X "
+                L"monitor=%p",
+                static_cast<unsigned>(hr), monitor);
             return false;
         }
         if (!rawItem) {
             g_popupOverlayWgcCreateItemHr = E_POINTER;
-            Wh_Log(L"Island: overlay WGC CreateForMonitor returned null item hr=0x%08X monitor=%p",
-                   static_cast<unsigned>(hr),
-                   monitor);
+            Wh_Log(
+                L"Island: overlay WGC CreateForMonitor returned null item "
+                L"hr=0x%08X monitor=%p",
+                static_cast<unsigned>(hr), monitor);
             return false;
         }
 
-        item = capture::GraphicsCaptureItem{
-            rawItem,
-            winrt::take_ownership_from_abi};
-        Wh_Log(L"Island: overlay WGC CreateForMonitor succeeded monitor=%p", monitor);
+        item = capture::GraphicsCaptureItem{rawItem,
+                                            winrt::take_ownership_from_abi};
+        Wh_Log(L"Island: overlay WGC CreateForMonitor succeeded monitor=%p",
+               monitor);
         g_popupOverlayWgcCreateItemFailed = false;
         return true;
     } catch (winrt::hresult_error const& error) {
@@ -12815,13 +13178,10 @@ ID2D1RoundedRectangleGeometry* EnsurePopupOverlayWgcRoundedGeometry(
     }
 
     D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
-        rect,
-        static_cast<float>(radius),
-        static_cast<float>(radius));
+        rect, static_cast<float>(radius), static_cast<float>(radius));
     winrt::com_ptr<ID2D1RoundedRectangleGeometry> geometry;
     HRESULT hr = g_popupOverlayWgcD2dFactory->CreateRoundedRectangleGeometry(
-        &roundedRect,
-        geometry.put());
+        &roundedRect, geometry.put());
     if (FAILED(hr) || !geometry) {
         g_popupOverlayWgcLastHr = FAILED(hr) ? hr : E_FAIL;
         return nullptr;
@@ -12856,10 +13216,7 @@ bool EnsurePopupOverlayWgcRenderCache(int width,
         HRESULT hr = g_popupOverlayWgcD2dContext->CreateBitmap(
             D2D1::SizeU(static_cast<UINT32>(width),
                         static_cast<UINT32>(height)),
-            nullptr,
-            0,
-            &props,
-            bitmap.put());
+            nullptr, 0, &props, bitmap.put());
         if (FAILED(hr)) {
             g_popupOverlayWgcLastHr = hr;
             return false;
@@ -12874,16 +13231,14 @@ bool EnsurePopupOverlayWgcRenderCache(int width,
 
     if (!g_popupOverlayWgcBlurEffect) {
         HRESULT hr = g_popupOverlayWgcD2dContext->CreateEffect(
-            CLSID_D2D1GaussianBlur,
-            g_popupOverlayWgcBlurEffect.put());
+            CLSID_D2D1GaussianBlur, g_popupOverlayWgcBlurEffect.put());
         if (FAILED(hr) || !g_popupOverlayWgcBlurEffect) {
             g_popupOverlayWgcLastHr = FAILED(hr) ? hr : E_FAIL;
             ClearPopupOverlayWgcRenderCache();
             return false;
         }
         g_popupOverlayWgcBlurEffect->SetValue(
-            D2D1_GAUSSIANBLUR_PROP_BORDER_MODE,
-            D2D1_BORDER_MODE_HARD);
+            D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
     if (useLiquidLensWarp && !g_popupOverlayWgcRefractionBlurEffect) {
@@ -12896,8 +13251,7 @@ bool EnsurePopupOverlayWgcRenderCache(int width,
             return false;
         }
         g_popupOverlayWgcRefractionBlurEffect->SetValue(
-            D2D1_GAUSSIANBLUR_PROP_BORDER_MODE,
-            D2D1_BORDER_MODE_HARD);
+            D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
     g_popupOverlayWgcRenderCacheWidth = width;
@@ -12905,7 +13259,9 @@ bool EnsurePopupOverlayWgcRenderCache(int width,
     return true;
 }
 
-bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius) {
+bool EnsurePopupOverlayWgcLensDisplacementMap(int width,
+                                              int height,
+                                              int radius) {
     if (!g_popupOverlayWgcD2dContext || width <= 0 || height <= 0) {
         return false;
     }
@@ -12944,23 +13300,19 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
 
     auto smootherStep = [](double value) {
         value = Clamp(value, 0.0, 1.0);
-        return value * value * value *
-               (value * (value * 6.0 - 15.0) + 10.0);
+        return value * value * value * (value * (value * 6.0 - 15.0) + 10.0);
     };
     auto smoothMax = [](double a, double b, double smoothness) {
         double h = Clamp(0.5 + 0.5 * (a - b) / smoothness, 0.0, 1.0);
         return a * h + b * (1.0 - h) + smoothness * h * (1.0 - h);
     };
-    auto fastThenSlowQuadraticFalloff = [](double distance,
-                                      double widthValue,
-                                      double holdRatio) {
+    auto fastThenSlowQuadraticFalloff = [](double distance, double widthValue,
+                                           double holdRatio) {
         double t = Clamp(distance / std::max(1.0, widthValue), 0.0, 1.0);
         holdRatio = Clamp(holdRatio, 0.0, 0.92);
-        double u = t <= holdRatio
-                       ? t / std::max(0.001, holdRatio)
-                       : 1.0;
-        double fastDrop = 1.0 - (1.0 - holdRatio) *
-                                    (1.0 - (1.0 - u) * (1.0 - u));
+        double u = t <= holdRatio ? t / std::max(0.001, holdRatio) : 1.0;
+        double fastDrop =
+            1.0 - (1.0 - holdRatio) * (1.0 - (1.0 - u) * (1.0 - u));
         if (t <= holdRatio) {
             return Clamp(fastDrop, 0.0, 1.0);
         }
@@ -12981,8 +13333,7 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
         // continuous/squircle corner while 2 remains the classic circle.
         double exponent = static_cast<double>(g_settings.liquidGlassRoundness);
         double outsideLength = std::pow(
-            std::pow(outsideX, exponent) +
-                std::pow(outsideY, exponent),
+            std::pow(outsideX, exponent) + std::pow(outsideY, exponent),
             1.0 / exponent);
         double hardMax = std::max(qx, qy);
         double smoothness = Clamp(minD * 0.018, 2.8, 7.0);
@@ -12997,18 +13348,13 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
         }
 
         double rim = 1.0 - smootherStep(distance / std::max(1.0, rimWidth));
-        double shoulder = fastThenSlowQuadraticFalloff(distance,
-                                                  shoulderWidth,
-                                                  0.36);
-        double body = fastThenSlowQuadraticFalloff(distance,
-                                              bodyWidth,
-                                              0.24);
+        double shoulder =
+            fastThenSlowQuadraticFalloff(distance, shoulderWidth, 0.36);
+        double body = fastThenSlowQuadraticFalloff(distance, bodyWidth, 0.24);
         rim = std::pow(Clamp(rim, 0.0, 1.0), 0.58);
         shoulder = std::pow(Clamp(shoulder, 0.0, 1.0), 1.18);
         body = std::pow(Clamp(body, 0.0, 1.0), 3.35);
-        return Clamp(rim * 0.72 + shoulder * 0.24 + body * 0.04,
-                     0.0,
-                     1.0);
+        return Clamp(rim * 0.72 + shoulder * 0.24 + body * 0.04, 0.0, 1.0);
     };
 
     for (int y = 0; y < height; ++y) {
@@ -13043,12 +13389,10 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
             size_t index = (static_cast<size_t>(y) * width + x) * 4;
             pixels[index + 0] = 0x80;
             pixels[index + 1] = static_cast<BYTE>(
-                Clamp(static_cast<int>(std::lround(128.0 + offsetY * 127.0)),
-                      0,
+                Clamp(static_cast<int>(std::lround(128.0 + offsetY * 127.0)), 0,
                       255));
             pixels[index + 2] = static_cast<BYTE>(
-                Clamp(static_cast<int>(std::lround(128.0 + offsetX * 127.0)),
-                      0,
+                Clamp(static_cast<int>(std::lround(128.0 + offsetX * 127.0)), 0,
                       255));
             pixels[index + 3] = 0xFF;
         }
@@ -13056,15 +13400,11 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
 
     D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
         D2D1_BITMAP_OPTIONS_NONE,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,
-                          D2D1_ALPHA_MODE_IGNORE));
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
     winrt::com_ptr<ID2D1Bitmap1> map;
     HRESULT hr = g_popupOverlayWgcD2dContext->CreateBitmap(
         D2D1::SizeU(static_cast<UINT32>(width), static_cast<UINT32>(height)),
-        pixels.data(),
-        static_cast<UINT32>(width * 4),
-        &props,
-        map.put());
+        pixels.data(), static_cast<UINT32>(width * 4), &props, map.put());
     if (FAILED(hr)) {
         g_popupOverlayWgcLastHr = hr;
         Wh_Log(L"Island: overlay WGC lens displacement map failed hr=0x%08X",
@@ -13102,15 +13442,13 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
     // Keep both Gaussian blurs inside one Direct2D effect graph. Direct2D can
     // schedule the complex sampling passes without us writing and reading two
     // additional full-size render targets every captured frame.
-    context->DrawImage(blurredImage,
-                       &imageTargetOffset,
-                       nullptr,
+    context->DrawImage(blurredImage, &imageTargetOffset, nullptr,
                        D2D1_INTERPOLATION_MODE_LINEAR,
                        D2D1_COMPOSITE_MODE_SOURCE_OVER);
 
     if (radius <= 0) {
-        radius = static_cast<int>(std::lround(
-            std::min(std::min(widthF, heightF) * 0.17f, 36.0f)));
+        radius = static_cast<int>(
+            std::lround(std::min(std::min(widthF, heightF) * 0.17f, 36.0f)));
     }
     radius = Clamp(radius, 1, std::max(1, std::min(width, height) / 2));
     if (!EnsurePopupOverlayWgcLensDisplacementMap(width, height, radius)) {
@@ -13118,9 +13456,9 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
     }
 
     if (!g_popupOverlayWgcDisplacementEffect) {
-        HRESULT createHr = context->CreateEffect(
-            CLSID_D2D1DisplacementMap,
-            g_popupOverlayWgcDisplacementEffect.put());
+        HRESULT createHr =
+            context->CreateEffect(CLSID_D2D1DisplacementMap,
+                                  g_popupOverlayWgcDisplacementEffect.put());
         if (FAILED(createHr) || !g_popupOverlayWgcDisplacementEffect) {
             return true;
         }
@@ -13133,13 +13471,15 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
     }
 
     g_popupOverlayWgcDisplacementEffect->SetInput(0, refractImage);
-    g_popupOverlayWgcDisplacementEffect->SetInput(1, g_popupOverlayWgcLensDisplacementMap.get());
+    g_popupOverlayWgcDisplacementEffect->SetInput(
+        1, g_popupOverlayWgcLensDisplacementMap.get());
 
     float scale = static_cast<float>(Clamp(
         std::min(width, height) *
             (static_cast<double>(g_settings.liquidGlassRefraction) / 100.0),
         0.0, 64.0));
-    HRESULT hr = g_popupOverlayWgcDisplacementEffect->SetValue(D2D1_DISPLACEMENTMAP_PROP_SCALE, scale);
+    HRESULT hr = g_popupOverlayWgcDisplacementEffect->SetValue(
+        D2D1_DISPLACEMENTMAP_PROP_SCALE, scale);
     if (FAILED(hr)) {
         return true;
     }
@@ -13150,27 +13490,19 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
     // surface shares one continuous lens field while the rim still pulls from
     // the lower-blur refractive source.
     D2D1_LAYER_PARAMETERS1 layerParams = D2D1::LayerParameters1(
-        D2D1::InfiniteRect(),
-        nullptr,
-        D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
-        D2D1::IdentityMatrix(),
-        0.38f,
-        nullptr,
-        D2D1_LAYER_OPTIONS1_NONE);
+        D2D1::InfiniteRect(), nullptr, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+        D2D1::IdentityMatrix(), 0.38f, nullptr, D2D1_LAYER_OPTIONS1_NONE);
     context->PushLayer(layerParams, nullptr);
-    context->DrawImage(g_popupOverlayWgcDisplacementEffect.get(),
-                       &imageTargetOffset,
-                       nullptr,
-                       D2D1_INTERPOLATION_MODE_LINEAR,
-                       D2D1_COMPOSITE_MODE_SOURCE_OVER);
+    context->DrawImage(
+        g_popupOverlayWgcDisplacementEffect.get(), &imageTargetOffset, nullptr,
+        D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_SOURCE_OVER);
     context->PopLayer();
 
     float rimInset = 0.75f;
     float rimRadius = std::max(1.0f, static_cast<float>(radius) - rimInset);
     D2D1_ROUNDED_RECT rimRect = D2D1::RoundedRect(
         D2D1::RectF(rimInset, rimInset, widthF - rimInset, heightF - rimInset),
-        rimRadius,
-        rimRadius);
+        rimRadius, rimRadius);
     rimAlpha = Clamp(rimAlpha, 0.0f, 1.0f);
     D2D1_COLOR_F rimColor = D2D1::ColorF(1.0f, 1.0f, 1.0f, rimAlpha);
     if (!g_popupOverlayWgcRimBrush) {
@@ -13180,8 +13512,7 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
         g_popupOverlayWgcRimBrush->SetColor(rimColor);
     }
     if (g_popupOverlayWgcRimBrush) {
-        context->DrawRoundedRectangle(rimRect,
-                                      g_popupOverlayWgcRimBrush.get(),
+        context->DrawRoundedRectangle(rimRect, g_popupOverlayWgcRimBrush.get(),
                                       1.25f);
     }
 
@@ -13198,18 +13529,15 @@ void UpdatePopupOverlayDcompVisualTransformLocked(int widthPx,
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     if (g_popupOverlayWgcTargetWidthPx > 0 &&
-        g_popupOverlayWgcTargetHeightPx > 0 &&
-        widthPx > 0 && heightPx > 0) {
-        scaleX = static_cast<float>(Clamp(
-            static_cast<double>(widthPx) /
-                static_cast<double>(g_popupOverlayWgcTargetWidthPx),
-            0.01,
-            8.0));
-        scaleY = static_cast<float>(Clamp(
-            static_cast<double>(heightPx) /
-                static_cast<double>(g_popupOverlayWgcTargetHeightPx),
-            0.01,
-            8.0));
+        g_popupOverlayWgcTargetHeightPx > 0 && widthPx > 0 && heightPx > 0) {
+        scaleX = static_cast<float>(
+            Clamp(static_cast<double>(widthPx) /
+                      static_cast<double>(g_popupOverlayWgcTargetWidthPx),
+                  0.01, 8.0));
+        scaleY = static_cast<float>(
+            Clamp(static_cast<double>(heightPx) /
+                      static_cast<double>(g_popupOverlayWgcTargetHeightPx),
+                  0.01, 8.0));
     }
 
     float radius = static_cast<float>(std::max(1, radiusPx));
@@ -13234,15 +13562,14 @@ void UpdatePopupOverlayDcompVisualTransformLocked(int widthPx,
             g_popupOverlayDcompVisual->SetClip(g_popupOverlayDcompClip.get());
         }
     }
-    if (g_popupOverlayDcompClip &&
-        g_popupOverlayWgcTargetWidthPx > 0 &&
+    if (g_popupOverlayDcompClip && g_popupOverlayWgcTargetWidthPx > 0 &&
         g_popupOverlayWgcTargetHeightPx > 0) {
-        float radiusX = std::min(
-            static_cast<float>(g_popupOverlayWgcTargetWidthPx) * 0.5f,
-            radius / std::max(scaleX, 0.01f));
-        float radiusY = std::min(
-            static_cast<float>(g_popupOverlayWgcTargetHeightPx) * 0.5f,
-            radius / std::max(scaleY, 0.01f));
+        float radiusX =
+            std::min(static_cast<float>(g_popupOverlayWgcTargetWidthPx) * 0.5f,
+                     radius / std::max(scaleX, 0.01f));
+        float radiusY =
+            std::min(static_cast<float>(g_popupOverlayWgcTargetHeightPx) * 0.5f,
+                     radius / std::max(scaleY, 0.01f));
         g_popupOverlayDcompClip->SetLeft(0.0f);
         g_popupOverlayDcompClip->SetTop(0.0f);
         g_popupOverlayDcompClip->SetRight(
@@ -13274,14 +13601,10 @@ void UpdatePopupOverlayDcompVisualTransform(int widthPx,
     // its properties. Mirror that model here: the UI thread publishes the
     // newest geometry without waiting for the WGC render lock. Intermediate
     // values may coalesce, but the latest radius can never be lost.
-    g_popupOverlayDcompPendingWidth.store(widthPx,
-                                          std::memory_order_relaxed);
-    g_popupOverlayDcompPendingHeight.store(heightPx,
-                                           std::memory_order_relaxed);
-    g_popupOverlayDcompPendingRadius.store(radiusPx,
-                                           std::memory_order_relaxed);
-    g_popupOverlayDcompGeometryDirty.store(true,
-                                           std::memory_order_release);
+    g_popupOverlayDcompPendingWidth.store(widthPx, std::memory_order_relaxed);
+    g_popupOverlayDcompPendingHeight.store(heightPx, std::memory_order_relaxed);
+    g_popupOverlayDcompPendingRadius.store(radiusPx, std::memory_order_relaxed);
+    g_popupOverlayDcompGeometryDirty.store(true, std::memory_order_release);
 }
 
 void SetPopupOverlayDcompContentOpacity(float opacity) {
@@ -13309,8 +13632,7 @@ bool RecreatePopupOverlayWgcReadbackTextures(int widthPx, int heightPx) {
         return false;
     }
 
-    if (g_popupOverlayWgcSwapChain &&
-        g_popupOverlayWgcSwapChainTargetBitmap &&
+    if (g_popupOverlayWgcSwapChain && g_popupOverlayWgcSwapChainTargetBitmap &&
         g_popupOverlayWgcTargetWidthPx == widthPx &&
         g_popupOverlayWgcTargetHeightPx == heightPx) {
         return true;
@@ -13326,8 +13648,7 @@ bool RecreatePopupOverlayWgcReadbackTextures(int widthPx, int heightPx) {
 
     if (!g_popupOverlayDcompDevice) {
         HRESULT hr = DCompositionCreateDevice(
-            g_popupOverlayWgcDxgiDevice.get(),
-            __uuidof(IDCompositionDevice),
+            g_popupOverlayWgcDxgiDevice.get(), __uuidof(IDCompositionDevice),
             g_popupOverlayDcompDevice.put_void());
         if (FAILED(hr)) {
             Wh_Log(L"Island: overlay DComp device failed hr=0x%08X",
@@ -13358,8 +13679,7 @@ bool RecreatePopupOverlayWgcReadbackTextures(int widthPx, int heightPx) {
             return false;
         }
         g_popupOverlayDcompTarget->SetRoot(g_popupOverlayDcompVisual.get());
-        g_popupOverlayDcompOpacityMilli.store(-1,
-                                              std::memory_order_release);
+        g_popupOverlayDcompOpacityMilli.store(-1, std::memory_order_release);
     }
     if (!g_popupOverlayDcompOpacityEffect) {
         HRESULT hr = g_popupOverlayDcompDevice->CreateEffectGroup(
@@ -13370,8 +13690,7 @@ bool RecreatePopupOverlayWgcReadbackTextures(int widthPx, int heightPx) {
         }
         g_popupOverlayDcompVisual->SetEffect(
             g_popupOverlayDcompOpacityEffect.get());
-        g_popupOverlayDcompOpacityMilli.store(-1,
-                                              std::memory_order_release);
+        g_popupOverlayDcompOpacityMilli.store(-1, std::memory_order_release);
     }
 
     winrt::com_ptr<IDXGIAdapter> adapter;
@@ -13444,13 +13763,12 @@ bool RecreatePopupOverlayWgcReadbackTextures(int widthPx, int heightPx) {
 bool EnsurePopupOverlayWgcDeviceResourcesLocked(HWND hwnd,
                                                 int widthPx,
                                                 int heightPx) {
-    if (!UseOverlayPopupBackdropMaterial() || !hwnd ||
-        widthPx <= 0 || heightPx <= 0) {
+    if (!UseOverlayPopupBackdropMaterial() || !hwnd || widthPx <= 0 ||
+        heightPx <= 0) {
         return false;
     }
 
-    if (g_popupOverlayWgcD3dDevice &&
-        g_popupOverlayWgcSwapChain &&
+    if (g_popupOverlayWgcD3dDevice && g_popupOverlayWgcSwapChain &&
         g_popupOverlayWgcSwapChainTargetBitmap &&
         g_popupOverlayWgcTargetWidthPx == widthPx &&
         g_popupOverlayWgcTargetHeightPx == heightPx) {
@@ -13460,7 +13778,8 @@ bool EnsurePopupOverlayWgcDeviceResourcesLocked(HWND hwnd,
     g_popupOverlayWgcSession = nullptr;
     if (g_popupOverlayWgcFramePool && g_popupOverlayWgcFrameCallbackHooked) {
         try {
-            g_popupOverlayWgcFramePool.FrameArrived(g_popupOverlayWgcFrameArrivedToken);
+            g_popupOverlayWgcFramePool.FrameArrived(
+                g_popupOverlayWgcFrameArrivedToken);
         } catch (...) {
         }
         g_popupOverlayWgcFrameCallbackHooked = false;
@@ -13507,27 +13826,15 @@ bool EnsurePopupOverlayWgcDeviceResourcesLocked(HWND hwnd,
     };
     D3D_FEATURE_LEVEL selectedFeatureLevel{};
     HRESULT hr = D3D11CreateDevice(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        deviceFlags,
-        featureLevels,
-        ARRAYSIZE(featureLevels),
-        D3D11_SDK_VERSION,
-        g_popupOverlayWgcD3dDevice.put(),
-        &selectedFeatureLevel,
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlags, featureLevels,
+        ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
+        g_popupOverlayWgcD3dDevice.put(), &selectedFeatureLevel,
         g_popupOverlayWgcD3dContext.put());
     if (FAILED(hr)) {
         hr = D3D11CreateDevice(
-            nullptr,
-            D3D_DRIVER_TYPE_WARP,
-            nullptr,
-            deviceFlags,
-            featureLevels,
-            ARRAYSIZE(featureLevels),
-            D3D11_SDK_VERSION,
-            g_popupOverlayWgcD3dDevice.put(),
-            &selectedFeatureLevel,
+            nullptr, D3D_DRIVER_TYPE_WARP, nullptr, deviceFlags, featureLevels,
+            ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
+            g_popupOverlayWgcD3dDevice.put(), &selectedFeatureLevel,
             g_popupOverlayWgcD3dContext.put());
     }
     if (FAILED(hr)) {
@@ -13539,25 +13846,24 @@ bool EnsurePopupOverlayWgcDeviceResourcesLocked(HWND hwnd,
     g_popupOverlayWgcDxgiDevice = g_popupOverlayWgcD3dDevice.as<IDXGIDevice>();
 
     D2D1_FACTORY_OPTIONS factoryOptions{};
-    hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED,
-                           __uuidof(ID2D1Factory1),
-                           &factoryOptions,
-                           reinterpret_cast<void**>(g_popupOverlayWgcD2dFactory.put()));
+    hr = D2D1CreateFactory(
+        D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1),
+        &factoryOptions,
+        reinterpret_cast<void**>(g_popupOverlayWgcD2dFactory.put()));
     if (FAILED(hr)) {
         Wh_Log(L"Island: overlay WGC D2D factory failed hr=0x%08X",
                static_cast<unsigned>(hr));
         return false;
     }
-    hr = g_popupOverlayWgcD2dFactory->CreateDevice(g_popupOverlayWgcDxgiDevice.get(),
-                                                   g_popupOverlayWgcD2dDevice.put());
+    hr = g_popupOverlayWgcD2dFactory->CreateDevice(
+        g_popupOverlayWgcDxgiDevice.get(), g_popupOverlayWgcD2dDevice.put());
     if (FAILED(hr)) {
         Wh_Log(L"Island: overlay WGC D2D device failed hr=0x%08X",
                static_cast<unsigned>(hr));
         return false;
     }
     hr = g_popupOverlayWgcD2dDevice->CreateDeviceContext(
-        D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-        g_popupOverlayWgcD2dContext.put());
+        D2D1_DEVICE_CONTEXT_OPTIONS_NONE, g_popupOverlayWgcD2dContext.put());
     if (FAILED(hr)) {
         Wh_Log(L"Island: overlay WGC D2D context failed hr=0x%08X",
                static_cast<unsigned>(hr));
@@ -13565,12 +13871,13 @@ bool EnsurePopupOverlayWgcDeviceResourcesLocked(HWND hwnd,
     }
 
     winrt::com_ptr<IInspectable> graphicsDeviceInspectable;
-    hr = CreateDirect3D11DeviceFromDXGIDevice(
-        g_popupOverlayWgcDxgiDevice.get(),
-        graphicsDeviceInspectable.put());
+    hr = CreateDirect3D11DeviceFromDXGIDevice(g_popupOverlayWgcDxgiDevice.get(),
+                                              graphicsDeviceInspectable.put());
     if (FAILED(hr)) {
-        Wh_Log(L"Island: overlay WGC CreateDirect3D11DeviceFromDXGIDevice failed hr=0x%08X",
-               static_cast<unsigned>(hr));
+        Wh_Log(
+            L"Island: overlay WGC CreateDirect3D11DeviceFromDXGIDevice failed "
+            L"hr=0x%08X",
+            static_cast<unsigned>(hr));
         return false;
     }
     g_popupOverlayWgcGraphicsDevice =
@@ -13599,8 +13906,7 @@ double PopupOverlayWgcFrameIntervalMsForMonitor(HMONITOR monitor) {
     if (monitor && GetMonitorInfoW(monitor, &monitorInfo)) {
         DEVMODEW devMode{};
         devMode.dmSize = sizeof(devMode);
-        if (EnumDisplaySettingsW(monitorInfo.szDevice,
-                                 ENUM_CURRENT_SETTINGS,
+        if (EnumDisplaySettingsW(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS,
                                  &devMode) &&
             devMode.dmDisplayFrequency > 1 &&
             devMode.dmDisplayFrequency < 1000) {
@@ -13619,8 +13925,8 @@ bool PopupOverlayWgcBorderlessAccessAllowed() {
 }
 
 bool PopupOverlayWgcBorderlessAccessPending() {
-    int state = g_popupOverlayWgcBorderlessAccessState.load(
-        std::memory_order_acquire);
+    int state =
+        g_popupOverlayWgcBorderlessAccessState.load(std::memory_order_acquire);
     return state == 0 || state == 1;
 }
 
@@ -13631,11 +13937,10 @@ void RequestPopupOverlayWgcBorderlessAccessAsync() {
         return;
     }
 
-    std::lock_guard threadLock(
-        g_popupOverlayWgcBorderlessAccessThreadMutex);
+    std::lock_guard threadLock(g_popupOverlayWgcBorderlessAccessThreadMutex);
     if (g_unloading.load()) {
-        g_popupOverlayWgcBorderlessAccessState.store(
-            4, std::memory_order_release);
+        g_popupOverlayWgcBorderlessAccessState.store(4,
+                                                     std::memory_order_release);
         return;
     }
 
@@ -13646,8 +13951,7 @@ void RequestPopupOverlayWgcBorderlessAccessAsync() {
                     capture::GraphicsCaptureAccess::RequestAccessAsync(
                         capture::GraphicsCaptureAccessKind::Borderless);
                 auto status = GetAsyncResultWithTimeout(
-                    operation,
-                    kPopupOverlayWgcBorderlessAccessTimeout,
+                    operation, kPopupOverlayWgcBorderlessAccessTimeout,
                     L"WGC borderless access");
                 bool allowed =
                     status ==
@@ -13675,13 +13979,12 @@ void RequestPopupOverlayWgcBorderlessAccessAsync() {
             } catch (...) {
                 g_popupOverlayWgcBorderlessAccessState.store(
                     4, std::memory_order_release);
-                Wh_Log(
-                    L"Island: overlay WGC borderless access failed unknown");
+                Wh_Log(L"Island: overlay WGC borderless access failed unknown");
             }
         });
     } catch (...) {
-        g_popupOverlayWgcBorderlessAccessState.store(
-            4, std::memory_order_release);
+        g_popupOverlayWgcBorderlessAccessState.store(4,
+                                                     std::memory_order_release);
         g_popupOverlayWgcBorderlessAccessThread = nullptr;
         Wh_Log(L"Island: failed to start overlay WGC access thread");
     }
@@ -13722,10 +14025,8 @@ bool PopupOverlayWgcFrameTouchesCapture(
     RECT const& captureRect,
     RECT const& monitorRect,
     bool morphing) {
-    if (morphing ||
-        !g_popupOverlayWgcReadbackHadVisibleFrame ||
-        !g_popupOverlayWgcDirtyRegionsEnabled.load(
-            std::memory_order_acquire)) {
+    if (morphing || !g_popupOverlayWgcReadbackHadVisibleFrame ||
+        !g_popupOverlayWgcDirtyRegionsEnabled.load(std::memory_order_acquire)) {
         return true;
     }
 
@@ -13735,28 +14036,23 @@ bool PopupOverlayWgcFrameTouchesCapture(
             return true;
         }
 
-        RECT localCaptureRect{
-            captureRect.left - monitorRect.left,
-            captureRect.top - monitorRect.top,
-            captureRect.right - monitorRect.left,
-            captureRect.bottom - monitorRect.top};
+        RECT localCaptureRect{captureRect.left - monitorRect.left,
+                              captureRect.top - monitorRect.top,
+                              captureRect.right - monitorRect.left,
+                              captureRect.bottom - monitorRect.top};
         for (auto const& dirtyRegion : frame.DirtyRegions()) {
-            RECT dirtyRect{
-                dirtyRegion.X,
-                dirtyRegion.Y,
-                dirtyRegion.X + dirtyRegion.Width,
-                dirtyRegion.Y + dirtyRegion.Height};
+            RECT dirtyRect{dirtyRegion.X, dirtyRegion.Y,
+                           dirtyRegion.X + dirtyRegion.Width,
+                           dirtyRegion.Y + dirtyRegion.Height};
             RECT intersection{};
-            if (IntersectRect(&intersection,
-                              &localCaptureRect,
-                              &dirtyRect)) {
+            if (IntersectRect(&intersection, &localCaptureRect, &dirtyRect)) {
                 return true;
             }
         }
         return false;
     } catch (...) {
-        g_popupOverlayWgcDirtyRegionsEnabled.store(
-            false, std::memory_order_release);
+        g_popupOverlayWgcDirtyRegionsEnabled.store(false,
+                                                   std::memory_order_release);
         return true;
     }
 }
@@ -13766,15 +14062,14 @@ void RenderPopupOverlayWgcFrameLocked(
     ++g_popupOverlayWgcFrameCount;
     g_popupOverlayWgcDiagnosticState =
         PopupOverlayWgcDiagnosticState::FrameArrived;
-    if (!g_popupOverlayWgcRunning || !frame ||
-        !g_popupOverlayWgcD2dContext ||
+    if (!g_popupOverlayWgcRunning || !frame || !g_popupOverlayWgcD2dContext ||
         !g_popupOverlayWgcSwapChain ||
         !g_popupOverlayWgcSwapChainTargetBitmap) {
         return;
     }
 
-    if (g_popupOverlayDcompGeometryDirty.exchange(
-            false, std::memory_order_acq_rel)) {
+    if (g_popupOverlayDcompGeometryDirty.exchange(false,
+                                                  std::memory_order_acq_rel)) {
         UpdatePopupOverlayDcompVisualTransformLocked(
             g_popupOverlayDcompPendingWidth.load(std::memory_order_relaxed),
             g_popupOverlayDcompPendingHeight.load(std::memory_order_relaxed),
@@ -13796,9 +14091,7 @@ void RenderPopupOverlayWgcFrameLocked(
     }
 
     bool morphing = renderParameters.morphing;
-    if (!PopupOverlayWgcFrameTouchesCapture(frame,
-                                            captureRect,
-                                            monitorRect,
+    if (!PopupOverlayWgcFrameTouchesCapture(frame, captureRect, monitorRect,
                                             morphing)) {
         return;
     }
@@ -13809,14 +14102,12 @@ void RenderPopupOverlayWgcFrameLocked(
         // small jitter guard so 120/144/165/240 Hz displays stay synchronized
         // with the XAML morph instead of being capped to 60 Hz.
         double targetIntervalMs = Clamp(g_popupOverlayWgcFrameIntervalMs,
-                                        1000.0 / 360.0,
-                                        1000.0 / 50.0);
+                                        1000.0 / 360.0, 1000.0 / 50.0);
         double guardIntervalMs = targetIntervalMs * 0.72;
         if (g_popupOverlayWgcLastRenderTime.time_since_epoch().count() != 0) {
-            double elapsedMs =
-                std::chrono::duration<double, std::milli>(
-                    now - g_popupOverlayWgcLastRenderTime)
-                    .count();
+            double elapsedMs = std::chrono::duration<double, std::milli>(
+                                   now - g_popupOverlayWgcLastRenderTime)
+                                   .count();
             if (elapsedMs < guardIntervalMs) {
                 return;
             }
@@ -13847,14 +14138,13 @@ void RenderPopupOverlayWgcFrameLocked(
     try {
         auto surface = frame.Surface();
         winrt::com_ptr<IDirect3DDxgiInterfaceAccess> access;
-        winrt::check_hresult(reinterpret_cast<IUnknown*>(winrt::get_abi(surface))
-                                 ->QueryInterface(
-                                     kIID_IDirect3DDxgiInterfaceAccess,
-                                     access.put_void()));
+        winrt::check_hresult(
+            reinterpret_cast<IUnknown*>(winrt::get_abi(surface))
+                ->QueryInterface(kIID_IDirect3DDxgiInterfaceAccess,
+                                 access.put_void()));
         winrt::com_ptr<ID3D11Texture2D> frameTexture;
-        winrt::check_hresult(access->GetInterface(
-            __uuidof(ID3D11Texture2D),
-            frameTexture.put_void()));
+        winrt::check_hresult(access->GetInterface(__uuidof(ID3D11Texture2D),
+                                                  frameTexture.put_void()));
         winrt::com_ptr<IDXGISurface> frameSurface;
         frameTexture.as(frameSurface);
 
@@ -13866,56 +14156,56 @@ void RenderPopupOverlayWgcFrameLocked(
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,
                               D2D1_ALPHA_MODE_IGNORE));
         winrt::com_ptr<ID2D1Bitmap1> sourceBitmap;
-        winrt::check_hresult(g_popupOverlayWgcD2dContext->CreateBitmapFromDxgiSurface(
-            frameSurface.get(),
-            &sourceProps,
-            sourceBitmap.put()));
+        winrt::check_hresult(
+            g_popupOverlayWgcD2dContext->CreateBitmapFromDxgiSurface(
+                frameSurface.get(), &sourceProps, sourceBitmap.put()));
 
         float srcLeft = static_cast<float>(captureRect.left - monitorRect.left);
         float srcTop = static_cast<float>(captureRect.top - monitorRect.top);
-        float srcRight = static_cast<float>(captureRect.right - monitorRect.left);
-        float srcBottom = static_cast<float>(captureRect.bottom - monitorRect.top);
-        D2D1_RECT_F sourceRect = D2D1::RectF(srcLeft, srcTop, srcRight, srcBottom);
-        D2D1_RECT_F targetRect = D2D1::RectF(
-            0.0f, 0.0f,
-            static_cast<float>(targetWidth),
-            static_cast<float>(targetHeight));
+        float srcRight =
+            static_cast<float>(captureRect.right - monitorRect.left);
+        float srcBottom =
+            static_cast<float>(captureRect.bottom - monitorRect.top);
+        D2D1_RECT_F sourceRect =
+            D2D1::RectF(srcLeft, srcTop, srcRight, srcBottom);
+        D2D1_RECT_F targetRect =
+            D2D1::RectF(0.0f, 0.0f, static_cast<float>(targetWidth),
+                        static_cast<float>(targetHeight));
 
         int cornerRadiusPx = renderParameters.targetRadiusPx;
-        cornerRadiusPx = Clamp(
-            cornerRadiusPx, 1,
-            std::max(1, std::min(targetWidth, targetHeight) / 2));
+        cornerRadiusPx =
+            Clamp(cornerRadiusPx, 1,
+                  std::max(1, std::min(targetWidth, targetHeight) / 2));
 
         winrt::com_ptr<ID2D1Bitmap1> recordingCleanBitmap;
-        winrt::com_ptr<ID2D1RoundedRectangleGeometry> recordingCleanMaskGeometry;
+        winrt::com_ptr<ID2D1RoundedRectangleGeometry>
+            recordingCleanMaskGeometry;
         if (useRecordingCleanBackdrop) {
             winrt::check_hresult(g_popupOverlayWgcD2dContext->CreateBitmap(
                 D2D1::SizeU(static_cast<UINT32>(targetWidth),
                             static_cast<UINT32>(targetHeight)),
                 recordingCleanPixels.data(),
-                static_cast<UINT32>(targetWidth * 4),
-                &sourceProps,
+                static_cast<UINT32>(targetWidth * 4), &sourceProps,
                 recordingCleanBitmap.put()));
 
             D2D1_ROUNDED_RECT cleanMaskRect = D2D1::RoundedRect(
-                targetRect,
-                static_cast<float>(cornerRadiusPx),
+                targetRect, static_cast<float>(cornerRadiusPx),
                 static_cast<float>(cornerRadiusPx));
-            winrt::check_hresult(g_popupOverlayWgcD2dFactory->CreateRoundedRectangleGeometry(
-                &cleanMaskRect,
-                recordingCleanMaskGeometry.put()));
+            winrt::check_hresult(
+                g_popupOverlayWgcD2dFactory->CreateRoundedRectangleGeometry(
+                    &cleanMaskRect, recordingCleanMaskGeometry.put()));
         }
         bool useLiquidLensWarp = renderParameters.useLiquidLensWarp;
         D2D1_BITMAP_PROPERTIES1 intermediateProps = D2D1::BitmapProperties1(
             D2D1_BITMAP_OPTIONS_TARGET,
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,
                               D2D1_ALPHA_MODE_IGNORE));
-        if (!EnsurePopupOverlayWgcRenderCache(targetWidth,
-                                              targetHeight,
+        if (!EnsurePopupOverlayWgcRenderCache(targetWidth, targetHeight,
                                               intermediateProps,
                                               useLiquidLensWarp)) {
             g_popupOverlayWgcDiagnosticHr = g_popupOverlayWgcLastHr;
-            g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+            g_popupOverlayWgcDiagnosticState =
+                PopupOverlayWgcDiagnosticState::RenderFailed;
             ++g_popupOverlayWgcRenderFailCount;
             return;
         }
@@ -13926,27 +14216,19 @@ void RenderPopupOverlayWgcFrameLocked(
         // resolution and avoids trying to draw the full monitor-sized effect.
         g_popupOverlayWgcD2dContext->SetTarget(intermediateBitmap.get());
         g_popupOverlayWgcD2dContext->BeginDraw();
-        g_popupOverlayWgcD2dContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+        g_popupOverlayWgcD2dContext->Clear(
+            D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
         g_popupOverlayWgcD2dContext->DrawBitmap(
-            sourceBitmap.get(),
-            targetRect,
-            1.0f,
-            D2D1_INTERPOLATION_MODE_LINEAR,
-            sourceRect);
+            sourceBitmap.get(), targetRect, 1.0f,
+            D2D1_INTERPOLATION_MODE_LINEAR, sourceRect);
         if (recordingCleanBitmap && recordingCleanMaskGeometry) {
             D2D1_LAYER_PARAMETERS1 cleanLayerParams = D2D1::LayerParameters1(
-                targetRect,
-                recordingCleanMaskGeometry.get(),
-                D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
-                D2D1::IdentityMatrix(),
-                1.0f,
-                nullptr,
-                D2D1_LAYER_OPTIONS1_NONE);
+                targetRect, recordingCleanMaskGeometry.get(),
+                D2D1_ANTIALIAS_MODE_PER_PRIMITIVE, D2D1::IdentityMatrix(), 1.0f,
+                nullptr, D2D1_LAYER_OPTIONS1_NONE);
             g_popupOverlayWgcD2dContext->PushLayer(cleanLayerParams, nullptr);
             g_popupOverlayWgcD2dContext->DrawBitmap(
-                recordingCleanBitmap.get(),
-                targetRect,
-                1.0f,
+                recordingCleanBitmap.get(), targetRect, 1.0f,
                 D2D1_INTERPOLATION_MODE_LINEAR);
             g_popupOverlayWgcD2dContext->PopLayer();
         }
@@ -13954,12 +14236,16 @@ void RenderPopupOverlayWgcFrameLocked(
         if (FAILED(hr)) {
             g_popupOverlayWgcLastHr = hr;
             g_popupOverlayWgcDiagnosticHr = hr;
-            g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+            g_popupOverlayWgcDiagnosticState =
+                PopupOverlayWgcDiagnosticState::RenderFailed;
             ++g_popupOverlayWgcRenderFailCount;
-            Wh_Log(L"Island: overlay WGC state intermediate EndDraw failed hr=0x%08X frames=%llu fails=%llu",
-                   static_cast<unsigned>(hr),
-                   static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
-                   static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
+            Wh_Log(
+                L"Island: overlay WGC state intermediate EndDraw failed "
+                L"hr=0x%08X frames=%llu fails=%llu",
+                static_cast<unsigned>(hr),
+                static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
+                static_cast<unsigned long long>(
+                    g_popupOverlayWgcRenderFailCount));
             return;
         }
 
@@ -14006,46 +14292,38 @@ void RenderPopupOverlayWgcFrameLocked(
         // the DirectComposition swapchain backbuffer. Capture, blur, clipping,
         // alpha and present now stay on the GPU.
         BYTE maxAlpha = static_cast<BYTE>(Clamp(
-            g_popupBackdropOverlayFrameAlpha.load(std::memory_order_relaxed),
-            0, 255));
+            g_popupBackdropOverlayFrameAlpha.load(std::memory_order_relaxed), 0,
+            255));
         double layerOpacity = static_cast<double>(maxAlpha) / 255.0;
         ID2D1RoundedRectangleGeometry* roundedGeometry =
-            EnsurePopupOverlayWgcRoundedGeometry(targetRect,
-                                                targetWidth,
-                                                targetHeight,
-                                                cornerRadiusPx);
+            EnsurePopupOverlayWgcRoundedGeometry(targetRect, targetWidth,
+                                                 targetHeight, cornerRadiusPx);
         if (!roundedGeometry) {
             g_popupOverlayWgcDiagnosticHr = g_popupOverlayWgcLastHr;
-            g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+            g_popupOverlayWgcDiagnosticState =
+                PopupOverlayWgcDiagnosticState::RenderFailed;
             ++g_popupOverlayWgcRenderFailCount;
             return;
         }
 
         g_popupOverlayWgcD2dContext->SetTarget(targetBitmap);
         g_popupOverlayWgcD2dContext->BeginDraw();
-        g_popupOverlayWgcD2dContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
+        g_popupOverlayWgcD2dContext->Clear(
+            D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
         D2D1_LAYER_PARAMETERS1 layerParams = D2D1::LayerParameters1(
-            targetRect,
-            roundedGeometry,
-            D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
-            D2D1::IdentityMatrix(),
-            static_cast<float>(layerOpacity),
-            nullptr,
+            targetRect, roundedGeometry, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+            D2D1::IdentityMatrix(), static_cast<float>(layerOpacity), nullptr,
             D2D1_LAYER_OPTIONS1_NONE);
         g_popupOverlayWgcD2dContext->PushLayer(layerParams, nullptr);
-        bool drewGpuLens = useLiquidLensWarp &&
-            DrawLiquidGlassGpuLensWarp(g_popupOverlayWgcD2dContext.get(),
-                                       blurredImage.get(),
-                                       refractionImage,
-                                       targetWidth,
-                                       targetHeight,
-                                       cornerRadiusPx,
-                                       renderParameters.liquidRimAlpha);
+        bool drewGpuLens =
+            useLiquidLensWarp &&
+            DrawLiquidGlassGpuLensWarp(
+                g_popupOverlayWgcD2dContext.get(), blurredImage.get(),
+                refractionImage, targetWidth, targetHeight, cornerRadiusPx,
+                renderParameters.liquidRimAlpha);
         if (!drewGpuLens) {
             g_popupOverlayWgcD2dContext->DrawImage(
-                renderImage,
-                &imageTargetOffset,
-                nullptr,
+                renderImage, &imageTargetOffset, nullptr,
                 D2D1_INTERPOLATION_MODE_LINEAR,
                 D2D1_COMPOSITE_MODE_SOURCE_COPY);
         }
@@ -14054,12 +14332,16 @@ void RenderPopupOverlayWgcFrameLocked(
         if (FAILED(hr)) {
             g_popupOverlayWgcLastHr = hr;
             g_popupOverlayWgcDiagnosticHr = hr;
-            g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+            g_popupOverlayWgcDiagnosticState =
+                PopupOverlayWgcDiagnosticState::RenderFailed;
             ++g_popupOverlayWgcRenderFailCount;
-            Wh_Log(L"Island: overlay WGC state EndDraw failed hr=0x%08X frames=%llu fails=%llu",
-                   static_cast<unsigned>(hr),
-                   static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
-                   static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
+            Wh_Log(
+                L"Island: overlay WGC state EndDraw failed hr=0x%08X "
+                L"frames=%llu fails=%llu",
+                static_cast<unsigned>(hr),
+                static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
+                static_cast<unsigned long long>(
+                    g_popupOverlayWgcRenderFailCount));
             return;
         }
 
@@ -14067,47 +14349,59 @@ void RenderPopupOverlayWgcFrameLocked(
         if (FAILED(hr)) {
             g_popupOverlayWgcLastHr = hr;
             g_popupOverlayWgcDiagnosticHr = hr;
-            g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::UpdateFailed;
+            g_popupOverlayWgcDiagnosticState =
+                PopupOverlayWgcDiagnosticState::UpdateFailed;
             ++g_popupOverlayWgcRenderFailCount;
-            Wh_Log(L"Island: overlay WGC swapchain Present failed hr=0x%08X frames=%llu fails=%llu",
-                   static_cast<unsigned>(hr),
-                   static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
-                   static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
+            Wh_Log(
+                L"Island: overlay WGC swapchain Present failed hr=0x%08X "
+                L"frames=%llu fails=%llu",
+                static_cast<unsigned>(hr),
+                static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
+                static_cast<unsigned long long>(
+                    g_popupOverlayWgcRenderFailCount));
             return;
         }
-        g_popupOverlayWgcPresentedSerial.fetch_add(1, std::memory_order_release);
+        g_popupOverlayWgcPresentedSerial.fetch_add(1,
+                                                   std::memory_order_release);
         g_popupOverlayWgcPresentedGeometryGeneration.store(
             renderGeometryGeneration, std::memory_order_release);
         bool attachedDcompContent = false;
         if (g_popupOverlayDcompVisual && g_popupOverlayWgcSwapChain &&
             !g_popupOverlayDcompContentAttached) {
-            g_popupOverlayDcompVisual->SetContent(g_popupOverlayWgcSwapChain.get());
+            g_popupOverlayDcompVisual->SetContent(
+                g_popupOverlayWgcSwapChain.get());
             g_popupOverlayDcompContentAttached = true;
             attachedDcompContent = true;
         }
         if (attachedDcompContent && g_popupOverlayDcompDevice) {
             g_popupOverlayDcompDevice->Commit();
         }
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::VisibleFrame;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::VisibleFrame;
         g_popupOverlayWgcReadbackHadVisibleFrame = true;
         g_popupOverlayWgcFallbackPainted = false;
     } catch (winrt::hresult_error const& error) {
         g_popupOverlayWgcLastHr = error.code().value;
         g_popupOverlayWgcDiagnosticHr = error.code().value;
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::RenderFailed;
         ++g_popupOverlayWgcRenderFailCount;
-        Wh_Log(L"Island: overlay WGC state hresult_error=0x%08X frames=%llu fails=%llu",
-               static_cast<unsigned>(g_popupOverlayWgcLastHr),
-               static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
-               static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
+        Wh_Log(
+            L"Island: overlay WGC state hresult_error=0x%08X frames=%llu "
+            L"fails=%llu",
+            static_cast<unsigned>(g_popupOverlayWgcLastHr),
+            static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
+            static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
     } catch (...) {
         g_popupOverlayWgcLastHr = E_FAIL;
         g_popupOverlayWgcDiagnosticHr = E_FAIL;
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::RenderFailed;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::RenderFailed;
         ++g_popupOverlayWgcRenderFailCount;
-        Wh_Log(L"Island: overlay WGC state unknown failure frames=%llu fails=%llu",
-               static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
-               static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
+        Wh_Log(
+            L"Island: overlay WGC state unknown failure frames=%llu fails=%llu",
+            static_cast<unsigned long long>(g_popupOverlayWgcFrameCount),
+            static_cast<unsigned long long>(g_popupOverlayWgcRenderFailCount));
     }
 }
 
@@ -14116,8 +14410,8 @@ void ResetPopupOverlayWgcDeviceResourcesLocked() {
     g_popupOverlayWgcFramePool = nullptr;
     g_popupOverlayWgcFrameArrivedToken = {};
     g_popupOverlayWgcFrameCallbackHooked = false;
-    g_popupOverlayWgcDirtyRegionsEnabled.store(
-        false, std::memory_order_release);
+    g_popupOverlayWgcDirtyRegionsEnabled.store(false,
+                                               std::memory_order_release);
     g_popupOverlayWgcItem = nullptr;
     g_popupOverlayWgcGraphicsDevice = nullptr;
     g_popupOverlayWgcSwapChainTargetBitmap = nullptr;
@@ -14180,8 +14474,8 @@ void StopPopupOverlayWgcBackdrop() {
     } catch (...) {
     }
 
-    for (int i = 0; i < 80 &&
-                    g_popupOverlayWgcRendering.load(std::memory_order_acquire);
+    for (int i = 0;
+         i < 80 && g_popupOverlayWgcRendering.load(std::memory_order_acquire);
          ++i) {
         Sleep(1);
     }
@@ -14194,7 +14488,8 @@ void StopPopupOverlayWgcBackdrop() {
         g_popupOverlayWgcLastRenderTime = {};
         g_popupOverlayWgcLastResizeTime = {};
         g_popupOverlayWgcReadbackHadVisibleFrame = false;
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::NotStarted;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::NotStarted;
         g_popupOverlayWgcDiagnosticHr = S_OK;
         g_popupOverlayWgcFrameCount = 0;
         g_popupOverlayWgcRenderFailCount = 0;
@@ -14241,40 +14536,40 @@ bool StartPopupOverlayWgcBackdrop(
     auto now = std::chrono::steady_clock::now();
     if (g_popupOverlayWgcCreateItemFailed &&
         g_popupOverlayWgcLastStartAttemptTime.time_since_epoch().count() != 0 &&
-        now - g_popupOverlayWgcLastStartAttemptTime <
-            std::chrono::seconds(3)) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        now - g_popupOverlayWgcLastStartAttemptTime < std::chrono::seconds(3)) {
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         return false;
     }
     g_popupOverlayWgcLastStartAttemptTime = now;
 
     if (g_unloading || widthPx <= 0 || heightPx <= 0) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         return false;
     }
 
     if (!UseOverlayPopupBackdropMaterial() || !g_popupBackdropOverlay ||
         !g_expandedPopup) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
-        Wh_Log(L"Island: overlay WGC state start skipped material=%d overlay=%p popup=%p unloading=%d size=%dx%d",
-               UseOverlayPopupBackdropMaterial(),
-               g_popupBackdropOverlay,
-               g_expandedPopup,
-               g_unloading.load(),
-               widthPx,
-               heightPx);
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
+        Wh_Log(
+            L"Island: overlay WGC state start skipped material=%d overlay=%p "
+            L"popup=%p unloading=%d size=%dx%d",
+            UseOverlayPopupBackdropMaterial(), g_popupBackdropOverlay,
+            g_expandedPopup, g_unloading.load(), widthPx, heightPx);
         return false;
     }
 
     HMONITOR monitor = MonitorFromRect(&captureRect, MONITOR_DEFAULTTONEAREST);
     MONITORINFO monitorInfo{sizeof(monitorInfo)};
     if (!monitor || !GetMonitorInfoW(monitor, &monitorInfo)) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         Wh_Log(L"Island: overlay WGC state no monitor");
         return false;
     }
-    double frameIntervalMs =
-        PopupOverlayWgcFrameIntervalMsForMonitor(monitor);
+    double frameIntervalMs = PopupOverlayWgcFrameIntervalMsForMonitor(monitor);
 
     {
         std::unique_lock lock(g_popupOverlayWgcMutex, std::try_to_lock);
@@ -14285,18 +14580,17 @@ bool StartPopupOverlayWgcBackdrop(
             return true;
         }
 
-        if (g_popupOverlayWgcRunning &&
-            g_popupOverlayWgcSwapChain &&
+        if (g_popupOverlayWgcRunning && g_popupOverlayWgcSwapChain &&
             g_popupOverlayWgcSwapChainTargetBitmap &&
             g_popupOverlayWgcMonitor == monitor) {
             // Keep the monitor capture session alive during the morph. Only
             // update its immutable-per-frame input snapshot.
             g_popupOverlayWgcCreateItemFailed = false;
-            bool sizeChanged =
-                g_popupOverlayWgcTargetWidthPx != widthPx ||
-                g_popupOverlayWgcTargetHeightPx != heightPx;
+            bool sizeChanged = g_popupOverlayWgcTargetWidthPx != widthPx ||
+                               g_popupOverlayWgcTargetHeightPx != heightPx;
             bool resizeDue =
-                g_popupOverlayWgcLastResizeTime.time_since_epoch().count() == 0 ||
+                g_popupOverlayWgcLastResizeTime.time_since_epoch().count() ==
+                    0 ||
                 now - g_popupOverlayWgcLastResizeTime >=
                     std::chrono::milliseconds(40);
             if (sizeChanged && !renderParameters.morphing && resizeDue) {
@@ -14310,15 +14604,13 @@ bool StartPopupOverlayWgcBackdrop(
                 g_popupOverlayWgcLastResizeTime = now;
             }
             if (sizeChanged && renderParameters.morphing) {
-                UpdatePopupOverlayDcompVisualTransformLocked(widthPx,
-                                                             heightPx,
-                                                             g_popupBackdropOverlayLastRadius);
+                UpdatePopupOverlayDcompVisualTransformLocked(
+                    widthPx, heightPx, g_popupBackdropOverlayLastRadius);
             }
             g_popupOverlayWgcCaptureRectPx = captureRect;
             g_popupOverlayWgcMonitorRectPx = monitorInfo.rcMonitor;
             g_popupOverlayWgcTargetRadiusPx =
-                Clamp(renderParameters.targetRadiusPx,
-                      1,
+                Clamp(renderParameters.targetRadiusPx, 1,
                       std::max(1, std::min(widthPx, heightPx) / 2));
             g_popupOverlayWgcRenderParameters = renderParameters;
             g_popupOverlayWgcRenderParameters.targetRadiusPx =
@@ -14333,14 +14625,16 @@ bool StartPopupOverlayWgcBackdrop(
     StopPopupOverlayWgcBackdrop();
 
     if (!capture::GraphicsCaptureSession::IsSupported()) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         Wh_Log(L"Island: overlay WGC state not supported");
         return false;
     }
 
     RequestPopupOverlayWgcBorderlessAccessAsync();
     if (!PopupOverlayWgcBorderlessAccessAllowed()) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         if (!PopupOverlayWgcBorderlessAccessPending()) {
             g_popupOverlayWgcDiagnosticHr = E_ACCESSDENIED;
         }
@@ -14350,23 +14644,26 @@ bool StartPopupOverlayWgcBackdrop(
     {
         std::lock_guard lock(g_popupOverlayWgcMutex);
         if (!EnsurePopupOverlayWgcDeviceResourcesLocked(g_popupBackdropOverlay,
-                                                        widthPx,
-                                                        heightPx)) {
+                                                        widthPx, heightPx)) {
             g_popupOverlayWgcDiagnosticState =
                 PopupOverlayWgcDiagnosticState::StartSkipped;
-            Wh_Log(L"Island: overlay WGC state Ensure resources failed hr=0x%08X",
-                   static_cast<unsigned>(g_popupOverlayWgcLastHr));
+            Wh_Log(
+                L"Island: overlay WGC state Ensure resources failed hr=0x%08X",
+                static_cast<unsigned>(g_popupOverlayWgcLastHr));
             return false;
         }
     }
 
     if (!CreatePopupOverlayWgcCaptureItemForMonitor(monitor,
                                                     g_popupOverlayWgcItem)) {
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         g_popupOverlayWgcDiagnosticHr = g_popupOverlayWgcCreateItemHr;
         g_popupOverlayWgcCreateItemFailed = true;
-        Wh_Log(L"Island: overlay WGC state Create capture item failed hr=0x%08X; throttling retries",
-               static_cast<unsigned>(g_popupOverlayWgcCreateItemHr));
+        Wh_Log(
+            L"Island: overlay WGC state Create capture item failed hr=0x%08X; "
+            L"throttling retries",
+            static_cast<unsigned>(g_popupOverlayWgcCreateItemHr));
         return false;
     }
     g_popupOverlayWgcCreateItemFailed = false;
@@ -14375,8 +14672,7 @@ bool StartPopupOverlayWgcBackdrop(
     // ready. Exclude the overlay from capture first; optionally keep the popup
     // capturable so users can record the expanded material effect.
     bool captureAffinityChanged =
-        SetExpandedPopupCaptureExclusion(
-            !renderParameters.allowScreenCapture);
+        SetExpandedPopupCaptureExclusion(!renderParameters.allowScreenCapture);
     captureAffinityChanged =
         SetPopupWindowCaptureExclusion(g_popupBackdropOverlay, true) ||
         captureAffinityChanged;
@@ -14389,81 +14685,83 @@ bool StartPopupOverlayWgcBackdrop(
     g_popupOverlayWgcMonitorRectPx = monitorInfo.rcMonitor;
     g_popupOverlayWgcMonitor = monitor;
     g_popupOverlayWgcTargetRadiusPx =
-        Clamp(renderParameters.targetRadiusPx,
-              1,
+        Clamp(renderParameters.targetRadiusPx, 1,
               std::max(1, std::min(widthPx, heightPx) / 2));
     g_popupOverlayWgcRenderParameters = renderParameters;
     g_popupOverlayWgcRenderParameters.targetRadiusPx =
         g_popupOverlayWgcTargetRadiusPx;
     g_popupOverlayWgcFrameIntervalMs = frameIntervalMs;
-    g_popupOverlayWgcGeometryGeneration.fetch_add(
-        1, std::memory_order_release);
+    g_popupOverlayWgcGeometryGeneration.fetch_add(1, std::memory_order_release);
     g_popupOverlayWgcRunning = true;
     g_popupOverlayWgcLastHr = S_OK;
     g_popupOverlayWgcDiagnosticHr = S_OK;
     g_popupOverlayWgcHadFrame = false;
     g_popupOverlayWgcFrameCount = 0;
     g_popupOverlayWgcRenderFailCount = 0;
-    g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartedNoFrame;
+    g_popupOverlayWgcDiagnosticState =
+        PopupOverlayWgcDiagnosticState::StartedNoFrame;
     g_popupOverlayWgcDiagnosticStartTime = std::chrono::steady_clock::now();
     g_popupOverlayWgcLastResizeTime = g_popupOverlayWgcDiagnosticStartTime;
     g_popupOverlayWgcFramesToSkip =
         renderParameters.morphing ? 0 : PopupBackdropInitialFrameSkip();
 
     try {
-        g_popupOverlayWgcFramePool = capture::Direct3D11CaptureFramePool::CreateFreeThreaded(
-            g_popupOverlayWgcGraphicsDevice,
-            directx::DirectXPixelFormat::B8G8R8A8UIntNormalized,
-            2,
-            g_popupOverlayWgcItem.Size());
-        g_popupOverlayWgcFrameArrivedToken = g_popupOverlayWgcFramePool.FrameArrived(
-            [](capture::Direct3D11CaptureFramePool const& sender,
-               winrt::Windows::Foundation::IInspectable const&) {
-                auto frame = sender.TryGetNextFrame();
-                if (!frame) {
-                    return;
-                }
-
-                // While waiting for the first frame of a new opening, the
-                // overlay is deliberately still hidden. It must nevertheless
-                // render that frame; otherwise "wait for a fresh frame" and
-                // "skip rendering while hidden" deadlock each other and the
-                // Gaussian glass appears late or never appears.
-                HWND overlay = g_popupBackdropOverlay;
-                bool waitingForOpeningFrame =
-                    g_popupOverlayAwaitFreshFrame.load(
-                        std::memory_order_acquire);
-                if (!overlay ||
-                    (!IsWindowVisible(overlay) && !waitingForOpeningFrame)) {
-                    frame.Close();
-                    return;
-                }
-
-                bool expected = false;
-                if (!g_popupOverlayWgcRendering.compare_exchange_strong(
-                        expected, true, std::memory_order_acq_rel)) {
-                    frame.Close();
-                    return;
-                }
-
-                try {
-                    std::lock_guard callbackLock(g_popupOverlayWgcMutex);
-                    if (g_popupOverlayWgcRunning) {
-                        RenderPopupOverlayWgcFrameLocked(frame);
+        g_popupOverlayWgcFramePool =
+            capture::Direct3D11CaptureFramePool::CreateFreeThreaded(
+                g_popupOverlayWgcGraphicsDevice,
+                directx::DirectXPixelFormat::B8G8R8A8UIntNormalized, 2,
+                g_popupOverlayWgcItem.Size());
+        g_popupOverlayWgcFrameArrivedToken =
+            g_popupOverlayWgcFramePool.FrameArrived(
+                [](capture::Direct3D11CaptureFramePool const& sender,
+                   winrt::Windows::Foundation::IInspectable const&) {
+                    auto frame = sender.TryGetNextFrame();
+                    if (!frame) {
+                        return;
                     }
-                } catch (...) {
-                    Wh_Log(
-                        L"Island: overlay WGC callback render escaped exception");
-                }
-                g_popupOverlayWgcRendering.store(false,
-                                                 std::memory_order_release);
-                frame.Close();
-            });
+
+                    // While waiting for the first frame of a new opening, the
+                    // overlay is deliberately still hidden. It must nevertheless
+                    // render that frame; otherwise "wait for a fresh frame" and
+                    // "skip rendering while hidden" deadlock each other and the
+                    // Gaussian glass appears late or never appears.
+                    HWND overlay = g_popupBackdropOverlay;
+                    bool waitingForOpeningFrame =
+                        g_popupOverlayAwaitFreshFrame.load(
+                            std::memory_order_acquire);
+                    if (!overlay || (!IsWindowVisible(overlay) &&
+                                     !waitingForOpeningFrame)) {
+                        frame.Close();
+                        return;
+                    }
+
+                    bool expected = false;
+                    if (!g_popupOverlayWgcRendering.compare_exchange_strong(
+                            expected, true, std::memory_order_acq_rel)) {
+                        frame.Close();
+                        return;
+                    }
+
+                    try {
+                        std::lock_guard callbackLock(g_popupOverlayWgcMutex);
+                        if (g_popupOverlayWgcRunning) {
+                            RenderPopupOverlayWgcFrameLocked(frame);
+                        }
+                    } catch (...) {
+                        Wh_Log(
+                            L"Island: overlay WGC callback render escaped "
+                            L"exception");
+                    }
+                    g_popupOverlayWgcRendering.store(false,
+                                                     std::memory_order_release);
+                    frame.Close();
+                });
         g_popupOverlayWgcFrameCallbackHooked = true;
         g_popupOverlayWgcSession =
-            g_popupOverlayWgcFramePool.CreateCaptureSession(g_popupOverlayWgcItem);
-        g_popupOverlayWgcDirtyRegionsEnabled.store(
-            false, std::memory_order_release);
+            g_popupOverlayWgcFramePool.CreateCaptureSession(
+                g_popupOverlayWgcItem);
+        g_popupOverlayWgcDirtyRegionsEnabled.store(false,
+                                                   std::memory_order_release);
         if (PopupOverlayWgcDirtyRegionsSupported()) {
             try {
                 // Windows 11 24H2+ can preserve unchanged pixels in the frame
@@ -14491,17 +14789,17 @@ bool StartPopupOverlayWgcBackdrop(
         } catch (...) {
         }
         g_popupOverlayWgcSession.StartCapture();
-        Wh_Log(L"Island: overlay WGC state backdrop started %dx%d monitor=(%ld,%ld,%ld,%ld)",
-               widthPx,
-               heightPx,
-               monitorInfo.rcMonitor.left,
-               monitorInfo.rcMonitor.top,
-               monitorInfo.rcMonitor.right,
-               monitorInfo.rcMonitor.bottom);
+        Wh_Log(
+            L"Island: overlay WGC state backdrop started %dx%d "
+            L"monitor=(%ld,%ld,%ld,%ld)",
+            widthPx, heightPx, monitorInfo.rcMonitor.left,
+            monitorInfo.rcMonitor.top, monitorInfo.rcMonitor.right,
+            monitorInfo.rcMonitor.bottom);
         return true;
     } catch (winrt::hresult_error const& error) {
         g_popupOverlayWgcLastHr = error.code().value;
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         g_popupOverlayWgcDiagnosticHr = g_popupOverlayWgcLastHr;
         Wh_Log(L"Island: overlay WGC state start failed hr=0x%08X",
                static_cast<unsigned>(g_popupOverlayWgcLastHr));
@@ -14511,7 +14809,8 @@ bool StartPopupOverlayWgcBackdrop(
         return false;
     } catch (...) {
         g_popupOverlayWgcLastHr = E_FAIL;
-        g_popupOverlayWgcDiagnosticState = PopupOverlayWgcDiagnosticState::StartSkipped;
+        g_popupOverlayWgcDiagnosticState =
+            PopupOverlayWgcDiagnosticState::StartSkipped;
         g_popupOverlayWgcDiagnosticHr = E_FAIL;
         Wh_Log(L"Island: overlay WGC state start failed unknown");
         g_popupOverlayWgcRunning = false;
@@ -14558,9 +14857,9 @@ BYTE PopupRoundedRectAlpha(int x, int y, int width, int height, int radius) {
     constexpr int kSamplesPerAxis = 4;
     int coveredSamples = 0;
     for (int sy = 0; sy < kSamplesPerAxis; ++sy) {
-        double sampleY = static_cast<double>(y) +
-                         (static_cast<double>(sy) + 0.5) /
-                             static_cast<double>(kSamplesPerAxis);
+        double sampleY =
+            static_cast<double>(y) + (static_cast<double>(sy) + 0.5) /
+                                         static_cast<double>(kSamplesPerAxis);
         for (int sx = 0; sx < kSamplesPerAxis; ++sx) {
             double sampleX = static_cast<double>(x) +
                              (static_cast<double>(sx) + 0.5) /
@@ -14571,14 +14870,18 @@ BYTE PopupRoundedRectAlpha(int x, int y, int width, int height, int radius) {
         }
     }
 
-    return static_cast<BYTE>(std::lround(
-        255.0 * static_cast<double>(coveredSamples) /
-        static_cast<double>(kSamplesPerAxis * kSamplesPerAxis)));
+    return static_cast<BYTE>(
+        std::lround(255.0 * static_cast<double>(coveredSamples) /
+                    static_cast<double>(kSamplesPerAxis * kSamplesPerAxis)));
 }
 
 // ===== CPU backdrop fallback and overlay windows =====
-void BoxBlurPbgraPixels(std::vector<BYTE>& pixels, int width, int height, int passes) {
-    if (width <= 1 || height <= 1 || pixels.size() < static_cast<size_t>(width) * height * 4) {
+void BoxBlurPbgraPixels(std::vector<BYTE>& pixels,
+                        int width,
+                        int height,
+                        int passes) {
+    if (width <= 1 || height <= 1 ||
+        pixels.size() < static_cast<size_t>(width) * height * 4) {
         return;
     }
 
@@ -14588,9 +14891,12 @@ void BoxBlurPbgraPixels(std::vector<BYTE>& pixels, int width, int height, int pa
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 int sumB = 0, sumG = 0, sumR = 0, sumA = 0, count = 0;
-                for (int yy = std::max(0, y - 1); yy <= std::min(height - 1, y + 1); ++yy) {
-                    for (int xx = std::max(0, x - 1); xx <= std::min(width - 1, x + 1); ++xx) {
-                        BYTE* p = temp.data() + (static_cast<size_t>(yy) * width + xx) * 4;
+                for (int yy = std::max(0, y - 1);
+                     yy <= std::min(height - 1, y + 1); ++yy) {
+                    for (int xx = std::max(0, x - 1);
+                         xx <= std::min(width - 1, x + 1); ++xx) {
+                        BYTE* p = temp.data() +
+                                  (static_cast<size_t>(yy) * width + xx) * 4;
                         sumB += p[0];
                         sumG += p[1];
                         sumR += p[2];
@@ -14598,7 +14904,8 @@ void BoxBlurPbgraPixels(std::vector<BYTE>& pixels, int width, int height, int pa
                         ++count;
                     }
                 }
-                BYTE* out = pixels.data() + (static_cast<size_t>(y) * width + x) * 4;
+                BYTE* out =
+                    pixels.data() + (static_cast<size_t>(y) * width + x) * 4;
                 out[0] = static_cast<BYTE>(sumB / count);
                 out[1] = static_cast<BYTE>(sumG / count);
                 out[2] = static_cast<BYTE>(sumR / count);
@@ -14639,8 +14946,7 @@ bool SetPopupWindowCaptureExclusion(HWND hwnd, bool exclude) {
     }
 
     BOOL affinitySet = SetWindowDisplayAffinity(
-        hwnd,
-        exclude ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE);
+        hwnd, exclude ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE);
     if (cached) {
         // Avoid hammering DWM every animation tick. Repeating the same display
         // affinity call can invalidate composition surfaces and shows up as
@@ -14654,7 +14960,8 @@ bool SetPopupWindowCaptureExclusion(HWND hwnd, bool exclude) {
 
 bool SetExpandedPopupCaptureExclusion(bool exclude) {
     bool changed = SetPopupWindowCaptureExclusion(g_expandedPopup, exclude);
-    changed = SetPopupWindowCaptureExclusion(g_popupXamlChild, exclude) || changed;
+    changed =
+        SetPopupWindowCaptureExclusion(g_popupXamlChild, exclude) || changed;
     return changed;
 }
 
@@ -14691,8 +14998,8 @@ bool ClearPopupBackdropOverlayLayeredSurface(HWND hwnd) {
     info.bmiHeader.biCompression = BI_RGB;
 
     void* bits = nullptr;
-    HBITMAP bitmap = CreateDIBSection(screenDc, &info, DIB_RGB_COLORS,
-                                      &bits, nullptr, 0);
+    HBITMAP bitmap =
+        CreateDIBSection(screenDc, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
     if (!bitmap || !bits) {
         if (bitmap) {
             DeleteObject(bitmap);
@@ -14710,8 +15017,8 @@ bool ClearPopupBackdropOverlayLayeredSurface(HWND hwnd) {
     POINT dstPoint{rect.left, rect.top};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
 
-    BOOL ok = UpdateLayeredWindow(hwnd, screenDc, &dstPoint, &size,
-                                  memDc, &srcPoint, 0, &blend, ULW_ALPHA);
+    BOOL ok = UpdateLayeredWindow(hwnd, screenDc, &dstPoint, &size, memDc,
+                                  &srcPoint, 0, &blend, ULW_ALPHA);
 
     SelectObject(memDc, oldBitmap);
     DeleteObject(bitmap);
@@ -14771,9 +15078,11 @@ bool CaptureLowResScreenPixels(RECT const& screenRect,
     info.bmiHeader.biCompression = BI_RGB;
 
     void* bits = nullptr;
-    HBITMAP bitmap = CreateDIBSection(screenDc, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
+    HBITMAP bitmap =
+        CreateDIBSection(screenDc, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
     if (!bitmap || !bits) {
-        if (bitmap) DeleteObject(bitmap);
+        if (bitmap)
+            DeleteObject(bitmap);
         DeleteDC(memDc);
         ReleaseDC(nullptr, screenDc);
         restoreExcludedOverlay();
@@ -14786,9 +15095,9 @@ bool CaptureLowResScreenPixels(RECT const& screenRect,
 
     int sourceWidth = screenRect.right - screenRect.left;
     int sourceHeight = screenRect.bottom - screenRect.top;
-    BOOL ok = StretchBlt(memDc, 0, 0, lowWidth, lowHeight,
-                         screenDc, screenRect.left, screenRect.top,
-                         sourceWidth, sourceHeight, SRCCOPY);
+    BOOL ok =
+        StretchBlt(memDc, 0, 0, lowWidth, lowHeight, screenDc, screenRect.left,
+                   screenRect.top, sourceWidth, sourceHeight, SRCCOPY);
 
     if (ok) {
         std::memcpy(pixels.data(), bits, pixels.size());
@@ -14803,13 +15112,13 @@ bool CaptureLowResScreenPixels(RECT const& screenRect,
 }
 
 void SampleBilinearPbgra(std::vector<BYTE> const& pixels,
-                       int width,
-                       int height,
-                       double x,
-                       double y,
-                       int& b,
-                       int& g,
-                       int& r) {
+                         int width,
+                         int height,
+                         double x,
+                         double y,
+                         int& b,
+                         int& g,
+                         int& r) {
     if (width <= 0 || height <= 0 || pixels.empty()) {
         b = g = r = 0;
         return;
@@ -14836,7 +15145,9 @@ void SampleBilinearPbgra(std::vector<BYTE> const& pixels,
     auto blend = [&](int channel) -> int {
         double top = p00[channel] * (1.0 - fx) + p10[channel] * fx;
         double bottom = p01[channel] * (1.0 - fx) + p11[channel] * fx;
-        return Clamp(static_cast<int>(std::lround(top * (1.0 - fy) + bottom * fy)), 0, 255);
+        return Clamp(
+            static_cast<int>(std::lround(top * (1.0 - fy) + bottom * fy)), 0,
+            255);
     };
 
     b = blend(0);
@@ -14855,10 +15166,9 @@ bool UpdatePopupBackdropOverlayLayeredBlur(HWND hwnd,
     }
 
     auto now = std::chrono::steady_clock::now();
-    bool sizeChanged =
-        width != g_popupBackdropOverlayLastWidth ||
-        height != g_popupBackdropOverlayLastHeight ||
-        cornerRadiusPx != g_popupBackdropOverlayLastRadius;
+    bool sizeChanged = width != g_popupBackdropOverlayLastWidth ||
+                       height != g_popupBackdropOverlayLastHeight ||
+                       cornerRadiusPx != g_popupBackdropOverlayLastRadius;
     if (!force && !sizeChanged &&
         g_popupBackdropOverlayLastPaintTime.time_since_epoch().count() != 0) {
         auto age = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -14870,27 +15180,31 @@ bool UpdatePopupBackdropOverlayLayeredBlur(HWND hwnd,
     }
 
     int captureScale = PopupBackdropFallbackCaptureScale();
-    int lowWidth = Clamp(width / captureScale,
-                         40, kPopupBackdropOverlayMaxCaptureSize);
-    int lowHeight = Clamp(height / captureScale,
-                          40, kPopupBackdropOverlayMaxCaptureSize);
+    int lowWidth =
+        Clamp(width / captureScale, 40, kPopupBackdropOverlayMaxCaptureSize);
+    int lowHeight =
+        Clamp(height / captureScale, 40, kPopupBackdropOverlayMaxCaptureSize);
     std::vector<BYTE> lowPixels;
-    if (!CaptureLowResScreenPixels(screenRect, lowWidth, lowHeight, lowPixels, hwnd)) {
+    if (!CaptureLowResScreenPixels(screenRect, lowWidth, lowHeight, lowPixels,
+                                   hwnd)) {
         return false;
     }
 
     std::vector<BYTE> cleanPixels(static_cast<size_t>(width) * height * 4);
     for (int y = 0; y < height; ++y) {
-        double sampleY = ((static_cast<double>(y) + 0.5) * lowHeight / height) - 0.5;
+        double sampleY =
+            ((static_cast<double>(y) + 0.5) * lowHeight / height) - 0.5;
         for (int x = 0; x < width; ++x) {
-            double sampleX = ((static_cast<double>(x) + 0.5) * lowWidth / width) - 0.5;
+            double sampleX =
+                ((static_cast<double>(x) + 0.5) * lowWidth / width) - 0.5;
             int sb = 0;
             int sg = 0;
             int sr = 0;
-            SampleBilinearPbgra(lowPixels, lowWidth, lowHeight, sampleX, sampleY, sb, sg, sr);
+            SampleBilinearPbgra(lowPixels, lowWidth, lowHeight, sampleX,
+                                sampleY, sb, sg, sr);
 
-            BYTE* dst = cleanPixels.data() +
-                         (static_cast<size_t>(y) * width + x) * 4;
+            BYTE* dst =
+                cleanPixels.data() + (static_cast<size_t>(y) * width + x) * 4;
             dst[0] = static_cast<BYTE>(sb);
             dst[1] = static_cast<BYTE>(sg);
             dst[2] = static_cast<BYTE>(sr);
@@ -14912,16 +15226,21 @@ bool UpdatePopupBackdropOverlayLayeredBlur(HWND hwnd,
     BYTE maxAlpha = PopupBackdropOverlayMaxAlpha();
 
     for (int y = 0; y < height; ++y) {
-        double sampleY = ((static_cast<double>(y) + 0.5) * lowHeight / height) - 0.5;
+        double sampleY =
+            ((static_cast<double>(y) + 0.5) * lowHeight / height) - 0.5;
         for (int x = 0; x < width; ++x) {
-            double sampleX = ((static_cast<double>(x) + 0.5) * lowWidth / width) - 0.5;
-            BYTE edgeAlpha = PopupRoundedRectAlpha(x, y, width, height, cornerRadiusPx);
-            BYTE a = static_cast<BYTE>((static_cast<int>(edgeAlpha) * maxAlpha) / 255);
+            double sampleX =
+                ((static_cast<double>(x) + 0.5) * lowWidth / width) - 0.5;
+            BYTE edgeAlpha =
+                PopupRoundedRectAlpha(x, y, width, height, cornerRadiusPx);
+            BYTE a = static_cast<BYTE>(
+                (static_cast<int>(edgeAlpha) * maxAlpha) / 255);
 
             int sb = 0;
             int sg = 0;
             int sr = 0;
-            SampleBilinearPbgra(lowPixels, lowWidth, lowHeight, sampleX, sampleY, sb, sg, sr);
+            SampleBilinearPbgra(lowPixels, lowWidth, lowHeight, sampleX,
+                                sampleY, sb, sg, sr);
 
             int b = Clamp(static_cast<int>(std::lround(sb * dim)), 0, 255);
             int g = Clamp(static_cast<int>(std::lround(sg * dim)), 0, 255);
@@ -14969,9 +15288,11 @@ bool UpdatePopupBackdropOverlayLayeredBlur(HWND hwnd,
     info.bmiHeader.biCompression = BI_RGB;
 
     void* bits = nullptr;
-    HBITMAP bitmap = CreateDIBSection(screenDc, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
+    HBITMAP bitmap =
+        CreateDIBSection(screenDc, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
     if (!bitmap || !bits) {
-        if (bitmap) DeleteObject(bitmap);
+        if (bitmap)
+            DeleteObject(bitmap);
         DeleteDC(memDc);
         ReleaseDC(nullptr, screenDc);
         return false;
@@ -14984,8 +15305,8 @@ bool UpdatePopupBackdropOverlayLayeredBlur(HWND hwnd,
     POINT dstPoint{screenRect.left, screenRect.top};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
 
-    BOOL ok = UpdateLayeredWindow(hwnd, screenDc, &dstPoint, &size,
-                                  memDc, &srcPoint, 0, &blend, ULW_ALPHA);
+    BOOL ok = UpdateLayeredWindow(hwnd, screenDc, &dstPoint, &size, memDc,
+                                  &srcPoint, 0, &blend, ULW_ALPHA);
 
     SelectObject(memDc, oldBitmap);
     DeleteObject(bitmap);
@@ -15009,7 +15330,10 @@ void PaintPopupBackdropOverlay(HWND hwnd) {
     }
 }
 
-LRESULT CALLBACK PopupBackdropOverlayWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK PopupBackdropOverlayWndProc(HWND hwnd,
+                                             UINT message,
+                                             WPARAM wParam,
+                                             LPARAM lParam) {
     try {
         switch (message) {
             case WM_ERASEBKGND:
@@ -15053,7 +15377,8 @@ bool RegisterPopupBackdropOverlayClass() {
     windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     windowClass.lpszClassName = kPopupBackdropOverlayClassName;
     if (!RegisterClassExW(&windowClass)) {
-        Wh_Log(L"Island: failed to register popup backdrop overlay window class");
+        Wh_Log(
+            L"Island: failed to register popup backdrop overlay window class");
         return false;
     }
     g_popupBackdropOverlayClassRegistered = true;
@@ -15065,7 +15390,8 @@ void UnregisterPopupBackdropOverlayClass() {
         return;
     }
     HINSTANCE moduleInstance = ModInstance();
-    if (moduleInstance && UnregisterClassW(kPopupBackdropOverlayClassName, moduleInstance)) {
+    if (moduleInstance &&
+        UnregisterClassW(kPopupBackdropOverlayClassName, moduleInstance)) {
         g_popupBackdropOverlayClassRegistered = false;
     }
 }
@@ -15084,9 +15410,8 @@ bool EnsurePopupBackdropOverlayWindow() {
         // Native Acrylic requires a normal redirected top-level surface.
         // NOREDIRECTIONBITMAP made the system effect fall back to opaque black.
         WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
-        kPopupBackdropOverlayClassName, L"",
-        WS_POPUP, 0, 0, 1, 1,
-        g_taskbarWnd, nullptr, ModInstance(), nullptr);
+        kPopupBackdropOverlayClassName, L"", WS_POPUP, 0, 0, 1, 1, g_taskbarWnd,
+        nullptr, ModInstance(), nullptr);
     if (!g_popupBackdropOverlay) {
         Wh_Log(L"Island: failed to create popup backdrop overlay window");
         return false;
@@ -15159,16 +15484,14 @@ bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
     }
 
     double dpiScale = PopupDpiScale(g_expandedPopup);
-    DipRect sourceRectDip = PopupScreenRectToLocalDip(g_popupSourceRect,
-                                                      popupScreenPx,
-                                                      dpiScale);
+    DipRect sourceRectDip =
+        PopupScreenRectToLocalDip(g_popupSourceRect, popupScreenPx, dpiScale);
     RECT sourceRect{static_cast<LONG>(std::lround(sourceRectDip.left)),
                     static_cast<LONG>(std::lround(sourceRectDip.top)),
                     static_cast<LONG>(std::lround(sourceRectDip.right)),
                     static_cast<LONG>(std::lround(sourceRectDip.bottom))};
-    DipRect finalRectDip = PopupScreenRectToLocalDip(g_popupFinalRect,
-                                                     popupScreenPx,
-                                                     dpiScale);
+    DipRect finalRectDip =
+        PopupScreenRectToLocalDip(g_popupFinalRect, popupScreenPx, dpiScale);
     RECT finalRect{static_cast<LONG>(std::lround(finalRectDip.left)),
                    static_cast<LONG>(std::lround(finalRectDip.top)),
                    static_cast<LONG>(std::lround(finalRectDip.right)),
@@ -15182,9 +15505,8 @@ bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
     RECT targetElapsed{};
     RECT targetDuration{};
     RECT targetControls{};
-    CalculatePopupFinalLayout(finalRect, targetArt, targetCard,
-                              targetTitle, targetArtist,
-                              targetProgress, targetElapsed,
+    CalculatePopupFinalLayout(finalRect, targetArt, targetCard, targetTitle,
+                              targetArtist, targetProgress, targetElapsed,
                               targetDuration, targetControls);
     RECT targetBackdrop = PopupBackdropRectFromParts(targetArt, targetCard);
 
@@ -15207,10 +15529,14 @@ bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
     // native edges but made the blur layer disagree with the component shape,
     // so no extra XAML tint/gray layers are used.
     overlayRect = {
-        popupScreenPx.left + static_cast<LONG>(std::lround(currentDip.left * dpiScale)),
-        popupScreenPx.top + static_cast<LONG>(std::lround(currentDip.top * dpiScale)),
-        popupScreenPx.left + static_cast<LONG>(std::lround(currentDip.right * dpiScale)),
-        popupScreenPx.top + static_cast<LONG>(std::lround(currentDip.bottom * dpiScale)),
+        popupScreenPx.left +
+            static_cast<LONG>(std::lround(currentDip.left * dpiScale)),
+        popupScreenPx.top +
+            static_cast<LONG>(std::lround(currentDip.top * dpiScale)),
+        popupScreenPx.left +
+            static_cast<LONG>(std::lround(currentDip.right * dpiScale)),
+        popupScreenPx.top +
+            static_cast<LONG>(std::lround(currentDip.bottom * dpiScale)),
     };
 
     int width = overlayRect.right - overlayRect.left;
@@ -15223,19 +15549,19 @@ bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
         g_settings.compact
             ? PopupG2CornerRadius(targetBackdrop.right - targetBackdrop.left,
                                   targetBackdrop.bottom - targetBackdrop.top)
-            : std::max(1.0,
-                       (IsLiquidGlassMaterial()
-                            ? static_cast<double>(g_settings.liquidGlassCornerRadius)
-                            : kPopupUnifiedCornerRadius) +
-                           kPopupOverlayRadiusAdjustDip);
-    double sourceRadiusDip =
-        std::min(sourceRect.right - sourceRect.left,
-                 sourceRect.bottom - sourceRect.top) * 0.5;
-    double radiusDip = LerpDouble(sourceRadiusDip,
-                                  targetRadiusDip,
-                                  progress);
+            : std::max(
+                  1.0,
+                  (IsLiquidGlassMaterial()
+                       ? static_cast<double>(g_settings.liquidGlassCornerRadius)
+                       : kPopupUnifiedCornerRadius) +
+                      kPopupOverlayRadiusAdjustDip);
+    double sourceRadiusDip = std::min(sourceRect.right - sourceRect.left,
+                                      sourceRect.bottom - sourceRect.top) *
+                             0.5;
+    double radiusDip = LerpDouble(sourceRadiusDip, targetRadiusDip, progress);
     int desiredRadius = static_cast<int>(std::lround(radiusDip * dpiScale));
-    cornerRadiusPx = Clamp(desiredRadius, 1, std::max(1, std::min(width, height) / 2));
+    cornerRadiusPx =
+        Clamp(desiredRadius, 1, std::max(1, std::min(width, height) / 2));
 
     RECT currentCardDip{
         LerpInt(sourceRect.left, targetCard.left, progress),
@@ -15255,15 +15581,15 @@ bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
     };
     panelRect.left = Clamp<LONG>(panelRect.left, 0L, static_cast<LONG>(width));
     panelRect.top = Clamp<LONG>(panelRect.top, 0L, static_cast<LONG>(height));
-    panelRect.right = Clamp<LONG>(panelRect.right, 0L, static_cast<LONG>(width));
-    panelRect.bottom = Clamp<LONG>(panelRect.bottom, 0L, static_cast<LONG>(height));
+    panelRect.right =
+        Clamp<LONG>(panelRect.right, 0L, static_cast<LONG>(width));
+    panelRect.bottom =
+        Clamp<LONG>(panelRect.bottom, 0L, static_cast<LONG>(height));
     int panelWidth = static_cast<int>(panelRect.right - panelRect.left);
     int panelHeight = static_cast<int>(panelRect.bottom - panelRect.top);
     g_popupLiquidGlassPanelRectPx = panelRect;
     g_popupLiquidGlassPanelRadiusPx = Clamp(
-        desiredRadius,
-        1,
-        std::max(1, std::min(panelWidth, panelHeight) / 2));
+        desiredRadius, 1, std::max(1, std::min(panelWidth, panelHeight) / 2));
     g_popupLiquidGlassPanelRectValid = panelWidth > 4 && panelHeight > 4;
     return true;
 }
@@ -15283,9 +15609,8 @@ bool CalculatePopupBackdropOverlayTargetSize(int& targetWidthPx,
     }
 
     double dpiScale = PopupDpiScale(g_expandedPopup);
-    DipRect finalRectDip = PopupScreenRectToLocalDip(g_popupFinalRect,
-                                                     popupScreenPx,
-                                                     dpiScale);
+    DipRect finalRectDip =
+        PopupScreenRectToLocalDip(g_popupFinalRect, popupScreenPx, dpiScale);
     RECT finalRect{static_cast<LONG>(std::lround(finalRectDip.left)),
                    static_cast<LONG>(std::lround(finalRectDip.top)),
                    static_cast<LONG>(std::lround(finalRectDip.right)),
@@ -15299,33 +15624,38 @@ bool CalculatePopupBackdropOverlayTargetSize(int& targetWidthPx,
     RECT targetElapsed{};
     RECT targetDuration{};
     RECT targetControls{};
-    CalculatePopupFinalLayout(finalRect, targetArt, targetCard,
-                              targetTitle, targetArtist,
-                              targetProgress, targetElapsed,
+    CalculatePopupFinalLayout(finalRect, targetArt, targetCard, targetTitle,
+                              targetArtist, targetProgress, targetElapsed,
                               targetDuration, targetControls);
     RECT targetBackdrop = PopupBackdropRectFromParts(targetArt, targetCard);
-    int targetWidthDip = std::max(1L, targetBackdrop.right - targetBackdrop.left);
-    int targetHeightDip = std::max(1L, targetBackdrop.bottom - targetBackdrop.top);
-    targetWidthPx = std::max(1, static_cast<int>(std::lround(targetWidthDip * dpiScale)));
-    targetHeightPx = std::max(1, static_cast<int>(std::lround(targetHeightDip * dpiScale)));
+    int targetWidthDip =
+        std::max(1L, targetBackdrop.right - targetBackdrop.left);
+    int targetHeightDip =
+        std::max(1L, targetBackdrop.bottom - targetBackdrop.top);
+    targetWidthPx =
+        std::max(1, static_cast<int>(std::lround(targetWidthDip * dpiScale)));
+    targetHeightPx =
+        std::max(1, static_cast<int>(std::lround(targetHeightDip * dpiScale)));
 
     double targetRadiusDip =
         g_settings.compact
             ? PopupG2CornerRadius(targetBackdrop.right - targetBackdrop.left,
                                   targetBackdrop.bottom - targetBackdrop.top)
-            : std::max(1.0,
-                       (IsLiquidGlassMaterial()
-                            ? static_cast<double>(g_settings.liquidGlassCornerRadius)
-                            : kPopupUnifiedCornerRadius) +
-                           kPopupOverlayRadiusAdjustDip);
-    targetRadiusPx = Clamp(
-        static_cast<int>(std::lround(targetRadiusDip * dpiScale)),
-        1,
-        std::max(1, std::min(targetWidthPx, targetHeightPx) / 2));
+            : std::max(
+                  1.0,
+                  (IsLiquidGlassMaterial()
+                       ? static_cast<double>(g_settings.liquidGlassCornerRadius)
+                       : kPopupUnifiedCornerRadius) +
+                      kPopupOverlayRadiusAdjustDip);
+    targetRadiusPx =
+        Clamp(static_cast<int>(std::lround(targetRadiusDip * dpiScale)), 1,
+              std::max(1, std::min(targetWidthPx, targetHeightPx) / 2));
     return true;
 }
 
-void ApplyPopupBackdropOverlayRegion(int width, int height, int cornerRadiusPx) {
+void ApplyPopupBackdropOverlayRegion(int width,
+                                     int height,
+                                     int cornerRadiusPx) {
     if (!g_popupBackdropOverlay || width <= 0 || height <= 0) {
         return;
     }
@@ -15334,8 +15664,8 @@ void ApplyPopupBackdropOverlayRegion(int width, int height, int cornerRadiusPx) 
     // animated rounded shape. Clearing the region here was the square mask
     // visible over the compact island on the last closing frame.
     int diameter = std::max(2, cornerRadiusPx * 2);
-    HRGN region = CreateRoundRectRgn(0, 0, width + 1, height + 1,
-                                    diameter, diameter);
+    HRGN region =
+        CreateRoundRectRgn(0, 0, width + 1, height + 1, diameter, diameter);
     if (region) {
         if (!SetWindowRgn(g_popupBackdropOverlay, region, FALSE)) {
             DeleteObject(region);
@@ -15366,13 +15696,11 @@ void UpdatePopupBackdropOverlayWindow() {
     if (systemFrostOnly) {
         LONG_PTR currentStyle =
             GetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE);
-        LONG_PTR nativeStyle = (currentStyle &
-                                ~(WS_EX_NOREDIRECTIONBITMAP | WS_EX_LAYERED)) |
-                               WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE |
-                               WS_EX_TRANSPARENT;
+        LONG_PTR nativeStyle =
+            (currentStyle & ~(WS_EX_NOREDIRECTIONBITMAP | WS_EX_LAYERED)) |
+            WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT;
         if (nativeStyle != currentStyle) {
-            SetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE,
-                              nativeStyle);
+            SetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE, nativeStyle);
             SetWindowPos(g_popupBackdropOverlay, nullptr, 0, 0, 0, 0,
                          SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
                              SWP_NOACTIVATE | SWP_FRAMECHANGED);
@@ -15398,9 +15726,9 @@ void UpdatePopupBackdropOverlayWindow() {
     // The material is one continuous surface. Never fade the glass independently
     // from its geometry; doing so exposed the transparent host on both ends.
     g_popupBackdropOverlayFrameAlpha.store(
-        static_cast<int>(std::lround(
-            PopupBackdropOverlayMaxAlpha() *
-            Clamp(g_popupCloseHandoffOpacity, 0.0, 1.0))),
+        static_cast<int>(
+            std::lround(PopupBackdropOverlayMaxAlpha() *
+                        Clamp(g_popupCloseHandoffOpacity, 0.0, 1.0))),
         std::memory_order_relaxed);
 
     RECT overlayRect{};
@@ -15421,8 +15749,7 @@ void UpdatePopupBackdropOverlayWindow() {
         int targetWidth = width;
         int targetHeight = height;
         int targetRadius = cornerRadiusPx;
-        if (CalculatePopupBackdropOverlayTargetSize(targetWidth,
-                                                    targetHeight,
+        if (CalculatePopupBackdropOverlayTargetSize(targetWidth, targetHeight,
                                                     targetRadius)) {
             renderWidth = targetWidth;
             renderHeight = targetHeight;
@@ -15462,17 +15789,16 @@ void UpdatePopupBackdropOverlayWindow() {
     }
 
     bool overlayWasVisible = IsWindowVisible(g_popupBackdropOverlay) != FALSE;
-    UINT overlayPosFlags = SWP_NOACTIVATE | SWP_NOCOPYBITS |
-                           SWP_NOOWNERZORDER | SWP_NOSENDCHANGING;
+    UINT overlayPosFlags = SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER |
+                           SWP_NOSENDCHANGING;
     if (!overlayWasVisible) {
         overlayPosFlags |= SWP_SHOWWINDOW;
     }
     // Place the blur host behind the popup once per layout update. Keeping the
     // blur host above and then reordering the popup again every frame produced
     // the white small-to-large flashing rectangle.
-    SetWindowPos(g_popupBackdropOverlay, HWND_BOTTOM,
-                 overlayRect.left, overlayRect.top, width, height,
-                 overlayPosFlags);
+    SetWindowPos(g_popupBackdropOverlay, HWND_BOTTOM, overlayRect.left,
+                 overlayRect.top, width, height, overlayPosFlags);
     ApplyPopupBackdropOverlayRegion(width, height, cornerRadiusPx);
     UpdatePopupOverlayDcompVisualTransform(width, height, cornerRadiusPx);
     g_popupBackdropOverlayLastWidth = width;
@@ -15494,21 +15820,19 @@ void UpdatePopupBackdropOverlayWindow() {
         if (!IsWindowVisible(g_popupBackdropOverlay)) {
             SetWindowPos(g_popupBackdropOverlay, g_expandedPopup,
                          overlayRect.left, overlayRect.top, width, height,
-                         SWP_NOACTIVATE | SWP_NOCOPYBITS |
-                             SWP_NOOWNERZORDER | SWP_NOSENDCHANGING |
-                             SWP_SHOWWINDOW);
+                         SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER |
+                             SWP_NOSENDCHANGING | SWP_SHOWWINDOW);
         }
         if (g_popupOverlayWgcRunning) {
             StopPopupOverlayWgcBackdrop();
         }
-        LONG_PTR fallbackStyle = GetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE);
+        LONG_PTR fallbackStyle =
+            GetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE);
         LONG_PTR fallbackDesiredStyle =
-            (fallbackStyle & ~WS_EX_NOREDIRECTIONBITMAP) |
-            WS_EX_LAYERED | WS_EX_TRANSPARENT |
-            WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+            (fallbackStyle & ~WS_EX_NOREDIRECTIONBITMAP) | WS_EX_LAYERED |
+            WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
         if (fallbackDesiredStyle != fallbackStyle) {
-            SetWindowLongPtrW(g_popupBackdropOverlay,
-                              GWL_EXSTYLE,
+            SetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE,
                               fallbackDesiredStyle);
         }
         bool captureAffinityChanged = SetExpandedPopupCaptureExclusion(true);
@@ -15524,11 +15848,8 @@ void UpdatePopupBackdropOverlayWindow() {
             g_popupBackdropOverlayFallbackHeight != height ||
             !EqualRect(&g_popupBackdropOverlayFallbackRect, &overlayRect);
         UpdatePopupBackdropOverlayLayeredBlur(g_popupBackdropOverlay,
-                                              overlayRect,
-                                              width,
-                                              height,
-                                              cornerRadiusPx,
-                                              forceSnapshot);
+                                              overlayRect, width, height,
+                                              cornerRadiusPx, forceSnapshot);
         g_popupOverlayWgcFallbackPainted = true;
         SetPopupWindowCaptureExclusion(g_popupBackdropOverlay, false);
         SetExpandedPopupCaptureExclusion(false);
@@ -15539,19 +15860,16 @@ void UpdatePopupBackdropOverlayWindow() {
         ClearPopupBackdropOverlayLayeredSurface(g_popupBackdropOverlay);
         g_popupOverlayWgcFallbackPainted = false;
     }
-    LONG_PTR dcompStyle = GetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE);
-    LONG_PTR dcompDesiredStyle =
-        (dcompStyle & ~WS_EX_LAYERED) | WS_EX_TRANSPARENT |
-        WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW |
-        WS_EX_NOREDIRECTIONBITMAP;
+    LONG_PTR dcompStyle =
+        GetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE);
+    LONG_PTR dcompDesiredStyle = (dcompStyle & ~WS_EX_LAYERED) |
+                                 WS_EX_TRANSPARENT | WS_EX_NOACTIVATE |
+                                 WS_EX_TOOLWINDOW | WS_EX_NOREDIRECTIONBITMAP;
     if (dcompDesiredStyle != dcompStyle) {
-        SetWindowLongPtrW(g_popupBackdropOverlay,
-                          GWL_EXSTYLE,
+        SetWindowLongPtrW(g_popupBackdropOverlay, GWL_EXSTYLE,
                           dcompDesiredStyle);
     }
-    StartPopupOverlayWgcBackdrop(overlayRect,
-                                 renderWidth,
-                                 renderHeight,
+    StartPopupOverlayWgcBackdrop(overlayRect, renderWidth, renderHeight,
                                  renderParameters);
     UpdatePopupOverlayDcompVisualTransform(width, height, cornerRadiusPx);
 
@@ -15565,10 +15883,9 @@ void UpdatePopupBackdropOverlayWindow() {
         bool hasNewPresent =
             g_popupOverlayWgcPresentedSerial.load(std::memory_order_acquire) >
             g_popupOverlayFreshFrameStartSerial;
-        bool hasNewGeometry =
-            g_popupOverlayWgcPresentedGeometryGeneration.load(
-                std::memory_order_acquire) >
-            g_popupOverlayFreshFrameStartGeneration;
+        bool hasNewGeometry = g_popupOverlayWgcPresentedGeometryGeneration.load(
+                                  std::memory_order_acquire) >
+                              g_popupOverlayFreshFrameStartGeneration;
         if (hasNewPresent && hasNewGeometry) {
             g_popupOverlayAwaitFreshFrame = false;
             SetPopupOverlayDcompContentOpacity(1.0f);
@@ -15578,11 +15895,10 @@ void UpdatePopupBackdropOverlayWindow() {
         SetPopupOverlayDcompContentOpacity(1.0f);
     }
     if (!IsWindowVisible(g_popupBackdropOverlay)) {
-        SetWindowPos(g_popupBackdropOverlay, g_expandedPopup,
-                     overlayRect.left, overlayRect.top, width, height,
-                     SWP_NOACTIVATE | SWP_NOCOPYBITS |
-                         SWP_NOOWNERZORDER | SWP_NOSENDCHANGING |
-                         SWP_SHOWWINDOW);
+        SetWindowPos(g_popupBackdropOverlay, g_expandedPopup, overlayRect.left,
+                     overlayRect.top, width, height,
+                     SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER |
+                         SWP_NOSENDCHANGING | SWP_SHOWWINDOW);
         ShowWindow(g_popupBackdropOverlay, SW_SHOWNOACTIVATE);
     }
 }
@@ -15681,12 +15997,10 @@ bool EnsurePopupToggleHitWindow() {
     HWND hitOwner = g_taskbarWnd && IsWindow(g_taskbarWnd)
                         ? g_taskbarWnd
                         : FindCurrentProcessTaskbarWnd();
-    g_popupToggleHitWindow = CreateWindowExW(
-        WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-        kPopupToggleHitWindowClassName, L"",
-        WS_POPUP,
-        0, 0, 1, 1,
-        hitOwner, nullptr, ModInstance(), nullptr);
+    g_popupToggleHitWindow =
+        CreateWindowExW(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                        kPopupToggleHitWindowClassName, L"", WS_POPUP, 0, 0, 1,
+                        1, hitOwner, nullptr, ModInstance(), nullptr);
     if (!g_popupToggleHitWindow) {
         Wh_Log(L"Island: failed to create permanent toggle hit window");
         return false;
@@ -15704,12 +16018,10 @@ bool ShowPopupToggleHitWindow() {
     }
     int width = std::max(1L, g_popupSourceRect.right - g_popupSourceRect.left);
     int height = std::max(1L, g_popupSourceRect.bottom - g_popupSourceRect.top);
-    SetWindowPos(
-        g_popupToggleHitWindow, HWND_TOP,
-        g_popupSourceRect.left, g_popupSourceRect.top,
-        width, height,
-        SWP_NOACTIVATE | SWP_SHOWWINDOW |
-            SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
+    SetWindowPos(g_popupToggleHitWindow, HWND_TOP, g_popupSourceRect.left,
+                 g_popupSourceRect.top, width, height,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_NOOWNERZORDER |
+                     SWP_NOSENDCHANGING);
     return IsWindowVisible(g_popupToggleHitWindow) != FALSE;
 }
 
@@ -15800,9 +16112,7 @@ bool EnsureExpandedPopup() {
 
     g_expandedPopup = CreateWindowExW(
         WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP,
-        kPopupClassName, L"",
-        WS_POPUP, initialX, initialY,
-        initialWidth,
+        kPopupClassName, L"", WS_POPUP, initialX, initialY, initialWidth,
         initialHeight,
         // Owned by the taskbar: Shell_TrayWnd is WS_EX_TOPMOST, so the popup
         // is in the topmost band and Windows enforces "never below the
@@ -15814,10 +16124,10 @@ bool EnsureExpandedPopup() {
     }
     BOOL useHostBackdropBrush = TRUE;
     HRESULT hostBackdropResult = DwmSetWindowAttribute(
-        g_expandedPopup, kDwmwaUseHostBackdropBrush,
-        &useHostBackdropBrush, sizeof(useHostBackdropBrush));
-    Wh_Log(L"Host backdrop brush enabled: hwnd=%p hr=0x%08X",
-           g_expandedPopup, static_cast<unsigned int>(hostBackdropResult));
+        g_expandedPopup, kDwmwaUseHostBackdropBrush, &useHostBackdropBrush,
+        sizeof(useHostBackdropBrush));
+    Wh_Log(L"Host backdrop brush enabled: hwnd=%p hr=0x%08X", g_expandedPopup,
+           static_cast<unsigned int>(hostBackdropResult));
     if (!InitializePopupXamlHost(g_expandedPopup)) {
         auto style = GetWindowLongPtrW(g_expandedPopup, GWL_EXSTYLE);
         style &= ~static_cast<LONG_PTR>(WS_EX_NOREDIRECTIONBITMAP);
@@ -15863,10 +16173,10 @@ void ShowExpandedPopup() {
         g_popupOverlayWgcPresentedSerial.load(std::memory_order_acquire);
     g_popupOverlayFreshFrameStartGeneration =
         g_popupOverlayWgcGeometryGeneration.load(std::memory_order_acquire);
-    g_popupCurrentWidth = static_cast<double>(
-        g_popupSourceRect.right - g_popupSourceRect.left);
-    g_popupCurrentHeight = static_cast<double>(
-        g_popupSourceRect.bottom - g_popupSourceRect.top);
+    g_popupCurrentWidth =
+        static_cast<double>(g_popupSourceRect.right - g_popupSourceRect.left);
+    g_popupCurrentHeight =
+        static_cast<double>(g_popupSourceRect.bottom - g_popupSourceRect.top);
     g_popupTargetWidth = g_popupExpandedWidth;
     g_popupTargetHeight = g_popupExpandedHeight;
     g_lastPopupVisualProgress = -1.0;
@@ -15894,7 +16204,8 @@ void ShowExpandedPopup() {
     // Re-apply after the popup becomes visible so the overlay is placed directly
     // under the popup in the active top-level z-order.
     UpdatePopupBackdropOverlayWindow();
-    SetTimer(g_expandedPopup, kPopupTimerId, g_popupXamlRoot ? 30 : 15, nullptr);
+    SetTimer(g_expandedPopup, kPopupTimerId, g_popupXamlRoot ? 30 : 15,
+             nullptr);
     if (g_popupXamlRoot) {
         StartPopupXamlRenderLoop();
     }
@@ -16058,7 +16369,8 @@ void OnHoverRendering(winrt::Windows::Foundation::IInspectable const&,
 
         double alpha = 1.0 - std::exp(-g_settings.hoverLerpSpeed * dtSec);
         alpha = Clamp(alpha, 0.0, 1.0);
-        g_currentHoverScale += (g_targetHoverScale - g_currentHoverScale) * alpha;
+        g_currentHoverScale +=
+            (g_targetHoverScale - g_currentHoverScale) * alpha;
 
         if (std::abs(g_targetHoverScale - g_currentHoverScale) < 0.001) {
             g_currentHoverScale = g_targetHoverScale;
@@ -16084,7 +16396,8 @@ void StartHoverRenderLoop(double targetScale) {
 
     if (!g_hoverRenderingHooked) {
         g_lastHoverFrameTime = std::chrono::steady_clock::now();
-        g_hoverRenderingToken = mediax::CompositionTarget::Rendering(OnHoverRendering);
+        g_hoverRenderingToken =
+            mediax::CompositionTarget::Rendering(OnHoverRendering);
         g_hoverRenderingHooked = true;
     }
 }
@@ -16099,7 +16412,8 @@ void ApplyExpandedState() {
     g_playerGrid.Height(spec.height);
     g_playerGrid.MinHeight(spec.height);
 
-    if (auto backgroundFe = FindChildByName(g_playerGrid, L"Island_Background")) {
+    if (auto backgroundFe =
+            FindChildByName(g_playerGrid, L"Island_Background")) {
         if (auto background = backgroundFe.try_as<Border>()) {
             ApplyCompactSurfaceVisual(background);
         }
@@ -16123,7 +16437,8 @@ void ApplyExpandedState() {
         details.IsHitTestVisible(false);
         details.Opacity(0.0);
     }
-    if (auto compactArtist = FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
+    if (auto compactArtist =
+            FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
         compactArtist.Visibility(Visibility::Visible);
         compactArtist.Opacity(1.0);
     }
@@ -16149,8 +16464,9 @@ void ApplyExpandedState() {
         artFe.Width(g_layout.artSize);
         artFe.Height(g_layout.artSize);
         if (auto art = artFe.try_as<Border>()) {
-            art.CornerRadius({g_layout.artCornerRadius, g_layout.artCornerRadius,
-                              g_layout.artCornerRadius, g_layout.artCornerRadius});
+            art.CornerRadius(
+                {g_layout.artCornerRadius, g_layout.artCornerRadius,
+                 g_layout.artCornerRadius, g_layout.artCornerRadius});
         }
     }
     if (auto artShellFe = FindChildByName(g_playerGrid, L"Island_ArtShell")) {
@@ -16162,12 +16478,14 @@ void ApplyExpandedState() {
         artHostFe.Height(g_layout.artSize);
         ApplyElementClip(artHostFe, g_layout.artSize, g_layout.artSize);
     }
-    if (auto placeholderFe = FindChildByName(g_playerGrid, L"Island_ArtPlaceholder")) {
+    if (auto placeholderFe =
+            FindChildByName(g_playerGrid, L"Island_ArtPlaceholder")) {
         placeholderFe.Width(g_layout.artSize);
         placeholderFe.Height(g_layout.artSize);
         if (auto placeholder = placeholderFe.try_as<Border>()) {
-            placeholder.CornerRadius({g_layout.artCornerRadius, g_layout.artCornerRadius,
-                                      g_layout.artCornerRadius, g_layout.artCornerRadius});
+            placeholder.CornerRadius(
+                {g_layout.artCornerRadius, g_layout.artCornerRadius,
+                 g_layout.artCornerRadius, g_layout.artCornerRadius});
         }
     }
     if (auto imageFe = FindChildByName(g_playerGrid, L"Island_AlbumArt")) {
@@ -16195,12 +16513,10 @@ void ApplyExpandedState() {
             FindChildByName(g_playerGrid, L"Island_PlaybackIndicator")) {
         indicator.Width(g_layout.playbackIndicatorWidth);
         indicator.Height(g_layout.playbackIndicatorHeight);
-        indicator.Margin(
-            {g_layout.playbackIndicatorMarginLeft, 0, 0, 0});
+        indicator.Margin({g_layout.playbackIndicatorMarginLeft, 0, 0, 0});
         indicator.Visibility(Visibility::Visible);
     }
-    if (auto barsHost =
-            FindChildByName(g_playerGrid, L"Island_PlaybackBars")) {
+    if (auto barsHost = FindChildByName(g_playerGrid, L"Island_PlaybackBars")) {
         barsHost.Height(g_layout.playbackIndicatorHeight);
         barsHost.VerticalAlignment(VerticalAlignment::Center);
     }
@@ -16281,8 +16597,7 @@ void StartExpandRenderLoop(bool expanded) {
             RefreshCompactTextHostClip(false);
         }
         bool reversingClose =
-            g_expanded && g_popupClosing &&
-            IsAnimatedTaskbarPopupVisible();
+            g_expanded && g_popupClosing && IsAnimatedTaskbarPopupVisible();
         if (reversingClose) {
             ResumeOpenExpandedPopup();
         } else {
@@ -16298,9 +16613,7 @@ bool InjectIslandGrid();
 // ===== Media thread =====
 void MediaThreadProc() {
     struct MediaThreadExitGuard {
-        ~MediaThreadExitGuard() {
-            g_mediaThreadExited = true;
-        }
+        ~MediaThreadExitGuard() { g_mediaThreadExited = true; }
     } mediaThreadExitGuard;
 
     bool apartmentInitialized = false;
@@ -16403,8 +16716,8 @@ void MediaThreadProc() {
     try {
         manager = RequestMediaManagerWithTimeout(std::chrono::seconds(3));
         if (manager) {
-            sessionsChangedToken = manager.SessionsChanged(
-                [&](auto const&, auto const&) {
+            sessionsChangedToken =
+                manager.SessionsChanged([&](auto const&, auto const&) {
                     sessionListChanged = true;
                     RequestMediaRefresh();
                 });
@@ -16421,16 +16734,13 @@ void MediaThreadProc() {
     g_mediaRefreshRequested = true;
 
     while (g_mediaThreadRunning) {
-        double neteaseSeekRatio =
-            g_neteaseSeekRatioRequested.exchange(-1.0);
+        double neteaseSeekRatio = g_neteaseSeekRatioRequested.exchange(-1.0);
         if (neteaseSeekRatio >= 0.0) {
             if (TrySeekNeteaseCloudMusic(neteaseSeekRatio)) {
                 MediaState state = SnapshotMedia();
-                g_neteaseEstimatedPositionTicks =
-                    static_cast<int64_t>(std::llround(
-                        state.durationTicks * neteaseSeekRatio));
-                g_neteaseProgressSampleTime =
-                    std::chrono::steady_clock::now();
+                g_neteaseEstimatedPositionTicks = static_cast<int64_t>(
+                    std::llround(state.durationTicks * neteaseSeekRatio));
+                g_neteaseProgressSampleTime = std::chrono::steady_clock::now();
             }
             g_mediaRefreshRequested = true;
         }
@@ -16474,14 +16784,13 @@ void MediaThreadProc() {
         std::chrono::milliseconds fallbackPollInterval =
             IsNeteaseCloudMusicRunning()
                 ? std::chrono::milliseconds(500)
-                : (IsBilibiliRunning()
-                       ? std::chrono::milliseconds(500)
-                       : std::chrono::milliseconds(30000));
+                : (IsBilibiliRunning() ? std::chrono::milliseconds(500)
+                                       : std::chrono::milliseconds(30000));
         bool fallbackPollDue =
             lastFallbackPoll.time_since_epoch().count() == 0 ||
             now - lastFallbackPoll >= fallbackPollInterval;
-        bool shouldRefresh = g_mediaRefreshRequested.exchange(false) ||
-                             fallbackPollDue;
+        bool shouldRefresh =
+            g_mediaRefreshRequested.exchange(false) || fallbackPollDue;
 
         if (shouldRefresh) {
             if (sessionListChanged.exchange(false)) {
@@ -16514,14 +16823,13 @@ void MediaThreadProc() {
         }
 
         std::unique_lock lock(g_mediaCommandMutex);
-        g_mediaCommandCv.wait_for(
-            lock, fallbackPollInterval, [] {
-                return !g_mediaThreadRunning || !g_mediaCommands.empty() ||
-                        g_neteaseFavoriteToggleRequested.load() ||
-                        g_neteaseSeekRatioRequested.load() >= 0.0 ||
-                        g_bilibiliFavoriteRequested.load() ||
-                        g_mediaRefreshRequested.load();
-            });
+        g_mediaCommandCv.wait_for(lock, fallbackPollInterval, [] {
+            return !g_mediaThreadRunning || !g_mediaCommands.empty() ||
+                   g_neteaseFavoriteToggleRequested.load() ||
+                   g_neteaseSeekRatioRequested.load() >= 0.0 ||
+                   g_bilibiliFavoriteRequested.load() ||
+                   g_mediaRefreshRequested.load();
+        });
     }
 
     clearSessionEvents();
@@ -16569,8 +16877,7 @@ void StopMediaThread() {
         if (g_mediaThread->joinable()) {
             if (g_mediaThread->get_id() != std::this_thread::get_id()) {
                 auto deadline =
-                    std::chrono::steady_clock::now() +
-                    kMediaThreadStopTimeout;
+                    std::chrono::steady_clock::now() + kMediaThreadStopTimeout;
                 while (!g_mediaThreadExited.load() &&
                        std::chrono::steady_clock::now() < deadline) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -16609,7 +16916,9 @@ TextBlock MakeTextBlock(const wchar_t* name, double fontSize, bool semibold) {
     return text;
 }
 
-Button MakeMediaButton(const wchar_t* name, const wchar_t* glyph, void (*onClick)()) {
+Button MakeMediaButton(const wchar_t* name,
+                       const wchar_t* glyph,
+                       void (*onClick)()) {
     Button button;
     button.Name(name);
     button.Width(32);
@@ -16619,8 +16928,7 @@ Button MakeMediaButton(const wchar_t* name, const wchar_t* glyph, void (*onClick
     button.Background(Brush(Color(0x18, 0xFF, 0xFF, 0xFF)));
     button.BorderBrush(CompactPlaybackControlStrokeBrush());
     button.BorderThickness({1, 1, 1, 1});
-    button.CornerRadius({kPopupG2ButtonCornerRadius,
-                         kPopupG2ButtonCornerRadius,
+    button.CornerRadius({kPopupG2ButtonCornerRadius, kPopupG2ButtonCornerRadius,
                          kPopupG2ButtonCornerRadius,
                          kPopupG2ButtonCornerRadius});
 
@@ -16683,17 +16991,20 @@ void UpdateThemeVisuals() {
             title.Foreground(primaryTextBrush);
         }
     }
-    if (auto outgoingTitleFe = FindChildByName(g_playerGrid, L"Island_OutgoingTitle")) {
+    if (auto outgoingTitleFe =
+            FindChildByName(g_playerGrid, L"Island_OutgoingTitle")) {
         if (auto title = outgoingTitleFe.try_as<TextBlock>()) {
             title.Foreground(primaryTextBrush);
         }
     }
-    if (auto artistFe = FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
+    if (auto artistFe =
+            FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
         if (auto artist = artistFe.try_as<TextBlock>()) {
             artist.Foreground(secondaryTextBrush);
         }
     }
-    if (auto outgoingArtistFe = FindChildByName(g_playerGrid, L"Island_OutgoingCompactArtist")) {
+    if (auto outgoingArtistFe =
+            FindChildByName(g_playerGrid, L"Island_OutgoingCompactArtist")) {
         if (auto artist = outgoingArtistFe.try_as<TextBlock>()) {
             artist.Foreground(secondaryTextBrush);
         }
@@ -16765,9 +17076,9 @@ double DetectTaskbarHeightDip(HWND hwnd,
         double height = EffectiveElementVisualHeightDip(
             element, rootHeight > 1.0 ? rootHeight : 0.0);
         if (height >= 24.0) {
-            bestVisualHeight =
-                bestVisualHeight > 1.0 ? std::min(bestVisualHeight, height)
-                                        : height;
+            bestVisualHeight = bestVisualHeight > 1.0
+                                   ? std::min(bestVisualHeight, height)
+                                   : height;
         }
     };
 
@@ -16790,8 +17101,8 @@ double DetectTaskbarHeightDip(HWND hwnd,
         if (GetWindowRect(hwnd, &rc)) {
             UINT dpi = GetDpiForWindow(hwnd);
             double scale = dpi > 0 ? static_cast<double>(dpi) / 96.0 : 1.0;
-            height = static_cast<double>(rc.bottom - rc.top) /
-                     std::max(0.01, scale);
+            height =
+                static_cast<double>(rc.bottom - rc.top) / std::max(0.01, scale);
         }
     }
 
@@ -16818,10 +17129,10 @@ void UpdateRuntimeLayout(HWND hwnd,
         double autoWidth = Clamp(230.0 * autoScale, 112.0, 280.0);
 
         if (taskbarHeight <= 50.0) {
-            compactHeight = std::min(static_cast<double>(g_settings.height),
-                                     autoHeight);
-            compactWidth = std::min(static_cast<double>(g_settings.compactWidth),
-                                    autoWidth);
+            compactHeight =
+                std::min(static_cast<double>(g_settings.height), autoHeight);
+            compactWidth = std::min(
+                static_cast<double>(g_settings.compactWidth), autoWidth);
         } else {
             compactHeight = autoHeight;
             compactWidth = autoWidth;
@@ -16913,7 +17224,8 @@ Grid BuildIslandGrid() {
     art.Name(L"Island_ArtFallback");
     art.Width(g_layout.artSize);
     art.Height(g_layout.artSize);
-    art.CornerRadius({g_layout.artCornerRadius, g_layout.artCornerRadius, g_layout.artCornerRadius, g_layout.artCornerRadius});
+    art.CornerRadius({g_layout.artCornerRadius, g_layout.artCornerRadius,
+                      g_layout.artCornerRadius, g_layout.artCornerRadius});
     // Keep the parent transparent. The old blue fallback could show through as a
     // 1px strip on the right/bottom when the generated cover was rounded/scaled.
     art.Background(Brush(Color(0x00, 0x00, 0x00, 0x00)));
@@ -16937,7 +17249,9 @@ Grid BuildIslandGrid() {
     artPlaceholder.Name(L"Island_ArtPlaceholder");
     artPlaceholder.Width(g_layout.artSize);
     artPlaceholder.Height(g_layout.artSize);
-    artPlaceholder.CornerRadius({g_layout.artCornerRadius, g_layout.artCornerRadius, g_layout.artCornerRadius, g_layout.artCornerRadius});
+    artPlaceholder.CornerRadius(
+        {g_layout.artCornerRadius, g_layout.artCornerRadius,
+         g_layout.artCornerRadius, g_layout.artCornerRadius});
     artPlaceholder.Background(Brush(Color(0xFF, 0x4F, 0x7D, 0xE8)));
     artPlaceholder.BorderThickness({0, 0, 0, 0});
     artPlaceholder.IsHitTestVisible(false);
@@ -16987,16 +17301,19 @@ Grid BuildIslandGrid() {
     outgoingTextStack.VerticalAlignment(VerticalAlignment::Center);
     outgoingTextStack.Opacity(1.0);
 
-    auto outgoingTitle = MakeTextBlock(L"Island_OutgoingTitle", spec.titleFontSize, true);
+    auto outgoingTitle =
+        MakeTextBlock(L"Island_OutgoingTitle", spec.titleFontSize, true);
     outgoingTitle.FontWeight(winrt::Windows::UI::Text::FontWeights::Bold());
     outgoingTitle.Opacity(0.0);
     TranslateTransform outgoingTitleTranslate;
     outgoingTitleTranslate.X(0.0);
     outgoingTitle.RenderTransform(outgoingTitleTranslate);
 
-    auto outgoingArtist = MakeTextBlock(L"Island_OutgoingCompactArtist", spec.artistFontSize, false);
-    outgoingArtist.Foreground(Brush(IsDarkModeApprox() ? Color(0xB8, 0xFF, 0xFF, 0xFF)
-                                                       : Color(0xB8, 0x1C, 0x1C, 0x20)));
+    auto outgoingArtist = MakeTextBlock(L"Island_OutgoingCompactArtist",
+                                        spec.artistFontSize, false);
+    outgoingArtist.Foreground(Brush(IsDarkModeApprox()
+                                        ? Color(0xB8, 0xFF, 0xFF, 0xFF)
+                                        : Color(0xB8, 0x1C, 0x1C, 0x20)));
     outgoingArtist.Opacity(0.0);
     TranslateTransform outgoingArtistTranslate;
     outgoingArtistTranslate.X(0.0);
@@ -17016,9 +17333,11 @@ Grid BuildIslandGrid() {
     TranslateTransform titleTranslate;
     titleTranslate.X(0.0);
     title.RenderTransform(titleTranslate);
-    auto artist = MakeTextBlock(L"Island_CompactArtist", spec.artistFontSize, false);
-    artist.Foreground(Brush(IsDarkModeApprox() ? Color(0xB8, 0xFF, 0xFF, 0xFF)
-                                               : Color(0xB8, 0x1C, 0x1C, 0x20)));
+    auto artist =
+        MakeTextBlock(L"Island_CompactArtist", spec.artistFontSize, false);
+    artist.Foreground(Brush(IsDarkModeApprox()
+                                ? Color(0xB8, 0xFF, 0xFF, 0xFF)
+                                : Color(0xB8, 0x1C, 0x1C, 0x20)));
     TranslateTransform artistTranslate;
     artistTranslate.X(0.0);
     artist.RenderTransform(artistTranslate);
@@ -17064,8 +17383,7 @@ Grid BuildIslandGrid() {
     playbackIndicator.Name(L"Island_PlaybackIndicator");
     playbackIndicator.Width(spec.playbackIndicatorWidth);
     playbackIndicator.Height(spec.playbackIndicatorHeight);
-    playbackIndicator.Margin(
-        {spec.playbackIndicatorMarginLeft, 0, 0, 0});
+    playbackIndicator.Margin({spec.playbackIndicatorMarginLeft, 0, 0, 0});
     playbackIndicator.HorizontalAlignment(HorizontalAlignment::Right);
     playbackIndicator.VerticalAlignment(VerticalAlignment::Center);
     playbackIndicator.IsHitTestVisible(false);
@@ -17084,26 +17402,23 @@ Grid BuildIslandGrid() {
     playbackAccentBrush.Color(g_compactPlaybackAccentDisplayed);
     g_compactPlaybackAccentBrush = playbackAccentBrush;
 
-    constexpr double kInitialPausedFractions[5] = {
-        0.27, 0.43, 0.60, 0.43, 0.27};
+    constexpr double kInitialPausedFractions[5] = {0.27, 0.43, 0.60, 0.43,
+                                                   0.27};
     g_compactPlaybackBars.clear();
     for (size_t i = 0; i < 5; ++i) {
         Border bar;
-        bar.Name(winrt::hstring(L"Island_PlaybackBar" +
-                                std::to_wstring(i)));
+        bar.Name(winrt::hstring(L"Island_PlaybackBar" + std::to_wstring(i)));
         bar.Width(spec.playbackBarWidth);
         double barHeight = std::max(
-            2.0,
-            spec.playbackIndicatorHeight * kInitialPausedFractions[i]);
+            2.0, spec.playbackIndicatorHeight * kInitialPausedFractions[i]);
         bar.Height(barHeight);
-        bar.Margin({spec.playbackBarGap * 0.5, 0,
-                    spec.playbackBarGap * 0.5, 0});
+        bar.Margin(
+            {spec.playbackBarGap * 0.5, 0, spec.playbackBarGap * 0.5, 0});
         double radius = spec.playbackBarWidth * 0.5;
         bar.CornerRadius({radius, radius, radius, radius});
         bar.VerticalAlignment(VerticalAlignment::Center);
         bar.Background(playbackAccentBrush);
-        bar.Opacity(i == 0 || i == 4 ? 0.86
-                                     : (i == 1 || i == 3 ? 0.94 : 1.0));
+        bar.Opacity(i == 0 || i == 4 ? 0.86 : (i == 1 || i == 3 ? 0.94 : 1.0));
         bar.IsHitTestVisible(false);
         g_compactPlaybackBarHeights[i] = barHeight;
         g_compactPlaybackBars.push_back(bar);
@@ -17122,22 +17437,15 @@ Grid BuildIslandGrid() {
     details.Opacity(0.0);
     controls::Grid::SetColumn(details, 2);
 
-    details.Children().Append(MakeMediaButton(
-        L"Island_Prev", L"\uEB9E",
-        [] {
-            RunMediaTransportCommand(MediaTransportCommand::Previous);
-        }));
-    details.Children().Append(MakeMediaButton(
-        L"Island_Play", L"\uE768",
-        [] {
-            RunMediaTransportCommand(
-                MediaTransportCommand::TogglePlayPause);
-        }));
-    details.Children().Append(MakeMediaButton(
-        L"Island_Next", L"\uEB9D",
-        [] {
-            RunMediaTransportCommand(MediaTransportCommand::Next);
-        }));
+    details.Children().Append(MakeMediaButton(L"Island_Prev", L"\uEB9E", [] {
+        RunMediaTransportCommand(MediaTransportCommand::Previous);
+    }));
+    details.Children().Append(MakeMediaButton(L"Island_Play", L"\uE768", [] {
+        RunMediaTransportCommand(MediaTransportCommand::TogglePlayPause);
+    }));
+    details.Children().Append(MakeMediaButton(L"Island_Next", L"\uEB9D", [] {
+        RunMediaTransportCommand(MediaTransportCommand::Next);
+    }));
 
     ProgressBar progress;
     progress.Name(L"Island_Progress");
@@ -17163,23 +17471,24 @@ Grid BuildIslandGrid() {
         g_islandScale = hoverScale;
         StartHoverRenderLoop(1.0);
     });
-    wrapper.PointerPressed([](auto const& sender, input::PointerRoutedEventArgs const& e) {
-        auto source = sender.template try_as<UIElement>();
-        auto point = e.GetCurrentPoint(source);
-        if (point.Properties().IsLeftButtonPressed()) {
-            RepairExpandedPopupStateIfHidden();
-            if (g_popupRestingCompact) {
-                ResumeOpenExpandedPopup();
+    wrapper.PointerPressed(
+        [](auto const& sender, input::PointerRoutedEventArgs const& e) {
+            auto source = sender.template try_as<UIElement>();
+            auto point = e.GetCurrentPoint(source);
+            if (point.Properties().IsLeftButtonPressed()) {
+                RepairExpandedPopupStateIfHidden();
+                if (g_popupRestingCompact) {
+                    ResumeOpenExpandedPopup();
+                    e.Handled(true);
+                    return;
+                }
+                bool popupActuallyExpanded = g_expanded &&
+                                             IsAnimatedTaskbarPopupVisible() &&
+                                             !g_popupClosing;
+                StartExpandRenderLoop(!popupActuallyExpanded);
                 e.Handled(true);
-                return;
             }
-            bool popupActuallyExpanded =
-                g_expanded && IsAnimatedTaskbarPopupVisible() &&
-                !g_popupClosing;
-            StartExpandRenderLoop(!popupActuallyExpanded);
-            e.Handled(true);
-        }
-    });
+        });
 
     return wrapper;
 }
@@ -17222,8 +17531,8 @@ void CALLBACK OnTaskbarLayoutTimer(HWND, UINT, UINT_PTR timerId, DWORD) {
         bool taskbarDirectionChanged = false;
         RECT taskbarRect{};
         if (GetWindowRect(hwnd, &taskbarRect)) {
-            HMONITOR monitor = MonitorFromRect(
-                &taskbarRect, MONITOR_DEFAULTTONEAREST);
+            HMONITOR monitor =
+                MonitorFromRect(&taskbarRect, MONITOR_DEFAULTTONEAREST);
             MONITORINFO monitorInfo{sizeof(monitorInfo)};
             if (monitor && GetMonitorInfoW(monitor, &monitorInfo)) {
                 bool taskbarAtTop =
@@ -17275,10 +17584,8 @@ void StartTaskbarLayoutMonitor(FrameworkElement const& root,
                     ? g_taskbarWnd
                     : FindCurrentProcessTaskbarWnd();
     if (!hwnd ||
-        !SetTimer(hwnd,
-                  kTaskbarLayoutMonitorTimerId,
-                  kTaskbarLayoutMonitorIntervalMs,
-                  OnTaskbarLayoutTimer)) {
+        !SetTimer(hwnd, kTaskbarLayoutMonitorTimerId,
+                  kTaskbarLayoutMonitorIntervalMs, OnTaskbarLayoutTimer)) {
         g_taskbarLayoutWatchRoot = nullptr;
         g_taskbarLayoutWatchTarget = nullptr;
         return;
@@ -17293,513 +17600,575 @@ void UpdatePlayerContents() {
     }
 
     try {
-    MediaState state = SnapshotMedia();
+        MediaState state = SnapshotMedia();
 
-    // Some providers briefly report metadata before the matching thumbnail is
-    // available. Reuse old artwork only when the *same media item* temporarily
-    // has an empty thumbnail. Do not carry a previous song/video cover into a
-    // new browser live room, where GSMTC often reports no thumbnail or repeats
-    // the previous thumbnail while the page is still updating.
-    auto artworkNow = std::chrono::steady_clock::now();
-    std::wstring artworkIdentityKey = MediaIdentityKey(state);
-    std::wstring visualTrackKey = MediaTrackKey(state);
-    uint64_t rawThumbnailHash = ThumbnailHash(state.thumbnailBytes);
+        // Some providers briefly report metadata before the matching thumbnail is
+        // available. Reuse old artwork only when the *same media item* temporarily
+        // has an empty thumbnail. Do not carry a previous song/video cover into a
+        // new browser live room, where GSMTC often reports no thumbnail or repeats
+        // the previous thumbnail while the page is still updating.
+        auto artworkNow = std::chrono::steady_clock::now();
+        std::wstring artworkIdentityKey = MediaIdentityKey(state);
+        std::wstring visualTrackKey = MediaTrackKey(state);
+        uint64_t rawThumbnailHash = ThumbnailHash(state.thumbnailBytes);
 
-    static std::vector<uint8_t> s_lastNonEmptyThumbnailBytes;
-    static std::wstring s_lastNonEmptyThumbnailIdentityKey;
-    static uint64_t s_lastNonEmptyThumbnailHash = 0;
-    static std::chrono::steady_clock::time_point s_lastNonEmptyThumbnailTime{};
-    static std::wstring s_suspectRepeatedThumbnailIdentityKey;
-    static uint64_t s_suspectRepeatedThumbnailHash = 0;
-    static std::chrono::steady_clock::time_point s_suspectRepeatedThumbnailSince{};
-    static std::wstring s_lastVisualTrackKey;
-    static std::chrono::steady_clock::time_point s_forceImmediateAccentUntil{};
+        static std::vector<uint8_t> s_lastNonEmptyThumbnailBytes;
+        static std::wstring s_lastNonEmptyThumbnailIdentityKey;
+        static uint64_t s_lastNonEmptyThumbnailHash = 0;
+        static std::chrono::steady_clock::time_point
+            s_lastNonEmptyThumbnailTime{};
+        static std::wstring s_suspectRepeatedThumbnailIdentityKey;
+        static uint64_t s_suspectRepeatedThumbnailHash = 0;
+        static std::chrono::steady_clock::time_point
+            s_suspectRepeatedThumbnailSince{};
+        static std::wstring s_lastVisualTrackKey;
+        static std::chrono::steady_clock::time_point
+            s_forceImmediateAccentUntil{};
 
-    bool visualTrackChanged =
-        state.hasSession && !s_lastVisualTrackKey.empty() &&
-        visualTrackKey != s_lastVisualTrackKey;
-    if (!state.hasSession) {
-        s_lastVisualTrackKey.clear();
-        s_forceImmediateAccentUntil = {};
-    } else {
-        if (visualTrackChanged) {
-            // The cover can arrive after title/id. Any accent received during
-            // this window belongs to the new track and must apply immediately.
-            s_forceImmediateAccentUntil =
-                artworkNow + std::chrono::milliseconds(2500);
+        bool visualTrackChanged = state.hasSession &&
+                                  !s_lastVisualTrackKey.empty() &&
+                                  visualTrackKey != s_lastVisualTrackKey;
+        if (!state.hasSession) {
+            s_lastVisualTrackKey.clear();
+            s_forceImmediateAccentUntil = {};
+        } else {
+            if (visualTrackChanged) {
+                // The cover can arrive after title/id. Any accent received during
+                // this window belongs to the new track and must apply immediately.
+                s_forceImmediateAccentUntil =
+                    artworkNow + std::chrono::milliseconds(2500);
+            }
+            s_lastVisualTrackKey = visualTrackKey;
         }
-        s_lastVisualTrackKey = visualTrackKey;
-    }
-    bool forceImmediateAccent =
-        s_forceImmediateAccentUntil.time_since_epoch().count() != 0 &&
-        artworkNow < s_forceImmediateAccentUntil;
+        bool forceImmediateAccent =
+            s_forceImmediateAccentUntil.time_since_epoch().count() != 0 &&
+            artworkNow < s_forceImmediateAccentUntil;
 
-    std::vector<uint8_t> visualThumbnailBytes = state.thumbnailBytes;
-    if (!state.hasSession) {
-        visualThumbnailBytes.clear();
-        s_suspectRepeatedThumbnailIdentityKey.clear();
-        s_suspectRepeatedThumbnailHash = 0;
-    } else if (!state.thumbnailBytes.empty()) {
-        bool differentMedia =
-            !s_lastNonEmptyThumbnailIdentityKey.empty() &&
-            artworkIdentityKey != s_lastNonEmptyThumbnailIdentityKey;
-        bool repeatedPreviousArtwork =
-            differentMedia &&
-            rawThumbnailHash != 0 &&
-            rawThumbnailHash == s_lastNonEmptyThumbnailHash;
-        bool browserLiveLike =
-            LooksLikeBrowserMediaSource(state.sourceAppUserModelId) &&
-            state.durationTicks <= 0;
+        std::vector<uint8_t> visualThumbnailBytes = state.thumbnailBytes;
+        if (!state.hasSession) {
+            visualThumbnailBytes.clear();
+            s_suspectRepeatedThumbnailIdentityKey.clear();
+            s_suspectRepeatedThumbnailHash = 0;
+        } else if (!state.thumbnailBytes.empty()) {
+            bool differentMedia =
+                !s_lastNonEmptyThumbnailIdentityKey.empty() &&
+                artworkIdentityKey != s_lastNonEmptyThumbnailIdentityKey;
+            bool repeatedPreviousArtwork =
+                differentMedia && rawThumbnailHash != 0 &&
+                rawThumbnailHash == s_lastNonEmptyThumbnailHash;
+            bool browserLiveLike =
+                LooksLikeBrowserMediaSource(state.sourceAppUserModelId) &&
+                state.durationTicks <= 0;
 
-        if (repeatedPreviousArtwork && browserLiveLike) {
-            if (s_suspectRepeatedThumbnailIdentityKey != artworkIdentityKey ||
-                s_suspectRepeatedThumbnailHash != rawThumbnailHash) {
-                s_suspectRepeatedThumbnailIdentityKey = artworkIdentityKey;
-                s_suspectRepeatedThumbnailHash = rawThumbnailHash;
-                s_suspectRepeatedThumbnailSince = artworkNow;
+            if (repeatedPreviousArtwork && browserLiveLike) {
+                if (s_suspectRepeatedThumbnailIdentityKey !=
+                        artworkIdentityKey ||
+                    s_suspectRepeatedThumbnailHash != rawThumbnailHash) {
+                    s_suspectRepeatedThumbnailIdentityKey = artworkIdentityKey;
+                    s_suspectRepeatedThumbnailHash = rawThumbnailHash;
+                    s_suspectRepeatedThumbnailSince = artworkNow;
+                }
+
+                // Give browser/GSMTC a short chance to replace a stale thumbnail.
+                // During that window show the placeholder instead of the previous
+                // video's cover. If it never changes, accept it later so the UI
+                // doesn't stay placeholder forever.
+                auto suspectAge =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        artworkNow - s_suspectRepeatedThumbnailSince)
+                        .count();
+                if (suspectAge < 3500) {
+                    visualThumbnailBytes.clear();
+                }
+            } else {
+                s_suspectRepeatedThumbnailIdentityKey.clear();
+                s_suspectRepeatedThumbnailHash = 0;
             }
 
-            // Give browser/GSMTC a short chance to replace a stale thumbnail.
-            // During that window show the placeholder instead of the previous
-            // video's cover. If it never changes, accept it later so the UI
-            // doesn't stay placeholder forever.
-            auto suspectAge =
-                std::chrono::duration_cast<std::chrono::milliseconds>(
-                    artworkNow - s_suspectRepeatedThumbnailSince)
-                    .count();
-            if (suspectAge < 3500) {
+            if (!visualThumbnailBytes.empty()) {
+                s_lastNonEmptyThumbnailBytes = state.thumbnailBytes;
+                s_lastNonEmptyThumbnailIdentityKey = artworkIdentityKey;
+                s_lastNonEmptyThumbnailHash = rawThumbnailHash;
+                s_lastNonEmptyThumbnailTime = artworkNow;
+            }
+        } else if (!s_lastNonEmptyThumbnailBytes.empty() &&
+                   artworkIdentityKey == s_lastNonEmptyThumbnailIdentityKey) {
+            auto age = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           artworkNow - s_lastNonEmptyThumbnailTime)
+                           .count();
+            if (age <= 2500) {
+                visualThumbnailBytes = s_lastNonEmptyThumbnailBytes;
+            } else {
                 visualThumbnailBytes.clear();
             }
         } else {
-            s_suspectRepeatedThumbnailIdentityKey.clear();
-            s_suspectRepeatedThumbnailHash = 0;
-        }
-
-        if (!visualThumbnailBytes.empty()) {
-            s_lastNonEmptyThumbnailBytes = state.thumbnailBytes;
-            s_lastNonEmptyThumbnailIdentityKey = artworkIdentityKey;
-            s_lastNonEmptyThumbnailHash = rawThumbnailHash;
-            s_lastNonEmptyThumbnailTime = artworkNow;
-        }
-    } else if (!s_lastNonEmptyThumbnailBytes.empty() &&
-               artworkIdentityKey == s_lastNonEmptyThumbnailIdentityKey) {
-        auto age =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                artworkNow - s_lastNonEmptyThumbnailTime)
-                .count();
-        if (age <= 2500) {
-            visualThumbnailBytes = s_lastNonEmptyThumbnailBytes;
-        } else {
             visualThumbnailBytes.clear();
         }
-    } else {
-        visualThumbnailBytes.clear();
-    }
 
-    std::vector<uint8_t> displayThumbnailBytes =
-        CreateDisplayAlbumCoverBytesCached(visualThumbnailBytes,
-                                           state.sourceAppUserModelId);
-    UpdateCompactPlaybackIndicatorAccent(displayThumbnailBytes,
-                                          forceImmediateAccent);
-    bool useGeneratedBlurCover =
-        LooksLikeBrowserMediaSource(state.sourceAppUserModelId) &&
-        ShouldUseAbstractArtworkForDisplay(visualThumbnailBytes) &&
-        !displayThumbnailBytes.empty();
-    std::vector<uint8_t> popupBlurSourceBytes =
-        useGeneratedBlurCover ? displayThumbnailBytes : visualThumbnailBytes;
-    uint64_t visualThumbnailHash = ThumbnailHash(visualThumbnailBytes);
-    uint64_t displayThumbnailHash = ThumbnailHash(displayThumbnailBytes);
+        std::vector<uint8_t> displayThumbnailBytes =
+            CreateDisplayAlbumCoverBytesCached(visualThumbnailBytes,
+                                               state.sourceAppUserModelId);
+        UpdateCompactPlaybackIndicatorAccent(displayThumbnailBytes,
+                                             forceImmediateAccent);
+        bool useGeneratedBlurCover =
+            LooksLikeBrowserMediaSource(state.sourceAppUserModelId) &&
+            ShouldUseAbstractArtworkForDisplay(visualThumbnailBytes) &&
+            !displayThumbnailBytes.empty();
+        std::vector<uint8_t> popupBlurSourceBytes = useGeneratedBlurCover
+                                                        ? displayThumbnailBytes
+                                                        : visualThumbnailBytes;
+        uint64_t visualThumbnailHash = ThumbnailHash(visualThumbnailBytes);
+        uint64_t displayThumbnailHash = ThumbnailHash(displayThumbnailBytes);
 
-    UpdateThemeVisuals();
+        UpdateThemeVisuals();
 
-    auto makeBitmap = [](std::vector<uint8_t> const& bytes) -> imaging::BitmapImage {
-        imaging::BitmapImage bitmap;
-        if (bytes.empty()) {
-            return imaging::BitmapImage{nullptr};
+        auto makeBitmap =
+            [](std::vector<uint8_t> const& bytes) -> imaging::BitmapImage {
+            imaging::BitmapImage bitmap;
+            if (bytes.empty()) {
+                return imaging::BitmapImage{nullptr};
+            }
+            streams::InMemoryRandomAccessStream stream;
+            streams::DataWriter writer(stream);
+            writer.WriteBytes(winrt::array_view<const uint8_t>(bytes));
+            try {
+                GetAsyncResultWithTimeout(writer.StoreAsync(),
+                                          kUiLocalAsyncTimeout,
+                                          L"DataWriter.StoreAsync");
+            } catch (...) {
+                return imaging::BitmapImage{nullptr};
+            }
+            writer.DetachStream();
+            stream.Seek(0);
+            bitmap.SetSourceAsync(stream);
+            return bitmap;
+        };
+
+        std::wstring compactTitle =
+            state.hasSession ? state.title : std::wstring(L"No media");
+        std::wstring compactArtist =
+            state.artist.empty()
+                ? std::wstring(state.isPlaying ? L"Playing" : L"Paused")
+                : state.artist;
+        // Artwork can be refreshed repeatedly while the media item itself hasn't
+        // changed (especially for browser-backed sessions). Text motion must be
+        // keyed to text metadata only: including the thumbnail hash restarted the
+        // title/artist slide on every refreshed frame and made XAML render only
+        // the ellipsis while the TextBlocks crossed the host clip. Album artwork
+        // has its own independent transition below.
+        uint64_t compactTextMediaHash = visualThumbnailHash;
+        bool compactWasInitialized = g_compactTextInitialized;
+        std::wstring compactOldTitle =
+            g_compactLastTitle.empty() ? compactTitle : g_compactLastTitle;
+        std::wstring compactOldArtist =
+            g_compactLastArtist.empty() ? compactArtist : g_compactLastArtist;
+        bool compactTextChanged =
+            compactWasInitialized && (compactTitle != g_compactLastTitle ||
+                                      compactArtist != g_compactLastArtist);
+        bool compactPlaybackOnlyTextChange =
+            compactWasInitialized && compactTitle == g_compactLastTitle &&
+            state.artist.empty() &&
+            (compactArtist == L"Playing" || compactArtist == L"Paused") &&
+            (g_compactLastArtist == L"Playing" ||
+             g_compactLastArtist == L"Paused") &&
+            compactTextMediaHash == g_compactLastTextMediaHash;
+        if (compactPlaybackOnlyTextChange) {
+            compactTextChanged = false;
         }
-        streams::InMemoryRandomAccessStream stream;
-        streams::DataWriter writer(stream);
-        writer.WriteBytes(winrt::array_view<const uint8_t>(bytes));
-        try {
-            GetAsyncResultWithTimeout(writer.StoreAsync(),
-                                      kUiLocalAsyncTimeout,
-                                      L"DataWriter.StoreAsync");
-        } catch (...) {
-            return imaging::BitmapImage{nullptr};
-        }
-        writer.DetachStream();
-        stream.Seek(0);
-        bitmap.SetSourceAsync(stream);
-        return bitmap;
-    };
 
-    std::wstring compactTitle = state.hasSession ? state.title : std::wstring(L"No media");
-    std::wstring compactArtist = state.artist.empty()
-                                     ? std::wstring(state.isPlaying ? L"Playing" : L"Paused")
-                                     : state.artist;
-    // Artwork can be refreshed repeatedly while the media item itself hasn't
-    // changed (especially for browser-backed sessions). Text motion must be
-    // keyed to text metadata only: including the thumbnail hash restarted the
-    // title/artist slide on every refreshed frame and made XAML render only
-    // the ellipsis while the TextBlocks crossed the host clip. Album artwork
-    // has its own independent transition below.
-    uint64_t compactTextMediaHash = visualThumbnailHash;
-    bool compactWasInitialized = g_compactTextInitialized;
-    std::wstring compactOldTitle = g_compactLastTitle.empty() ? compactTitle : g_compactLastTitle;
-    std::wstring compactOldArtist = g_compactLastArtist.empty() ? compactArtist : g_compactLastArtist;
-    bool compactTextChanged =
-        compactWasInitialized &&
-        (compactTitle != g_compactLastTitle ||
-         compactArtist != g_compactLastArtist);
-    bool compactPlaybackOnlyTextChange =
-        compactWasInitialized &&
-        compactTitle == g_compactLastTitle &&
-        state.artist.empty() &&
-        (compactArtist == L"Playing" || compactArtist == L"Paused") &&
-        (g_compactLastArtist == L"Playing" || g_compactLastArtist == L"Paused") &&
-        compactTextMediaHash == g_compactLastTextMediaHash;
-    if (compactPlaybackOnlyTextChange) {
-        compactTextChanged = false;
-    }
-
-    if (auto titleFe = FindChildByName(g_playerGrid, L"Island_Title")) {
-        if (auto title = titleFe.try_as<TextBlock>()) {
-            title.Text(winrt::hstring(compactTitle));
-        }
-    }
-    if (auto artistFe = FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
-        if (auto artist = artistFe.try_as<TextBlock>()) {
-            artist.Text(winrt::hstring(compactArtist));
-        }
-    }
-
-    if (!g_compactTextInitialized) {
-        g_compactTextInitialized = true;
-        ResetCompactTextAnimationVisuals();
-    }
-    g_compactLastTitle = compactTitle;
-    g_compactLastArtist = compactArtist;
-    g_compactLastTextMediaHash = compactTextMediaHash;
-    if (auto playFe = FindChildByName(g_playerGrid, L"Island_Play")) {
-        if (auto button = playFe.try_as<Button>()) {
-            if (auto icon = button.Content().try_as<TextBlock>()) {
-                icon.Text(state.isPlaying ? L"\uE769"
-                                          : L"\uE768");
+        if (auto titleFe = FindChildByName(g_playerGrid, L"Island_Title")) {
+            if (auto title = titleFe.try_as<TextBlock>()) {
+                title.Text(winrt::hstring(compactTitle));
             }
         }
-    }
-    SetCompactPlaybackIndicatorState(state.hasSession && state.isPlaying);
-    if (g_compactProgress) {
-        bool shouldInterpolate = UpdateCompactProgressFromSnapshot();
-        if (shouldInterpolate && !g_expanded) {
-            StartCompactProgressRenderLoop();
-        } else {
-            StopCompactProgressRenderLoop();
-        }
-    }
-    bool compactArtChanged = false;
-    uint64_t compactArtHash = displayThumbnailHash;
-    if (auto imageFe = FindChildByName(g_playerGrid, L"Island_AlbumArt")) {
-        if (auto image = imageFe.try_as<Image>()) {
-            if (!g_compactAlbumArtImage) {
-                g_compactAlbumArtImage = image;
+        if (auto artistFe =
+                FindChildByName(g_playerGrid, L"Island_CompactArtist")) {
+            if (auto artist = artistFe.try_as<TextBlock>()) {
+                artist.Text(winrt::hstring(compactArtist));
             }
-            compactArtChanged = compactArtHash != g_lastThumbnailHash;
-            if (compactArtChanged) {
-                bool canAnimateArt = compactWasInitialized && !g_expanded && !g_unloading;
-                try {
-                    if (canAnimateArt && g_compactAlbumArtFade) {
-                        auto oldSource = image.Source();
-                        g_compactAlbumArtFade.Source(oldSource);
-                        g_compactAlbumArtFade.Opacity(oldSource != nullptr ? 1.0 : 0.0);
-                    }
-                    if (compactArtHash) {
-                        image.Source(makeBitmap(displayThumbnailBytes));
-                    } else {
-                        image.Source(nullptr);
-                    }
-                    image.Opacity(canAnimateArt ? 0.0 : 1.0);
-                } catch (...) {
-                    image.Source(nullptr);
-                    image.Opacity(1.0);
-                    if (g_compactAlbumArtFade) {
-                        g_compactAlbumArtFade.Source(nullptr);
-                        g_compactAlbumArtFade.Opacity(0.0);
-                    }
+        }
+
+        if (!g_compactTextInitialized) {
+            g_compactTextInitialized = true;
+            ResetCompactTextAnimationVisuals();
+        }
+        g_compactLastTitle = compactTitle;
+        g_compactLastArtist = compactArtist;
+        g_compactLastTextMediaHash = compactTextMediaHash;
+        if (auto playFe = FindChildByName(g_playerGrid, L"Island_Play")) {
+            if (auto button = playFe.try_as<Button>()) {
+                if (auto icon = button.Content().try_as<TextBlock>()) {
+                    icon.Text(state.isPlaying ? L"\uE769" : L"\uE768");
                 }
-                g_lastThumbnailHash = compactArtHash;
             }
         }
-    }
-
-    if (compactWasInitialized && !g_expanded && (compactTextChanged || compactArtChanged)) {
-        StartCompactTrackTransition(compactOldTitle, compactOldArtist,
-                                    compactTextChanged, compactArtChanged);
-    }
-
-    if (g_popupXamlRoot) {
-        if (g_popupRenderingHooked &&
-            g_popupLifecycleState != PopupLifecycleState::Open) {
-            g_popupPendingContentRefresh = true;
-        } else {
-            std::vector<uint8_t> const& accentSourceBytes =
-                displayThumbnailBytes.empty() ? visualThumbnailBytes
-                                              : displayThumbnailBytes;
-            uint64_t accentHash = displayThumbnailHash != 0
-                                      ? displayThumbnailHash
-                                      : visualThumbnailHash;
-            bool accentChanged = accentHash != g_popupAccentThumbnailHash;
-            if (accentChanged) {
-                winrt::Windows::UI::Color nextAccent =
-                    accentSourceBytes.empty()
-                        ? DefaultPopupAccentColor()
-                        : ExtractAlbumAccentColor(accentSourceBytes);
-                winrt::Windows::UI::Color currentAccent = PopupAccentColor();
-                bool canAnimateAccent = g_popupAccentThumbnailHash != UINT64_MAX &&
-                                        g_popupXamlRoot &&
-                                        IsAnimatedTaskbarPopupVisible() &&
-                                        !forceImmediateAccent;
-                g_popupAccentThumbnailHash = accentHash;
-                g_popupAccentColor = nextAccent;
-                g_popupAccentColorValid = !accentSourceBytes.empty();
-                g_popupAccentTransitionFrom = canAnimateAccent ? currentAccent : nextAccent;
-                g_popupAccentTransitionTo = nextAccent;
-                g_popupDisplayedAccentColor = canAnimateAccent ? currentAccent : nextAccent;
-                g_popupDisplayedAccentColorValid = true;
-                if (canAnimateAccent) {
-                    g_popupMediaTransitionProgress = 0.0;
-                    g_popupMediaTransitionActive = true;
-                }
-                g_popupXamlThemeValid = false;
-            }
-            ApplyPopupXamlTheme();
-            winrt::hstring nextPopupTitle = state.hasSession ? winrt::hstring(state.title) : winrt::hstring(L"No media");
-            winrt::hstring nextPopupArtist = state.artist.empty()
-                                                 ? (state.isPlaying ? winrt::hstring(L"Playing")
-                                                                    : winrt::hstring(L"Paused"))
-                                                 : winrt::hstring(state.artist);
-            bool popupTextChanged = g_popupXamlTitle && g_popupXamlArtist &&
-                                    (g_popupXamlTitle.Text() != nextPopupTitle ||
-                                     g_popupXamlArtist.Text() != nextPopupArtist);
-            bool popupPlaybackOnlyTextChange =
-                popupTextChanged &&
-                g_popupXamlTitle &&
-                g_popupXamlArtist &&
-                g_popupXamlTitle.Text() == nextPopupTitle &&
-                state.artist.empty() &&
-                (nextPopupArtist == winrt::hstring(L"Playing") ||
-                 nextPopupArtist == winrt::hstring(L"Paused")) &&
-                (g_popupXamlArtist.Text() == winrt::hstring(L"Playing") ||
-                 g_popupXamlArtist.Text() == winrt::hstring(L"Paused"));
-            bool canAnimatePopupText = popupTextChanged &&
-                                       !popupPlaybackOnlyTextChange &&
-                                       g_popupXamlOutgoingTitle &&
-                                       g_popupXamlOutgoingArtist &&
-                                       IsAnimatedTaskbarPopupVisible();
-            if (canAnimatePopupText) {
-                g_popupXamlOutgoingTitle.Text(g_popupXamlTitle.Text());
-                g_popupXamlOutgoingArtist.Text(g_popupXamlArtist.Text());
-                int navigationDirection = ConsumeRecentMediaNavigationDirection();
-                g_popupTextTransitionDirection = navigationDirection < 0 ? -1 : 1;
-                double popupTextStartOffset = 30.0 * static_cast<double>(g_popupTextTransitionDirection);
-                if (g_popupXamlOutgoingTitleTranslate) g_popupXamlOutgoingTitleTranslate.X(0.0);
-                if (g_popupXamlOutgoingArtistTranslate) g_popupXamlOutgoingArtistTranslate.X(0.0);
-                g_popupXamlOutgoingTitle.Opacity(g_popupTextBaseOpacity);
-                g_popupXamlOutgoingArtist.Opacity(g_popupTextBaseOpacity);
-                if (g_popupXamlTitleTranslate) g_popupXamlTitleTranslate.X(popupTextStartOffset);
-                if (g_popupXamlArtistTranslate) g_popupXamlArtistTranslate.X(popupTextStartOffset);
-                g_popupXamlTitle.Opacity(0.0);
-                g_popupXamlArtist.Opacity(0.0);
-                g_popupTextTransitionActive = true;
-                g_popupMediaTransitionProgress = 0.0;
-                g_popupMediaTransitionActive = true;
-            } else if (!popupTextChanged) {
-                // Leave the current transition state alone if only artwork/accent is changing.
+        SetCompactPlaybackIndicatorState(state.hasSession && state.isPlaying);
+        if (g_compactProgress) {
+            bool shouldInterpolate = UpdateCompactProgressFromSnapshot();
+            if (shouldInterpolate && !g_expanded) {
+                StartCompactProgressRenderLoop();
             } else {
-                g_popupTextTransitionActive = false;
+                StopCompactProgressRenderLoop();
             }
-            if (g_popupXamlTitle) g_popupXamlTitle.Text(nextPopupTitle);
-            if (g_popupXamlArtist) g_popupXamlArtist.Text(nextPopupArtist);
-            if (!canAnimatePopupText && !g_popupTextTransitionActive) {
-                if (g_popupXamlTitleTranslate) g_popupXamlTitleTranslate.X(0.0);
-                if (g_popupXamlArtistTranslate) g_popupXamlArtistTranslate.X(0.0);
-                if (g_popupXamlOutgoingTitle) g_popupXamlOutgoingTitle.Opacity(0.0);
-                if (g_popupXamlOutgoingArtist) g_popupXamlOutgoingArtist.Opacity(0.0);
-            }
-            UpdatePopupLiveProgressFromSnapshot();
-            if (g_popupXamlControls) {
-                for (auto const& child : g_popupXamlControls.Children()) {
-                    if (auto buttonSurface = child.try_as<Border>()) {
-                        bool favoriteButton =
-                            buttonSurface.Name() == L"Popup_Favorite";
-                        UpdatePopupTransportButtonGlyph(
-                            buttonSurface, state.isPlaying,
-                            state.isFavorite);
-                        if (favoriteButton) {
-                            buttonSurface.IsHitTestVisible(
-                                state.canFavorite);
-                            buttonSurface.Opacity(
-                                state.canFavorite ? 1.0 : 0.38);
+        }
+        bool compactArtChanged = false;
+        uint64_t compactArtHash = displayThumbnailHash;
+        if (auto imageFe = FindChildByName(g_playerGrid, L"Island_AlbumArt")) {
+            if (auto image = imageFe.try_as<Image>()) {
+                if (!g_compactAlbumArtImage) {
+                    g_compactAlbumArtImage = image;
+                }
+                compactArtChanged = compactArtHash != g_lastThumbnailHash;
+                if (compactArtChanged) {
+                    bool canAnimateArt =
+                        compactWasInitialized && !g_expanded && !g_unloading;
+                    try {
+                        if (canAnimateArt && g_compactAlbumArtFade) {
+                            auto oldSource = image.Source();
+                            g_compactAlbumArtFade.Source(oldSource);
+                            g_compactAlbumArtFade.Opacity(
+                                oldSource != nullptr ? 1.0 : 0.0);
+                        }
+                        if (compactArtHash) {
+                            image.Source(makeBitmap(displayThumbnailBytes));
+                        } else {
+                            image.Source(nullptr);
+                        }
+                        image.Opacity(canAnimateArt ? 0.0 : 1.0);
+                    } catch (...) {
+                        image.Source(nullptr);
+                        image.Opacity(1.0);
+                        if (g_compactAlbumArtFade) {
+                            g_compactAlbumArtFade.Source(nullptr);
+                            g_compactAlbumArtFade.Opacity(0.0);
                         }
                     }
+                    g_lastThumbnailHash = compactArtHash;
                 }
             }
+        }
 
-            uint64_t popupHash = displayThumbnailHash != 0
-                                     ? displayThumbnailHash
-                                     : visualThumbnailHash;
-            bool useBackdropCover = PopupBackdropCoverEffectEnabled();
-            if (popupHash != g_popupXamlThumbnailHash ||
-                g_popupXamlThumbnailMaterial != g_settings.material ||
-                g_popupXamlThumbnailCompact != g_settings.compact ||
-                useBackdropCover != g_popupXamlBackdropCoverEnabled) {
-                bool canAnimateCover = g_popupXamlThumbnailHash != UINT64_MAX &&
-                                       g_popupXamlRoot &&
-                                       IsAnimatedTaskbarPopupVisible();
-                try {
-                    if (canAnimateCover) {
-                        if (g_popupXamlArtFade && g_popupXamlArt) {
-                            auto oldArtSource = g_popupXamlArt.Source();
-                            g_popupXamlArtFade.Source(oldArtSource);
-                            g_popupXamlArtFade.Opacity(oldArtSource != nullptr ? 1.0 : 0.0);
-                        }
-                        if (g_popupXamlBackdropCoverFade && g_popupXamlBackdropCover) {
-                            auto oldBackdropCoverSource = useBackdropCover
-                                                              ? g_popupXamlBackdropCover.Source()
-                                                              : nullptr;
-                            g_popupXamlBackdropCoverFade.Source(oldBackdropCoverSource);
-                            g_popupXamlBackdropCoverFade.Opacity(oldBackdropCoverSource != nullptr ? 1.0 : 0.0);
-                        }
-                        if (g_popupXamlPanelCoverFade && g_popupXamlPanelCover) {
-                            auto oldCoverSource = g_popupXamlPanelCover.Source();
-                            g_popupXamlPanelCoverFade.Source(oldCoverSource);
-                            g_popupXamlPanelCoverFade.Opacity(oldCoverSource != nullptr ? 1.0 : 0.0);
-                        }
-                    }
+        if (compactWasInitialized && !g_expanded &&
+            (compactTextChanged || compactArtChanged)) {
+            StartCompactTrackTransition(compactOldTitle, compactOldArtist,
+                                        compactTextChanged, compactArtChanged);
+        }
 
-                    if (visualThumbnailBytes.empty()) {
-                        auto placeholderArtBytes = CreatePlaceholderAlbumCoverBytes(128);
-                        auto placeholderG2ArtBytes = CreatePopupG2AlbumCoverBytes(placeholderArtBytes);
-                        auto placeholderPanelBytes = CreatePlaceholderAlbumCoverBytes(20);
-                        auto placeholderBackdropBytes =
-                            CreatePlaceholderAlbumCoverBytes(
-                                20,
-                                true,
-                                g_settings.compact || g_taskbarAtTop,
-                                false);
-                        auto const& popupArtBytes = placeholderG2ArtBytes.empty()
-                                                        ? placeholderArtBytes
-                                                        : placeholderG2ArtBytes;
-                        if (!popupArtBytes.empty()) {
-                            g_popupXamlArt.Source(makeBitmap(popupArtBytes));
-                        } else {
-                            g_popupXamlArt.Source(nullptr);
-                        }
-                        if (g_popupXamlBackdropCover) {
-                            if (useBackdropCover && !placeholderBackdropBytes.empty()) {
-                                g_popupXamlBackdropCover.Source(makeBitmap(placeholderBackdropBytes));
-                            } else {
-                                g_popupXamlBackdropCover.Source(nullptr);
-                            }
-                        }
-                        if (g_popupXamlPanelCover) {
-                            if (!placeholderPanelBytes.empty()) {
-                                g_popupXamlPanelCover.Source(makeBitmap(placeholderPanelBytes));
-                            } else {
-                                g_popupXamlPanelCover.Source(nullptr);
-                            }
-                        }
-                    } else {
-                        auto popupArtBytes = CreatePopupG2AlbumCoverBytes(displayThumbnailBytes);
-                        g_popupXamlArt.Source(makeBitmap(
-                            popupArtBytes.empty() ? displayThumbnailBytes : popupArtBytes));
-                        if (g_popupXamlBackdropCover) {
-                            if (useBackdropCover) {
-                                auto lowDetailBackdropBytes =
-                                    CreateLowDetailAlbumCoverBytes(
-                                        popupBlurSourceBytes,
-                                        true,
-                                        g_settings.compact || g_taskbarAtTop,
-                                        false);
-                                auto const& backdropBytes = lowDetailBackdropBytes.empty()
-                                                                ? popupBlurSourceBytes
-                                                                : lowDetailBackdropBytes;
-                                g_popupXamlBackdropCover.Source(makeBitmap(backdropBytes));
-                            } else {
-                                g_popupXamlBackdropCover.Source(nullptr);
-                            }
-                        }
-                        if (g_popupXamlPanelCover) {
-                            auto lowDetailCoverBytes = CreateLowDetailAlbumCoverBytes(popupBlurSourceBytes);
-                            auto const& coverBytes = lowDetailCoverBytes.empty()
-                                                         ? popupBlurSourceBytes
-                                                         : lowDetailCoverBytes;
-                            g_popupXamlPanelCover.Source(makeBitmap(coverBytes));
-                        }
-                    }
-
-                    if (canAnimateCover) {
-                        g_popupCoverTransitionActive = true;
+        if (g_popupXamlRoot) {
+            if (g_popupRenderingHooked &&
+                g_popupLifecycleState != PopupLifecycleState::Open) {
+                g_popupPendingContentRefresh = true;
+            } else {
+                std::vector<uint8_t> const& accentSourceBytes =
+                    displayThumbnailBytes.empty() ? visualThumbnailBytes
+                                                  : displayThumbnailBytes;
+                uint64_t accentHash = displayThumbnailHash != 0
+                                          ? displayThumbnailHash
+                                          : visualThumbnailHash;
+                bool accentChanged = accentHash != g_popupAccentThumbnailHash;
+                if (accentChanged) {
+                    winrt::Windows::UI::Color nextAccent =
+                        accentSourceBytes.empty()
+                            ? DefaultPopupAccentColor()
+                            : ExtractAlbumAccentColor(accentSourceBytes);
+                    winrt::Windows::UI::Color currentAccent =
+                        PopupAccentColor();
+                    bool canAnimateAccent =
+                        g_popupAccentThumbnailHash != UINT64_MAX &&
+                        g_popupXamlRoot && IsAnimatedTaskbarPopupVisible() &&
+                        !forceImmediateAccent;
+                    g_popupAccentThumbnailHash = accentHash;
+                    g_popupAccentColor = nextAccent;
+                    g_popupAccentColorValid = !accentSourceBytes.empty();
+                    g_popupAccentTransitionFrom =
+                        canAnimateAccent ? currentAccent : nextAccent;
+                    g_popupAccentTransitionTo = nextAccent;
+                    g_popupDisplayedAccentColor =
+                        canAnimateAccent ? currentAccent : nextAccent;
+                    g_popupDisplayedAccentColorValid = true;
+                    if (canAnimateAccent) {
                         g_popupMediaTransitionProgress = 0.0;
                         g_popupMediaTransitionActive = true;
-                        ApplyPopupMediaTransitionVisuals();
-                    } else {
-                        g_popupCoverTransitionActive = false;
-                        if (g_popupXamlArt) g_popupXamlArt.Opacity(1.0);
-                        if (g_popupXamlArtFade) g_popupXamlArtFade.Opacity(0.0);
-                        if (g_popupXamlBackdropCover) {
-                            g_popupXamlBackdropCover.Opacity(useBackdropCover ? 1.0 : 0.0);
+                    }
+                    g_popupXamlThemeValid = false;
+                }
+                ApplyPopupXamlTheme();
+                winrt::hstring nextPopupTitle =
+                    state.hasSession ? winrt::hstring(state.title)
+                                     : winrt::hstring(L"No media");
+                winrt::hstring nextPopupArtist =
+                    state.artist.empty()
+                        ? (state.isPlaying ? winrt::hstring(L"Playing")
+                                           : winrt::hstring(L"Paused"))
+                        : winrt::hstring(state.artist);
+                bool popupTextChanged =
+                    g_popupXamlTitle && g_popupXamlArtist &&
+                    (g_popupXamlTitle.Text() != nextPopupTitle ||
+                     g_popupXamlArtist.Text() != nextPopupArtist);
+                bool popupPlaybackOnlyTextChange =
+                    popupTextChanged && g_popupXamlTitle && g_popupXamlArtist &&
+                    g_popupXamlTitle.Text() == nextPopupTitle &&
+                    state.artist.empty() &&
+                    (nextPopupArtist == winrt::hstring(L"Playing") ||
+                     nextPopupArtist == winrt::hstring(L"Paused")) &&
+                    (g_popupXamlArtist.Text() == winrt::hstring(L"Playing") ||
+                     g_popupXamlArtist.Text() == winrt::hstring(L"Paused"));
+                bool canAnimatePopupText =
+                    popupTextChanged && !popupPlaybackOnlyTextChange &&
+                    g_popupXamlOutgoingTitle && g_popupXamlOutgoingArtist &&
+                    IsAnimatedTaskbarPopupVisible();
+                if (canAnimatePopupText) {
+                    g_popupXamlOutgoingTitle.Text(g_popupXamlTitle.Text());
+                    g_popupXamlOutgoingArtist.Text(g_popupXamlArtist.Text());
+                    int navigationDirection =
+                        ConsumeRecentMediaNavigationDirection();
+                    g_popupTextTransitionDirection =
+                        navigationDirection < 0 ? -1 : 1;
+                    double popupTextStartOffset =
+                        30.0 *
+                        static_cast<double>(g_popupTextTransitionDirection);
+                    if (g_popupXamlOutgoingTitleTranslate)
+                        g_popupXamlOutgoingTitleTranslate.X(0.0);
+                    if (g_popupXamlOutgoingArtistTranslate)
+                        g_popupXamlOutgoingArtistTranslate.X(0.0);
+                    g_popupXamlOutgoingTitle.Opacity(g_popupTextBaseOpacity);
+                    g_popupXamlOutgoingArtist.Opacity(g_popupTextBaseOpacity);
+                    if (g_popupXamlTitleTranslate)
+                        g_popupXamlTitleTranslate.X(popupTextStartOffset);
+                    if (g_popupXamlArtistTranslate)
+                        g_popupXamlArtistTranslate.X(popupTextStartOffset);
+                    g_popupXamlTitle.Opacity(0.0);
+                    g_popupXamlArtist.Opacity(0.0);
+                    g_popupTextTransitionActive = true;
+                    g_popupMediaTransitionProgress = 0.0;
+                    g_popupMediaTransitionActive = true;
+                } else if (!popupTextChanged) {
+                    // Leave the current transition state alone if only artwork/accent is changing.
+                } else {
+                    g_popupTextTransitionActive = false;
+                }
+                if (g_popupXamlTitle)
+                    g_popupXamlTitle.Text(nextPopupTitle);
+                if (g_popupXamlArtist)
+                    g_popupXamlArtist.Text(nextPopupArtist);
+                if (!canAnimatePopupText && !g_popupTextTransitionActive) {
+                    if (g_popupXamlTitleTranslate)
+                        g_popupXamlTitleTranslate.X(0.0);
+                    if (g_popupXamlArtistTranslate)
+                        g_popupXamlArtistTranslate.X(0.0);
+                    if (g_popupXamlOutgoingTitle)
+                        g_popupXamlOutgoingTitle.Opacity(0.0);
+                    if (g_popupXamlOutgoingArtist)
+                        g_popupXamlOutgoingArtist.Opacity(0.0);
+                }
+                UpdatePopupLiveProgressFromSnapshot();
+                if (g_popupXamlControls) {
+                    for (auto const& child : g_popupXamlControls.Children()) {
+                        if (auto buttonSurface = child.try_as<Border>()) {
+                            bool favoriteButton =
+                                buttonSurface.Name() == L"Popup_Favorite";
+                            UpdatePopupTransportButtonGlyph(buttonSurface,
+                                                            state.isPlaying,
+                                                            state.isFavorite);
+                            if (favoriteButton) {
+                                buttonSurface.IsHitTestVisible(
+                                    state.canFavorite);
+                                buttonSurface.Opacity(state.canFavorite ? 1.0
+                                                                        : 0.38);
+                            }
                         }
-                        if (g_popupXamlBackdropCoverFade) g_popupXamlBackdropCoverFade.Opacity(0.0);
-                        if (g_popupXamlPanelCover) g_popupXamlPanelCover.Opacity(1.0);
-                        if (g_popupXamlPanelCoverFade) g_popupXamlPanelCoverFade.Opacity(0.0);
                     }
-                    g_popupXamlThumbnailHash = popupHash;
-                    g_popupXamlThumbnailMaterial = g_settings.material;
-                    g_popupXamlThumbnailCompact = g_settings.compact;
-                    g_popupXamlBackdropCoverEnabled = useBackdropCover;
-                } catch (...) {
-                    g_popupXamlArt.Source(nullptr);
-                    if (g_popupXamlArtFade) {
-                        g_popupXamlArtFade.Source(nullptr);
-                        g_popupXamlArtFade.Opacity(0.0);
+                }
+
+                uint64_t popupHash = displayThumbnailHash != 0
+                                         ? displayThumbnailHash
+                                         : visualThumbnailHash;
+                bool useBackdropCover = PopupBackdropCoverEffectEnabled();
+                if (popupHash != g_popupXamlThumbnailHash ||
+                    g_popupXamlThumbnailMaterial != g_settings.material ||
+                    g_popupXamlThumbnailCompact != g_settings.compact ||
+                    useBackdropCover != g_popupXamlBackdropCoverEnabled) {
+                    bool canAnimateCover =
+                        g_popupXamlThumbnailHash != UINT64_MAX &&
+                        g_popupXamlRoot && IsAnimatedTaskbarPopupVisible();
+                    try {
+                        if (canAnimateCover) {
+                            if (g_popupXamlArtFade && g_popupXamlArt) {
+                                auto oldArtSource = g_popupXamlArt.Source();
+                                g_popupXamlArtFade.Source(oldArtSource);
+                                g_popupXamlArtFade.Opacity(
+                                    oldArtSource != nullptr ? 1.0 : 0.0);
+                            }
+                            if (g_popupXamlBackdropCoverFade &&
+                                g_popupXamlBackdropCover) {
+                                auto oldBackdropCoverSource =
+                                    useBackdropCover
+                                        ? g_popupXamlBackdropCover.Source()
+                                        : nullptr;
+                                g_popupXamlBackdropCoverFade.Source(
+                                    oldBackdropCoverSource);
+                                g_popupXamlBackdropCoverFade.Opacity(
+                                    oldBackdropCoverSource != nullptr ? 1.0
+                                                                      : 0.0);
+                            }
+                            if (g_popupXamlPanelCoverFade &&
+                                g_popupXamlPanelCover) {
+                                auto oldCoverSource =
+                                    g_popupXamlPanelCover.Source();
+                                g_popupXamlPanelCoverFade.Source(
+                                    oldCoverSource);
+                                g_popupXamlPanelCoverFade.Opacity(
+                                    oldCoverSource != nullptr ? 1.0 : 0.0);
+                            }
+                        }
+
+                        if (visualThumbnailBytes.empty()) {
+                            auto placeholderArtBytes =
+                                CreatePlaceholderAlbumCoverBytes(128);
+                            auto placeholderG2ArtBytes =
+                                CreatePopupG2AlbumCoverBytes(
+                                    placeholderArtBytes);
+                            auto placeholderPanelBytes =
+                                CreatePlaceholderAlbumCoverBytes(20);
+                            auto placeholderBackdropBytes =
+                                CreatePlaceholderAlbumCoverBytes(
+                                    20, true,
+                                    g_settings.compact || g_taskbarAtTop,
+                                    false);
+                            auto const& popupArtBytes =
+                                placeholderG2ArtBytes.empty()
+                                    ? placeholderArtBytes
+                                    : placeholderG2ArtBytes;
+                            if (!popupArtBytes.empty()) {
+                                g_popupXamlArt.Source(
+                                    makeBitmap(popupArtBytes));
+                            } else {
+                                g_popupXamlArt.Source(nullptr);
+                            }
+                            if (g_popupXamlBackdropCover) {
+                                if (useBackdropCover &&
+                                    !placeholderBackdropBytes.empty()) {
+                                    g_popupXamlBackdropCover.Source(
+                                        makeBitmap(placeholderBackdropBytes));
+                                } else {
+                                    g_popupXamlBackdropCover.Source(nullptr);
+                                }
+                            }
+                            if (g_popupXamlPanelCover) {
+                                if (!placeholderPanelBytes.empty()) {
+                                    g_popupXamlPanelCover.Source(
+                                        makeBitmap(placeholderPanelBytes));
+                                } else {
+                                    g_popupXamlPanelCover.Source(nullptr);
+                                }
+                            }
+                        } else {
+                            auto popupArtBytes = CreatePopupG2AlbumCoverBytes(
+                                displayThumbnailBytes);
+                            g_popupXamlArt.Source(makeBitmap(
+                                popupArtBytes.empty() ? displayThumbnailBytes
+                                                      : popupArtBytes));
+                            if (g_popupXamlBackdropCover) {
+                                if (useBackdropCover) {
+                                    auto lowDetailBackdropBytes =
+                                        CreateLowDetailAlbumCoverBytes(
+                                            popupBlurSourceBytes, true,
+                                            g_settings.compact ||
+                                                g_taskbarAtTop,
+                                            false);
+                                    auto const& backdropBytes =
+                                        lowDetailBackdropBytes.empty()
+                                            ? popupBlurSourceBytes
+                                            : lowDetailBackdropBytes;
+                                    g_popupXamlBackdropCover.Source(
+                                        makeBitmap(backdropBytes));
+                                } else {
+                                    g_popupXamlBackdropCover.Source(nullptr);
+                                }
+                            }
+                            if (g_popupXamlPanelCover) {
+                                auto lowDetailCoverBytes =
+                                    CreateLowDetailAlbumCoverBytes(
+                                        popupBlurSourceBytes);
+                                auto const& coverBytes =
+                                    lowDetailCoverBytes.empty()
+                                        ? popupBlurSourceBytes
+                                        : lowDetailCoverBytes;
+                                g_popupXamlPanelCover.Source(
+                                    makeBitmap(coverBytes));
+                            }
+                        }
+
+                        if (canAnimateCover) {
+                            g_popupCoverTransitionActive = true;
+                            g_popupMediaTransitionProgress = 0.0;
+                            g_popupMediaTransitionActive = true;
+                            ApplyPopupMediaTransitionVisuals();
+                        } else {
+                            g_popupCoverTransitionActive = false;
+                            if (g_popupXamlArt)
+                                g_popupXamlArt.Opacity(1.0);
+                            if (g_popupXamlArtFade)
+                                g_popupXamlArtFade.Opacity(0.0);
+                            if (g_popupXamlBackdropCover) {
+                                g_popupXamlBackdropCover.Opacity(
+                                    useBackdropCover ? 1.0 : 0.0);
+                            }
+                            if (g_popupXamlBackdropCoverFade)
+                                g_popupXamlBackdropCoverFade.Opacity(0.0);
+                            if (g_popupXamlPanelCover)
+                                g_popupXamlPanelCover.Opacity(1.0);
+                            if (g_popupXamlPanelCoverFade)
+                                g_popupXamlPanelCoverFade.Opacity(0.0);
+                        }
+                        g_popupXamlThumbnailHash = popupHash;
+                        g_popupXamlThumbnailMaterial = g_settings.material;
+                        g_popupXamlThumbnailCompact = g_settings.compact;
+                        g_popupXamlBackdropCoverEnabled = useBackdropCover;
+                    } catch (...) {
+                        g_popupXamlArt.Source(nullptr);
+                        if (g_popupXamlArtFade) {
+                            g_popupXamlArtFade.Source(nullptr);
+                            g_popupXamlArtFade.Opacity(0.0);
+                        }
+                        if (g_popupXamlBackdropCover) {
+                            g_popupXamlBackdropCover.Source(nullptr);
+                        }
+                        if (g_popupXamlBackdropCoverFade) {
+                            g_popupXamlBackdropCoverFade.Source(nullptr);
+                            g_popupXamlBackdropCoverFade.Opacity(0.0);
+                        }
+                        if (g_popupXamlPanelCover) {
+                            g_popupXamlPanelCover.Source(nullptr);
+                        }
+                        if (g_popupXamlPanelCoverFade) {
+                            g_popupXamlPanelCoverFade.Source(nullptr);
+                            g_popupXamlPanelCoverFade.Opacity(0.0);
+                        }
+                        g_popupXamlThumbnailHash = popupHash;
+                        g_popupXamlThumbnailMaterial = g_settings.material;
+                        g_popupXamlThumbnailCompact = g_settings.compact;
+                        g_popupXamlBackdropCoverEnabled = useBackdropCover;
                     }
-                    if (g_popupXamlBackdropCover) {
-                        g_popupXamlBackdropCover.Source(nullptr);
-                    }
-                    if (g_popupXamlBackdropCoverFade) {
-                        g_popupXamlBackdropCoverFade.Source(nullptr);
-                        g_popupXamlBackdropCoverFade.Opacity(0.0);
-                    }
-                    if (g_popupXamlPanelCover) {
-                        g_popupXamlPanelCover.Source(nullptr);
-                    }
-                    if (g_popupXamlPanelCoverFade) {
-                        g_popupXamlPanelCoverFade.Source(nullptr);
-                        g_popupXamlPanelCoverFade.Opacity(0.0);
-                    }
-                    g_popupXamlThumbnailHash = popupHash;
-                    g_popupXamlThumbnailMaterial = g_settings.material;
-                    g_popupXamlThumbnailCompact = g_settings.compact;
-                    g_popupXamlBackdropCoverEnabled = useBackdropCover;
+                }
+                if (g_popupMediaTransitionActive && !g_popupRenderingHooked) {
+                    StartPopupXamlRenderLoop();
                 }
             }
-            if (g_popupMediaTransitionActive && !g_popupRenderingHooked) {
-                StartPopupXamlRenderLoop();
-            }
+        } else {
+            UpdatePopupAlbumBitmap(state);
         }
-    } else {
-        UpdatePopupAlbumBitmap(state);
-    }
-    if (g_expandedPopup && IsWindowVisible(g_expandedPopup) && !g_popupXamlRoot) {
-        ApplyPopupBackdrop(g_expandedPopup);
-        RenderExpandedPopupLayer();
-    }
+        if (g_expandedPopup && IsWindowVisible(g_expandedPopup) &&
+            !g_popupXamlRoot) {
+            ApplyPopupBackdrop(g_expandedPopup);
+            RenderExpandedPopupLayer();
+        }
 
-    g_playerGrid.Visibility((g_settings.hideWhenNoMedia && !state.hasSession)
-                               ? Visibility::Collapsed
-                               : Visibility::Visible);
-    EnsureCompactIslandInteractive();
+        g_playerGrid.Visibility(
+            (g_settings.hideWhenNoMedia && !state.hasSession)
+                ? Visibility::Collapsed
+                : Visibility::Visible);
+        EnsureCompactIslandInteractive();
     } catch (...) {
         Wh_Log(L"Island: exception while updating player contents");
         if (IsAnimatedTaskbarPopupVisible()) {
@@ -17885,7 +18254,8 @@ void RemoveIslandGrid() {
             }
 
             if (g_playerColumn >= 0 &&
-                g_playerColumn < static_cast<int>(targetGrid.ColumnDefinitions().Size())) {
+                g_playerColumn <
+                    static_cast<int>(targetGrid.ColumnDefinitions().Size())) {
                 for (uint32_t i = 0; i < children.Size(); ++i) {
                     auto child = children.GetAt(i).try_as<FrameworkElement>();
                     if (!child) {
@@ -17996,14 +18366,18 @@ bool InjectIslandGrid() {
         } else {
             ColumnDefinition colDef;
             colDef.Width({1.0, GridUnitType::Auto});
-            int col = Clamp(target.column, 0,
-                            static_cast<int>(target.grid.ColumnDefinitions().Size()));
-            if (col >= static_cast<int>(target.grid.ColumnDefinitions().Size())) {
+            int col =
+                Clamp(target.column, 0,
+                      static_cast<int>(target.grid.ColumnDefinitions().Size()));
+            if (col >=
+                static_cast<int>(target.grid.ColumnDefinitions().Size())) {
                 target.grid.ColumnDefinitions().Append(colDef);
             } else {
                 target.grid.ColumnDefinitions().InsertAt(col, colDef);
                 for (uint32_t i = 0; i < target.grid.Children().Size(); ++i) {
-                    auto child = target.grid.Children().GetAt(i).try_as<FrameworkElement>();
+                    auto child = target.grid.Children()
+                                     .GetAt(i)
+                                     .try_as<FrameworkElement>();
                     if (child) {
                         int childCol = controls::Grid::GetColumn(child);
                         if (childCol >= col) {
@@ -18069,8 +18443,7 @@ void ApplySettingsOnTaskbarThread() {
     }
     if (g_taskbarWnd) {
         RunFromWindowThread(
-            g_taskbarWnd,
-            [](void*) { ApplyPendingSettingsAndInject(); },
+            g_taskbarWnd, [](void*) { ApplyPendingSettingsAndInject(); },
             nullptr);
     }
 }
@@ -18111,7 +18484,8 @@ void WINAPI TrayUI__Hide_Hook(void* pThis) {
     OnTaskbarShellHiding();
 }
 
-void WINAPI TrayUI_Unhide_Hook(void* pThis, int trayUnhideFlags,
+void WINAPI TrayUI_Unhide_Hook(void* pThis,
+                               int trayUnhideFlags,
                                int unhideRequest) {
     if (TrayUI_Unhide_Original) {
         TrayUI_Unhide_Original(pThis, trayUnhideFlags, unhideRequest);
@@ -18126,11 +18500,11 @@ void WINAPI CSecondaryTray__AutoHide_Hook(void* pThis, bool param1) {
     OnTaskbarShellHiding();
 }
 
-void WINAPI CSecondaryTray__Unhide_Hook(void* pThis, int trayUnhideFlags,
+void WINAPI CSecondaryTray__Unhide_Hook(void* pThis,
+                                        int trayUnhideFlags,
                                         int unhideRequest) {
     if (CSecondaryTray__Unhide_Original) {
-        CSecondaryTray__Unhide_Original(pThis, trayUnhideFlags,
-                                        unhideRequest);
+        CSecondaryTray__Unhide_Original(pThis, trayUnhideFlags, unhideRequest);
     }
     OnTaskbarShellShowing();
 }
@@ -18144,14 +18518,14 @@ void WINAPI TrayUI_StartTaskbar_Hook(void* pThis) {
     g_taskbarWnd = FindCurrentProcessTaskbarWnd();
     if (g_taskbarWnd) {
         RunFromWindowThread(
-            g_taskbarWnd,
-            [](void*) { ApplyPendingSettingsAndInject(); },
+            g_taskbarWnd, [](void*) { ApplyPendingSettingsAndInject(); },
             nullptr);
     }
 }
 
 bool HookTaskbarSymbols() {
-    HMODULE taskbarDll = LoadLibraryExW(L"taskbar.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    HMODULE taskbarDll =
+        LoadLibraryExW(L"taskbar.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
     if (!taskbarDll) {
         return false;
     }
@@ -18159,7 +18533,8 @@ bool HookTaskbarSymbols() {
     WindhawkUtils::SYMBOL_HOOK taskbarDllHooks[] = {
         {{L"const CTaskBand::`vftable'{for `ITaskListWndSite'}"},
          &CTaskBand_ITaskListWndSite_vftable},
-        {{L"public: virtual class std::shared_ptr<class TaskbarHost> __cdecl CTaskBand::GetTaskbarHost(void)const "},
+        {{L"public: virtual class std::shared_ptr<class TaskbarHost> __cdecl "
+          L"CTaskBand::GetTaskbarHost(void)const "},
          &CTaskBand_GetTaskbarHost_Original},
         {{L"public: int __cdecl TaskbarHost::FrameHeight(void)const "},
          &TaskbarHost_FrameHeight_Original},
@@ -18172,8 +18547,10 @@ bool HookTaskbarSymbols() {
          &TrayUI__Hide_Original,
          TrayUI__Hide_Hook,
          true},
-        {{L"public: virtual void __cdecl TrayUI::Unhide(enum TrayCommon::TrayUnhideFlags,enum TrayCommon::UnhideRequest)",
-          L"public: virtual void __cdecl TrayUI::Unhide(enum TrayCommon::TrayUnhideFlags, enum TrayCommon::UnhideRequest)"},
+        {{L"public: virtual void __cdecl TrayUI::Unhide(enum "
+          L"TrayCommon::TrayUnhideFlags,enum TrayCommon::UnhideRequest)",
+          L"public: virtual void __cdecl TrayUI::Unhide(enum "
+          L"TrayCommon::TrayUnhideFlags, enum TrayCommon::UnhideRequest)"},
          &TrayUI_Unhide_Original,
          TrayUI_Unhide_Hook,
          true},
@@ -18181,8 +18558,10 @@ bool HookTaskbarSymbols() {
          &CSecondaryTray__AutoHide_Original,
          CSecondaryTray__AutoHide_Hook,
          true},
-        {{L"private: void __cdecl CSecondaryTray::_Unhide(enum TrayCommon::TrayUnhideFlags,enum TrayCommon::UnhideRequest)",
-          L"private: void __cdecl CSecondaryTray::_Unhide(enum TrayCommon::TrayUnhideFlags, enum TrayCommon::UnhideRequest)"},
+        {{L"private: void __cdecl CSecondaryTray::_Unhide(enum "
+          L"TrayCommon::TrayUnhideFlags,enum TrayCommon::UnhideRequest)",
+          L"private: void __cdecl CSecondaryTray::_Unhide(enum "
+          L"TrayCommon::TrayUnhideFlags, enum TrayCommon::UnhideRequest)"},
          &CSecondaryTray__Unhide_Original,
          CSecondaryTray__Unhide_Hook,
          true},
@@ -18192,7 +18571,7 @@ bool HookTaskbarSymbols() {
                                       ARRAYSIZE(taskbarDllHooks));
 }
 
-} // namespace
+}  // namespace
 
 // ===== Mod lifecycle =====
 BOOL Wh_ModInit() {
