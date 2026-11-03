@@ -10,11 +10,14 @@
   is 2x the real UI and the PNGs can be compared 1:1 with the real 2x captures
   in preview/reference/.
 
-  Geometry source: island-beat-float.wh.cpp 3.1.3 (UpdateRuntimeLayout,
-  CalculatePopupFinalLayout, UpdatePopupXamlVisuals) plus the deployed 3.1.3
+  Geometry source: island-beat-float.wh.cpp 3.1.4 (UpdateRuntimeLayout,
+  CalculatePopupFinalLayout, UpdatePopupXamlVisuals) plus the deployed 3.1.4
   compact screen-space numbers: cover 4..36 DIP (32 DIP circle centred on the
-  left end-cap centre 20,20, 1 DIP rim), text block 42.5..123.5 DIP (width 81),
-  equalizer bars right-aligned to 147 DIP, pill 154 x 40 DIP.
+  left end-cap centre 20,20, 1 DIP rim), NEW 3.1.4 arc spin-toggle column
+  38..50 DIP (2 DIP after the cover, 12 DIP wide, 180 degree semicircular ring
+  1.8 DIP stroke, vertically centred), text block 55.5..123.5 DIP (width 68,
+  was 42.5..123.5 in 3.1.3), equalizer bars right-aligned to 147 DIP, pill 154
+  x 40 DIP.
 
   Views (query string):
     ?view=compact   192.5 x 55 CSS  -> 385 x 110 px PNG  (pill 308 x 80 px)
@@ -116,10 +119,12 @@
   }
 
   /* -------------------------------------------------- compact island pill */
-  /* 3.1.3 deployed screen-space metrics (DIP):
+  /* 3.1.4 deployed screen-space metrics (DIP):
        pill 154 x 40, radius 20, 1 DIP light rim, flat translucent dark fill
        cover circle 32, box left 4 / top 4, centre (20,20), 1 DIP rim
-       title/artist block x 42.5, width 81; title line box 14.5, artist 12
+       arc spin-toggle column x 38..50 (2 DIP after the cover), 180 degree
+       semicircular ring 1.8 DIP stroke at 0.55 opacity, vertically centred
+       title/artist block x 55.5, width 68; title line box 14.5, artist 12
        equalizer bars 5 x 2.4 wide / 0.75 gaps, right-aligned to x 147    */
   .pill {
     position: absolute;
@@ -148,27 +153,60 @@
   }
   .cover svg { display: block; width: 100%; height: 100%; }
 
+  /* 3.1.4 arc spin-toggle: a thin right-half ring, i.e. a 20 DIP diameter
+     circle (r = 10) whose left half is clipped away at the vertical diameter.
+     The real UI builds it from a stroked Ellipse plus a RectangleGeometry clip
+     x 0..12, y -0.9..20.9; here the SVG does the same: the path is the
+     180 degree right half (M ... A ...), the box x 0 = vertical diameter does
+     the clipping (the SVG viewport clips the round end caps' left halves), and
+     the 1.8 DIP round-capped stroke gives the ring its rounded ends.
+     Layout: 12 x 20 DIP column at x 38, y 10 (vertically centred on the pill);
+     the caps make the visible ink 10.9 x 21.8 DIP (y 9.1..30.9). */
+  .arc {
+    position: absolute;
+    left: 38px;
+    top: 9.1px;
+    width: 12px;
+    height: 21.8px;
+    overflow: hidden;          /* clips the caps at the vertical diameter */
+  }
+  .arc svg { display: block; width: 100%; height: 100%; }
+  .arc path {
+    fill: none;
+    stroke: currentColor;      /* themed light foreground, like the real popup */
+    stroke-width: 1.8px;
+    stroke-linecap: round;
+    opacity: 0.55;
+  }
+
   .meta {
     position: absolute;
-    left: 40.5px;            /* ink left 41.5 DIP, measured from real 3.1.3 */
+    left: 53.5px;            /* 3.1.4 text block 55.5 DIP: 42.5 + 13 */
     top: 5.5px;              /* ink block centre 20.25 DIP like the real capture */
-    width: 81px;
+    width: 68px;             /* 3.1.4: widened cover->arc->text column, right edge kept */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    /* The 3.1.4 text block is 13 DIP narrower than 3.1.3. Condense the two
+       placeholder lines a little (and tighten their tracking below) so the
+       full idle title/artist stay visible; the real UI ellipsizes at this
+       width, but the showcase has always shown the complete placeholder. */
+    transform: scaleX(0.93);
+    transform-origin: left center;
   }
   .pill .title {
     font-family: var(--font-ui);
     font-weight: 600;
     font-size: 12px;
     line-height: 14.5px;
-    letter-spacing: -0.045em;   /* keeps the full idle title inside 81 DIP */
+    letter-spacing: -0.075em;   /* keeps the full idle title inside 68 DIP */
     color: rgba(255, 255, 255, 0.95);
     white-space: nowrap;
   }
   .pill .artist {
     font-size: 10px;
     line-height: 12px;
+    letter-spacing: -0.03em;    /* keeps "No media playing" inside 68 DIP */
     color: rgba(255, 255, 255, 0.72);
     white-space: nowrap;
   }
@@ -373,6 +411,9 @@
     <div class="grain" aria-hidden="true"></div>
     <div class="pill">
       <div class="cover" data-art aria-hidden="true"></div>
+      <svg class="arc" viewBox="0 0 12 21.8" aria-label="Spin toggle" role="img">
+        <path d="M 0 0.9 A 10 10 0 0 1 0 20.9"/>
+      </svg>
       <div class="meta">
         <span class="title">Island Beat Float</span>
         <span class="artist">No media playing</span>
@@ -427,6 +468,9 @@
     </div>
     <div class="pill">
       <div class="cover" data-art aria-hidden="true"></div>
+      <svg class="arc" viewBox="0 0 12 21.8" aria-label="Spin toggle" role="img">
+        <path d="M 0 0.9 A 10 10 0 0 1 0 20.9"/>
+      </svg>
       <div class="meta">
         <span class="title">Island Beat Float</span>
         <span class="artist">No media playing</span>

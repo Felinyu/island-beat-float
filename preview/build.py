@@ -10,7 +10,8 @@ are therefore 2x the real UI and line up 1:1 with the 2x captures in
 ``preview/reference/`` (see ``preview/compare.py``).
 
 Usage (from anywhere):
-    python preview/build.py
+    python preview/build.py                 # re-render every artboard
+    python preview/build.py compact hero    # re-render only the named artboards
 
 Requires Microsoft Edge and Pillow; everything else is in the repo.
 """
@@ -108,8 +109,15 @@ def main() -> None:
     os.makedirs(SHOTS, exist_ok=True)
     profile = os.path.join(tempfile.gettempdir(), "island-beat-float-preview-profile")
     work = tempfile.mkdtemp(prefix="island-beat-float-preview-")
+    wanted = set(sys.argv[1:])
+    known = {name for name, *_ in VIEWS}
+    unknown = wanted - known
+    if unknown:
+        sys.exit(f"unknown view(s): {', '.join(sorted(unknown))} (known: {', '.join(sorted(known))})")
     try:
         for name, css_w, css_h, radius, out_w in VIEWS:
+            if wanted and name not in wanted:
+                continue
             dump = os.path.join(work, name + "-raw.png")
             win_w = int(math.ceil(css_w)) + 2 * MARGIN
             win_h = int(math.ceil(css_h)) + 2 * MARGIN

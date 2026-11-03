@@ -6,25 +6,32 @@ Both sides are at the same pixel scale (2x the real UI): a 308 x 80 px compact
 pill and a 648 x 1156 px expanded glass surface. The comparison images
 therefore need no rescaling, so layout differences are directly readable.
 
+The rendered compact mockup now shows the 3.1.4 layout (new arc spin-toggle
+next to the cover, text block shifted from 42.5 to 55.5 DIP). The real 3.1.3
+capture predates both changes, so the arc column and the text shift are the
+expected, intentional differences in the compact comparison; everything else
+(cover, equalizer, pill bounds, text style) should still line up.
+
 Inputs:
     preview/reference/real-compact-3.1.3.png     (335 x 110 real capture, 3.1.3)
     preview/reference/real-expanded-3.1.1.png    (1100 x 1000 real capture)
     screenshots/compact.png, screenshots/expanded.png
 
 Outputs:
-    preview/compare/compact.png    real | render | 50% overlay, 1:1 pixels
+    preview/compare/compact.png    3.1.3 real | 3.1.4 render | 50% overlay
     preview/compare/expanded.png   real | render | bottom-aligned overlay
 
 The compact overlay is aligned on the pill's top-left corner; the expanded
 overlay is aligned on the card's bottom edge (the real capture is cropped at
 the top, so the bottom is the only common anchor).
 
-Usage: python preview/compare.py
+Usage: python preview/compare.py [compact|expanded ...]
 """
 
 from __future__ import annotations
 
 import os
+import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -38,7 +45,7 @@ BG = (12, 14, 20)
 FG = (235, 235, 240)
 DIM = (150, 155, 170)
 PAD = 16
-LABEL_H = 26
+LABEL_H = 44
 GAP = 20
 
 FONT_REG = r"C:\Windows\Fonts\segoeui.ttf"
@@ -70,6 +77,10 @@ def add_label(draw: ImageDraw.ImageDraw, x: int, y: int, text: str) -> None:
     draw.text((x, y), text, fill=FG, font=font(FONT_BOLD, 14))
 
 
+def add_note(draw: ImageDraw.ImageDraw, x: int, y: int, text: str) -> None:
+    draw.text((x, y), text, fill=DIM, font=font(FONT_REG, 11))
+
+
 def build_compact() -> None:
     real = Image.open(os.path.join(REF, "real-compact-3.1.3.png")).convert("RGB")
     ours = Image.open(os.path.join(SHOTS, "compact.png")).convert("RGB")
@@ -91,12 +102,26 @@ def build_compact() -> None:
     draw = ImageDraw.Draw(canvas)
 
     x = PAD
-    for img, text in (
-        (real, "real 3.1.3 capture (335 x 110 px)"),
-        (ours, "rendered mockup (385 x 110 px)"),
-        (overlay, "overlay, aligned on pill top-left"),
-    ):
+    panels = (
+        (
+            real,
+            "real 3.1.3 capture (335 x 110 px)",
+            "no arc, text block x 42.5 DIP",
+        ),
+        (
+            ours,
+            "rendered 3.1.4 mockup (385 x 110 px)",
+            "NEW 3.1.4 arc toggle, text block x 55.5 DIP",
+        ),
+        (
+            overlay,
+            "overlay, aligned on pill top-left",
+            "arc column + text shift are the intended differences",
+        ),
+    )
+    for img, text, note in panels:
         add_label(draw, x, PAD, text)
+        add_note(draw, x, PAD + 20, note)
         add_panel(canvas, x, PAD + LABEL_H, img)
         x += img.width + GAP
 
@@ -155,8 +180,15 @@ def build_expanded() -> None:
 
 def main() -> None:
     os.makedirs(OUT, exist_ok=True)
-    build_compact()
-    build_expanded()
+    wanted = set(sys.argv[1:])
+    known = {"compact", "expanded"}
+    unknown = wanted - known
+    if unknown:
+        sys.exit(f"unknown comparison(s): {', '.join(sorted(unknown))} (known: {', '.join(sorted(known))})")
+    if not wanted or "compact" in wanted:
+        build_compact()
+    if not wanted or "expanded" in wanted:
+        build_expanded()
 
 
 if __name__ == "__main__":
