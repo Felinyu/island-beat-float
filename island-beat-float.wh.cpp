@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.5
+// @version         3.1.6
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -854,8 +854,8 @@ struct RuntimeLayout {
     // of the circular cover, concentric with it and just outside the artwork
     // edge. Only the gap outside the cover and the stroke scale with the
     // island; the cover itself never moves or resizes for the arc.
-    double arcToggleCoverGap = 1.4;
-    double arcToggleStroke = 2.6;
+    double arcToggleCoverGap = 3.0;
+    double arcToggleStroke = 3.7;
     double textMarginX = 8.0;
     double titleFontSize = 12.0;
     double artistFontSize = 10.0;
@@ -16847,13 +16847,13 @@ void StartHoverRenderLoop(double targetScale) {
 
 // ===== Compact arc spin toggle =====
 // A short accent-coloured arc hugging the right side of the circular cover.
-// It is concentric with the cover but only sweeps 120 degrees on the right
-// (y-down angles -60..+60), so the artwork keeps its exact size/position and
+// It is concentric with the cover but only sweeps 90 degrees on the right
+// (y-down angles -45..+45), so the artwork keeps its exact size/position and
 // the arc never draws over it. The arc lives in its own transparent hit grid;
 // only ring-band taps are consumed, so taps on the cover itself still open the
 // expanded player. Spinning the art is a RenderTransform only, no layout work.
-constexpr double kCompactArcStartDeg = -60.0;
-constexpr double kCompactArcSweepDeg = 120.0;
+constexpr double kCompactArcStartDeg = -45.0;
+constexpr double kCompactArcSweepDeg = 90.0;
 
 mediax::PathGeometry MakeCompactArcGeometry(double centerX,
                                             double centerY,
@@ -16876,7 +16876,7 @@ mediax::PathGeometry MakeCompactArcGeometry(double centerX,
     segment.Point(pointAt(startDeg + sweepDeg));
     segment.Size({static_cast<float>(radius), static_cast<float>(radius)});
     // Angles increase clockwise on screen (y grows downward), so a positive
-    // sweep maps to a clockwise arc; 120 degrees is never the large arc.
+    // sweep maps to a clockwise arc; 90 degrees is never the large arc.
     segment.SweepDirection(sweepDeg >= 0.0
                                ? mediax::SweepDirection::Clockwise
                                : mediax::SweepDirection::Counterclockwise);
@@ -16896,7 +16896,7 @@ double CompactArcRadius(CompactVisualSpec const& spec) {
 }
 
 // Hit test in the overlay's local DIP space: the point must be inside the
-// short right-side arc band (distance tolerance plus the -60..+60 wedge).
+// short right-side arc band (distance tolerance plus the -45..+45 wedge).
 bool CompactArcRingHitTest(winrt::Windows::Foundation::Point const& point) {
     if (!g_compactArcToggle) {
         return false;
@@ -16939,7 +16939,12 @@ void ApplyCompactArcToggleLayout() {
         auto spec = CurrentCompactVisualSpec();
         double stroke = spec.arcToggleStroke;
         double radius = CompactArcRadius(spec);
-        double overlaySize = spec.artSize + stroke * 2.0 + 8.0;
+        // The overlay must at least cover the cover plus the base tolerance
+        // padding, and it must be large enough that the full ring hit band
+        // (radius +/- (stroke/2 + 4 DIP)) is reachable, otherwise the hit
+        // tolerance would be silently clipped by the overlay bounds.
+        double overlaySize = std::max(spec.artSize + stroke * 2.0 + 8.0,
+                                      2.0 * (radius + stroke * 0.5 + 4.0));
         double center = overlaySize * 0.5;
         double centerX = spec.artInset + spec.artSize * 0.5;
         double centerY = spec.height * 0.5;
@@ -17758,15 +17763,18 @@ void UpdateRuntimeLayout(HWND hwnd,
     // add a half-overscan offset to the cover position.
     g_layout.artColumnWidth = g_layout.artSize;
     // The arc spin toggle is concentric with the cover and hugs its right
-    // edge, so it never touches the cover size or the text column start. Only
-    // the outside gap and the thicker stroke scale with the island.
-    g_layout.arcToggleCoverGap = Clamp(1.4 * scale, 0.8, 2.0);
-    g_layout.arcToggleStroke = Clamp(2.6 * scale, 1.8, 3.6);
-    // Balanced compact spacing: this margin is the gap between the circular
-    // cover and the title/artist column (and the text column's right inset), so
-    // cover -> text, text -> equalizer and equalizer -> pill edge read as an
-    // even set of gaps instead of a tight cover gap plus a loose equalizer gap.
-    g_layout.textMarginX = Clamp(5.5 * scale, 3.0, 8.0);
+    // edge, so it never touches the cover size. The user picked a 3 DIP gap
+    // and a thick 3.7 DIP stroke; both scale with the island.
+    g_layout.arcToggleCoverGap = Clamp(3.0 * scale, 1.5, 4.5);
+    g_layout.arcToggleStroke = Clamp(3.7 * scale, 2.4, 5.0);
+    // The text must start just right of the thicker arc instead of after the
+    // bare cover: the arc's outer edge is at artInset + artSize +
+    // coverGap + stroke, so the text margin needs coverGap + stroke plus a
+    // small breathing gap. At H=40/scale 1 this is 3.0 + 3.7 + 1.8 = 8.5 DIP,
+    // so the text block starts at 4 + 32 + 8.5 = 44.5 DIP (arc outer x 42.7).
+    g_layout.textMarginX = g_layout.arcToggleCoverGap +
+                           g_layout.arcToggleStroke +
+                           Clamp(1.8 * scale, 1.2, 2.4);
     g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
     g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 13.5);
     g_layout.progressWidth = Clamp(74.0 * scale, 42.0, 110.0);
