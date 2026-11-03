@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.3
+
+- Compact layout: the right content padding (7 DIP) and the equalizer leading
+  margin (1 DIP) are tuned so the three horizontal gaps read evenly:
+  cover -> text ~5.5 DIP, text -> equalizer ~6.5 DIP, equalizer -> pill edge
+  ~7 DIP.
+
 ## 3.1.2
 
 - Compact layout: balanced cover-to-text and text-to-equalizer spacing. The

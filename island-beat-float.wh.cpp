@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.2
+// @version         3.1.3
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -17462,7 +17462,7 @@ void UpdateRuntimeLayout(HWND hwnd,
     double scale = Clamp(compactHeight / 40.0, 0.68, 1.50);
     g_layout.compactHeight = compactHeight;
     g_layout.compactWidth = compactWidth;
-    g_layout.contentMarginX = Clamp(10.0 * scale, 6.0, 14.0);
+    g_layout.contentMarginX = Clamp(7.0 * scale, 4.0, 10.0);
     g_layout.contentMarginY = Clamp(4.0 * scale, 2.0, 6.0);
     // The compact cover is a circle whose diameter equals the island's inner
     // content height, so its curvature matches the pill's rounded cap radius.
@@ -17499,7 +17499,7 @@ void UpdateRuntimeLayout(HWND hwnd,
     g_layout.progressMarginLeft = Clamp(8.0 * scale, 4.0, 12.0);
     g_layout.playbackIndicatorWidth = Clamp(18.0 * scale, 13.0, 24.0);
     g_layout.playbackIndicatorHeight = Clamp(16.0 * scale, 11.0, 24.0);
-    g_layout.playbackIndicatorMarginLeft = Clamp(2.0 * scale, 1.0, 4.0);
+    g_layout.playbackIndicatorMarginLeft = Clamp(1.0 * scale, 0.5, 2.0);
     g_layout.playbackBarWidth = Clamp(2.4 * scale, 1.7, 3.6);
     g_layout.playbackBarGap = Clamp(0.75 * scale, 0.45, 1.2);
 }
