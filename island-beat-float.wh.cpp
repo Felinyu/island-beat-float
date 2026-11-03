@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.14
+// @version         3.1.15
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1487,6 +1487,10 @@ Grid g_compactArcToggle = nullptr;
 shapes::Path g_compactArcPath = nullptr;
 mediax::SolidColorBrush g_compactArcAccentBrush = nullptr;
 std::chrono::steady_clock::time_point g_compactArcLastDoubleTap{};
+// Timestamp of the previous XAML ring tap. Fallback double-tap detector for the
+// case where the platform raises two Tapped events instead of Tapped +
+// DoubleTapped (e.g. while the popup window owns the pointer).
+std::chrono::steady_clock::time_point g_compactArcLastTap{};
 mediax::RotateTransform g_compactArtSpinImage = nullptr;
 mediax::RotateTransform g_compactArtSpinFade = nullptr;
 winrt::event_token g_compactArtSpinRenderingToken{};
@@ -16537,10 +16541,18 @@ LRESULT CALLBACK PopupToggleHitWindowWndProc(HWND hwnd,
                     if (g_popupArcLastRingTap.time_since_epoch().count() != 0 &&
                         now - g_popupArcLastRingTap <
                             std::chrono::milliseconds(300)) {
+                        // Two-tap fallback for the case where Windows did not
+                        // synthesise WM_LBUTTONDBLCLK (no CS_DBLCLKS hit, a
+                        // window-class reload, injected input, ...). The reset
+                        // always wins: final state is stopped + upright no
+                        // matter how many intermediates toggled.
                         g_popupArcLastRingTap = {};
+                        Wh_Log(
+                            L"Island: popup arc double-tap reset (fallback)");
                         ResetCompactCoverSpin();
                     } else {
                         g_popupArcLastRingTap = now;
+                        Wh_Log(L"Island: popup arc tap toggle");
                         ToggleCompactCoverSpin();
                     }
                     return 0;
@@ -16551,6 +16563,23 @@ LRESULT CALLBACK PopupToggleHitWindowWndProc(HWND hwnd,
                 ResumeOpenExpandedPopup();
             } else if (g_expanded) {
                 BeginCloseExpandedPopup();
+            }
+            return 0;
+        case WM_LBUTTONDBLCLK:
+            // The toggle hit window has CS_DBLCLKS, so the second press of a
+            // double-click arrives here instead of as another WM_LBUTTONDOWN.
+            // A double-click inside the ring must always stop the spin and put
+            // the cover back upright; a double-click anywhere else on the
+            // resting compact is swallowed so it cannot open/close twice.
+            KeepPopupOnTop();
+            if (g_popupRestingCompact) {
+                POINT screenPoint{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                ClientToScreen(hwnd, &screenPoint);
+                g_popupArcLastRingTap = {};
+                if (PopupCompactArcHitTest(screenPoint)) {
+                    Wh_Log(L"Island: popup arc double-tap reset");
+                    ResetCompactCoverSpin();
+                }
             }
             return 0;
         case WM_LBUTTONUP:
@@ -16591,6 +16620,10 @@ bool RegisterPopupToggleHitWindowClass() {
     windowClass.hInstance = moduleInstance;
     windowClass.hCursor = LoadCursorW(nullptr, IDC_HAND);
     windowClass.lpszClassName = kPopupToggleHitWindowClassName;
+    // The resting compact endpoint is a native window, so a ring double-click
+    // needs CS_DBLCLKS to arrive as WM_LBUTTONDBLCLK (the timestamp fallback in
+    // WM_LBUTTONDOWN still covers the case where it does not).
+    windowClass.style = CS_DBLCLKS;
     if (!RegisterClassExW(&windowClass)) {
         Wh_Log(L"Island: failed to register permanent toggle hit window");
         return false;
@@ -18419,26 +18452,38 @@ Grid BuildIslandGrid() {
                 e.Handled(true);
             }
         });
-    arcToggle.Tapped(
-        [](auto const& sender, input::TappedRoutedEventArgs const& e) {
-            auto element = sender.template try_as<UIElement>();
-            if (!element) {
-                return;
-            }
-            if (!CompactArcRingHitTest(e.GetPosition(element))) {
-                return;
-            }
-            if (g_compactArcLastDoubleTap.time_since_epoch().count() != 0 &&
-                std::chrono::steady_clock::now() - g_compactArcLastDoubleTap <
-                    std::chrono::milliseconds(250)) {
-                // Tail tap of a double-tap sequence: DoubleTapped owns the
-                // final state (stopped + upright), so swallow this toggle.
-                e.Handled(true);
-                return;
-            }
+    arcToggle.Tapped([](auto const& sender,
+                        input::TappedRoutedEventArgs const& e) {
+        auto element = sender.template try_as<UIElement>();
+        if (!element) {
+            return;
+        }
+        if (!CompactArcRingHitTest(e.GetPosition(element))) {
+            return;
+        }
+        auto now = std::chrono::steady_clock::now();
+        if (g_compactArcLastDoubleTap.time_since_epoch().count() != 0 &&
+            now - g_compactArcLastDoubleTap < std::chrono::milliseconds(250)) {
+            // Tail tap of a double-tap sequence: DoubleTapped owns the
+            // final state (stopped + upright), so swallow this toggle.
             e.Handled(true);
-            ToggleCompactCoverSpin();
-        });
+            return;
+        }
+        if (g_compactArcLastTap.time_since_epoch().count() != 0 &&
+            now - g_compactArcLastTap < std::chrono::milliseconds(300)) {
+            // Fallback double-tap: some routes (popup resting compact run-
+            // time) raise two Tapped events with no DoubleTapped. Always end
+            // stopped + upright, regardless of the intermediate toggles.
+            g_compactArcLastTap = {};
+            g_compactArcLastDoubleTap = now;
+            e.Handled(true);
+            ResetCompactCoverSpin();
+            return;
+        }
+        g_compactArcLastTap = now;
+        e.Handled(true);
+        ToggleCompactCoverSpin();
+    });
     arcToggle.DoubleTapped(
         [](auto const& sender, input::DoubleTappedRoutedEventArgs const& e) {
             auto element = sender.template try_as<UIElement>();
@@ -18448,6 +18493,7 @@ Grid BuildIslandGrid() {
             if (!CompactArcRingHitTest(e.GetPosition(element))) {
                 return;
             }
+            g_compactArcLastTap = {};
             g_compactArcLastDoubleTap = std::chrono::steady_clock::now();
             e.Handled(true);
             ResetCompactCoverSpin();
@@ -19286,6 +19332,8 @@ void RemoveIslandGrid() {
         g_compactArcToggle = nullptr;
         g_compactArcPath = nullptr;
         g_compactArcAccentBrush = nullptr;
+        g_compactArcLastDoubleTap = {};
+        g_compactArcLastTap = {};
         g_compactArtSpinImage = nullptr;
         g_compactArtSpinFade = nullptr;
         g_compactProgress = nullptr;
@@ -19371,6 +19419,8 @@ void RemoveIslandGrid() {
     g_compactArcToggle = nullptr;
     g_compactArcPath = nullptr;
     g_compactArcAccentBrush = nullptr;
+    g_compactArcLastDoubleTap = {};
+    g_compactArcLastTap = {};
     g_compactArtSpinImage = nullptr;
     g_compactArtSpinFade = nullptr;
     g_compactProgress = nullptr;
