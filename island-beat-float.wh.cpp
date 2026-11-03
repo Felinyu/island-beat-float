@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.12
+// @version         3.1.13
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -12617,46 +12617,33 @@ void AnchorIslandAboveTaskbar();
 
 // ===== Taskbar tracking and z-order =====
 void RestExpandedPopupAsCompact() {
-    // The final collapsed frame is now the compact island itself. Keep every
-    // object that is already on screen: same HWND, glass swap-chain, artwork,
-    // text and corner clip. No second component is revealed underneath it.
-    StopPopupXamlRenderLoop();
-    g_popupAnimationProgress = 0.0;
-    g_popupAnimationTarget = 0.0;
-    g_popupAnimationVelocity = 0.0;
-    g_popupClosing = false;
-    g_popupRestingCompact = true;
-    g_popupRestingHiddenWithTaskbar = false;
-    g_popupRidingTaskbarUp = false;
-    g_pendingPopupDeltaX = 0;
-    g_pendingPopupDeltaY = 0;
-    g_popupTransparentParkPending = false;
-    g_popupOutsideClickArmed = false;
-    if (g_playerGrid) {
-        try {
-            // Keep only the original in-taskbar hit target alive. A tiny alpha
-            // keeps XAML hit testing active without drawing a second island.
-            g_playerGrid.Opacity(0.001);
+    // The close morph has settled exactly on the compact island geometry. Hand
+    // the resting state back to the REAL taskbar island instead of keeping the
+    // popup's own compact endpoint on screen: that popup endpoint renders the
+    // compact contents itself and has no arc toggle (it also styles the
+    // equalizer slightly differently), which is precisely why the arc vanished
+    // after open -> close while the cold-start island showed it fine.
+    //
+    // FinishCloseExpandedPopup is the existing "popup is done, restore the
+    // island" teardown: it parks/hides the popup window and its click catcher,
+    // resets the popup lifecycle to Closed and raises the island (opacity 1).
+    // Then SetCompactIslandSuppressed(false) restores the compact island's
+    // complete visual state - compact layout (including the arc toggle layout
+    // through ApplyExpandedState), progress/equalizer render loops, and the
+    // spin loop through EnsureCompactIslandInteractive - so the resting surface
+    // is the same one cold start renders. BeginCloseExpandedPopup already laid
+    // the island out at the final morph geometry, so the swap is seamless.
+    FinishCloseExpandedPopup(g_expandedPopup);
+    g_popupMediaTransitionActive = false;
+    g_popupPendingContentRefresh = false;
+    SetCompactIslandSuppressed(false);
+    try {
+        if (g_playerGrid) {
+            g_playerGrid.Opacity(1.0);
             g_playerGrid.IsHitTestVisible(true);
-        } catch (...) {
         }
+    } catch (...) {
     }
-    if (g_expandedPopup) {
-        SetPopupWindowClickThrough(g_expandedPopup, true);
-        SetPopupWindowClickThrough(g_popupXamlChild, true);
-        // Keep a high-frequency binding timer in addition to composition
-        // rendering so auto-hide movement is followed even while media is
-        // paused and the rest of the animation loop is idle.
-        SetTimer(g_expandedPopup, kPopupTimerId, 8, nullptr);
-    }
-    ApplyPopupCompactWindowRegions();
-    StartPopupPlaybackIndicatorRenderLoop();
-    // Preserve the original compact island's dedicated hit target. This is
-    // the interaction model from the first interruptible build: every press
-    // in the same physical region reverses the existing spring, with no state
-    // reset and no dependency on where the animated surface currently is.
-    ShowPopupToggleHitWindow();
-    AnchorIslandAboveTaskbar();
 }
 
 bool IsTaskbarCurrentlyAutoHidden() {
