@@ -1,5 +1,87 @@
 # Changelog
 
+## 3.1.19
+
+- Reverted the experimental progress-bar splitting transition (3.1.17/3.1.18);
+  the original spring open/close morph is back and the progress bar behaves
+  normally again.
+
+## 3.1.18
+
+- Experimental: progress bar split inside the collapse/expand morph (removed
+  again in 3.1.19).
+
+## 3.1.17
+
+- Experimental: decorative progress-bar split pieces on collapse/expand
+  (removed again in 3.1.19).
+
+## 3.1.16
+
+- NetEase Cloud Music progress sync fixes: a track change (in-app or from the
+  island) now resets the displayed progress to 00:00 and discards the previous
+  track's samples instead of inheriting its position; progress is recalibrated
+  against the freshest sample on a 500 ms cadence while a NetEase session is
+  active; seeking publishes the target position immediately and holds it until
+  the provider catches up so backward seeks are not undone.
+
+## 3.1.15
+
+- Double-clicking the arc in the resting compact state now reliably stops the
+  spin and snaps the cover upright (the hit window class now receives
+  double-click messages, with a fallback two-tap detector on both the popup
+  compact endpoint and the taskbar island).
+
+## 3.1.14
+
+- Flash-free collapse: the popup's compact endpoint remains the resting surface
+  (no cross-surface handoff frame), and the compact arc toggle is drawn on that
+  endpoint too, so the arc stays visible after opening and closing the player
+  and never blinks during the morph.
+- The vinyl spin and ring hit routing now work in the resting compact endpoint
+  as well.
+
+## 3.1.13
+
+- Fixed the arc disappearing after opening and closing the player by handing the
+  resting compact state back to the real taskbar island (superseded by the
+  flash-free approach in 3.1.14).
+
+## 3.1.12
+
+- Reverted the arc layout/rendering subsystem to the proven 3.1.8
+  implementation, keeping the 3.1.9 animation/startup work; arc parameters:
+  77 degrees, 4.5 DIP stroke, 2.7 DIP gap from the cover.
+
+## 3.1.11
+
+- Arc cold-start visibility experiments (superseded by 3.1.12/3.1.14).
+
+## 3.1.10
+
+- Forced arc re-application after popup close (superseded by 3.1.12/3.1.14).
+
+## 3.1.9
+
+- Attempted cold-start arc recovery, new track-change animation (crossfade +
+  vertical settle replacing the horizontal slide) and faster startup injection;
+  the animation and startup changes are kept, the arc recovery was superseded.
+
+## 3.1.8
+
+- Compact arc: 80 degrees, 3.7 DIP gap, 4 DIP stroke; asymmetric text margins
+  (right margin 4 DIP) so the title gets a longer text box without widening the
+  island.
+
+## 3.1.7
+
+- Compact arc parameters: 87 degrees, 4 DIP stroke, text starting at 50 DIP.
+
+## 3.1.6
+
+- Compact arc: 90 degrees, 3 DIP gap, 3.7 DIP stroke, text shifted clear of the
+  arc to 44.5 DIP.
+
 ## 3.1.5
 
 - Compact arc spin toggle redesigned per feedback: the bracket column is gone
