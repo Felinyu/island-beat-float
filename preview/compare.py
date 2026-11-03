@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build 1:1 comparisons between the real 3.1.1 panel captures and the rendered
+"""Build 1:1 comparisons between the real 3.1.3 panel captures and the rendered
 showcase mockups.
 
 Both sides are at the same pixel scale (2x the real UI): a 308 x 80 px compact
@@ -7,7 +7,7 @@ pill and a 648 x 1156 px expanded glass surface. The comparison images
 therefore need no rescaling, so layout differences are directly readable.
 
 Inputs:
-    preview/reference/real-compact-3.1.1.png     (335 x 110 real capture)
+    preview/reference/real-compact-3.1.3.png     (335 x 110 real capture, 3.1.3)
     preview/reference/real-expanded-3.1.1.png    (1100 x 1000 real capture)
     screenshots/compact.png, screenshots/expanded.png
 
@@ -46,7 +46,7 @@ FONT_BOLD = r"C:\Windows\Fonts\seguisb.ttf"
 
 # Pill / card positions measured from the real captures (2x pixels) and from
 # the rendered mockups.
-REAL_PILL = (33.0, 14.0)           # pill top-left in real-compact-3.1.1.png
+REAL_PILL = (33.0, 14.0)           # pill top-left in real-compact-3.1.3.png
 OUR_PILL = (38.5, 15.0)            # pill top-left in screenshots/compact.png
 REAL_CARD = (165, 0, 812, 933)     # card region in real-expanded-3.1.1.png
 OUR_CARD = (36, 62, 684, 1218)     # card region in screenshots/expanded.png
@@ -71,7 +71,7 @@ def add_label(draw: ImageDraw.ImageDraw, x: int, y: int, text: str) -> None:
 
 
 def build_compact() -> None:
-    real = Image.open(os.path.join(REF, "real-compact-3.1.1.png")).convert("RGB")
+    real = Image.open(os.path.join(REF, "real-compact-3.1.3.png")).convert("RGB")
     ours = Image.open(os.path.join(SHOTS, "compact.png")).convert("RGB")
 
     # 50% overlay aligned on the pill top-left corner (integer round).
@@ -92,7 +92,7 @@ def build_compact() -> None:
 
     x = PAD
     for img, text in (
-        (real, "real 3.1.1 capture (335 x 110 px)"),
+        (real, "real 3.1.3 capture (335 x 110 px)"),
         (ours, "rendered mockup (385 x 110 px)"),
         (overlay, "overlay, aligned on pill top-left"),
     ):

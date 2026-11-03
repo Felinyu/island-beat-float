@@ -150,8 +150,8 @@
 
   .meta {
     position: absolute;
-    left: 42.5px;
-    top: 5px;                /* title/artist ink block centred like the capture */
+    left: 40.5px;            /* ink left 41.5 DIP, measured from real 3.1.3 */
+    top: 5.5px;              /* ink block centre 20.25 DIP like the real capture */
     width: 81px;
     display: flex;
     flex-direction: column;
@@ -178,15 +178,17 @@
     position: absolute;
     right: 7px;
     top: 12px;
+    width: 18px;
     display: flex;
     align-items: center;
-    gap: 0.75px;
+    justify-content: center;
+    gap: 1px;
     height: 16px;
   }
   .eq span {
     display: block;
-    width: 2.4px;
-    border-radius: 1.2px;
+    width: 2.5px;
+    border-radius: 1.25px;
     background: var(--accent);
   }
   .eq .b1 { height: 4.32px; opacity: 0.86; }
