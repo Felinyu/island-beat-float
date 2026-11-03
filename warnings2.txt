@@ -1,0 +1,56 @@
+C:\dsh\work\island-fork\island-fork.wh.cpp:388:19: warning: unknown attribute 'novtable' ignored [-Wunknown-attributes]
+  388 | struct __declspec(novtable) IGraphicsEffectD2D1Interop : IUnknown {
+      |                   ^~~~~~~~
+<built-in>:486:38: note: expanded from macro '__declspec'
+  486 | #define __declspec(a) __attribute__((a))
+      |                                      ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:1465:40: warning: missing field 'cntUsage' initializer [-Wmissing-field-initializers]
+ 1465 |     PROCESSENTRY32W entry{sizeof(entry)};
+      |                                        ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:3051:49: warning: missing field 'lpszScheme' initializer [-Wmissing-field-initializers]
+ 3051 |     URL_COMPONENTS components{sizeof(components)};
+      |                                                 ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:3391:40: warning: missing field 'cntUsage' initializer [-Wmissing-field-initializers]
+ 3391 |     PROCESSENTRY32W entry{sizeof(entry)};
+      |                                        ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:4034:36: warning: missing field 'flags' initializer [-Wmissing-field-initializers]
+ 4034 |     GUITHREADINFO info{sizeof(info)};
+      |                                    ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:10360:48: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 10360 |     MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:11956:33: warning: missing field 'hWnd' initializer [-Wmissing-field-initializers]
+ 11956 |     APPBARDATA data{sizeof(data)};
+       |                                 ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:11966:34: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 11966 |     MONITORINFO info{sizeof(info)};
+       |                                  ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:11996:48: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 11996 |     MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:12017:48: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 12017 |     MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:12072:48: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 12072 |     MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:14385:48: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 14385 |     MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:15166:48: warning: missing field 'style' initializer [-Wmissing-field-initializers]
+ 15166 |     WNDCLASSEXW windowClass{sizeof(windowClass)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:15777:48: warning: missing field 'style' initializer [-Wmissing-field-initializers]
+ 15777 |     WNDCLASSEXW windowClass{sizeof(windowClass)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:15868:48: warning: missing field 'style' initializer [-Wmissing-field-initializers]
+ 15868 |     WNDCLASSEXW windowClass{sizeof(windowClass)};
+       |                                                ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:17351:56: warning: missing field 'rcMonitor' initializer [-Wmissing-field-initializers]
+ 17351 |             MONITORINFO monitorInfo{sizeof(monitorInfo)};
+       |                                                        ^
+C:\dsh\work\island-fork\island-fork.wh.cpp:7884:6: warning: unused function 'ApplyOptimisticFavoriteToggle' [-Wunused-function]
+ 7884 | void ApplyOptimisticFavoriteToggle() {
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+17 warnings generated.
+
