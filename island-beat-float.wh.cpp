@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.8
+// @version         3.1.9
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1012,6 +1012,10 @@ std::chrono::steady_clock::time_point g_popupSeekCommitUntil;
 
 std::atomic_bool g_unloading = false;
 std::atomic_bool g_modActive = false;
+// Set on the taskbar UI thread when the compact island is in the visual tree.
+// The media thread polls this to drive the cold-start fast retry without
+// touching g_playerGrid across threads.
+std::atomic_bool g_islandInjected = false;
 std::atomic_bool g_mediaThreadRunning = false;
 std::thread* g_mediaThread = nullptr;
 std::atomic_bool g_mediaThreadExited = true;
@@ -1476,6 +1480,14 @@ Grid g_compactArcToggle = nullptr;
 shapes::Path g_compactArcPath = nullptr;
 mediax::SolidColorBrush g_compactArcAccentBrush = nullptr;
 std::chrono::steady_clock::time_point g_compactArcLastDoubleTap{};
+// Signature of the arc geometry currently applied to the Path. Used to skip
+// redundant layout churn on the every-refresh re-apply path while still
+// recreating the geometry whenever the spec, position or accent colour moves.
+bool g_compactArcGeometryApplied = false;
+double g_compactArcAppliedOverlaySize = -1.0;
+double g_compactArcAppliedLeft = 1e9;
+double g_compactArcAppliedTop = 1e9;
+uint32_t g_compactArcAppliedColor = 0;
 mediax::RotateTransform g_compactArtSpinImage = nullptr;
 mediax::RotateTransform g_compactArtSpinFade = nullptr;
 winrt::event_token g_compactArtSpinRenderingToken{};
@@ -1506,9 +1518,10 @@ bool g_compactPlaybackAccentTransitionActive = false;
 std::chrono::steady_clock::time_point g_compactPlaybackAccentTransitionStart{};
 winrt::event_token g_compactTextRenderingToken{};
 bool g_compactTextRenderingHooked = false;
-double g_compactTextProgress = 1.0;
+double g_compactTextElapsedMs = 0.0;
 std::chrono::steady_clock::time_point g_lastCompactTextFrameTime{};
-bool g_compactTextEdgeFadeActive = false;
+bool g_compactTextAnimatingText = false;
+bool g_compactTextAnimatingArt = false;
 HWND g_taskbarLayoutTimerWindow = nullptr;
 FrameworkElement g_taskbarLayoutWatchRoot = nullptr;
 FrameworkElement g_taskbarLayoutWatchTarget = nullptr;
@@ -11106,6 +11119,7 @@ void StopHoverRenderLoop();
 void StopCompactTextRenderLoop();
 void StopCompactProgressRenderLoop();
 void StopCompactPlaybackIndicatorRenderLoop();
+void ApplyCompactArcToggleLayout();
 bool ShowPopupToggleHitWindow();
 void HidePopupToggleHitWindow();
 void DestroyPopupToggleHitWindow();
@@ -11229,9 +11243,17 @@ void ApplyCompactPlaybackAccentColor(winrt::Windows::UI::Color color) {
         g_compactPlaybackAccentBrush.Color(color);
     }
     // The cover arc toggle shares the equalizer accent, including its animated
-    // accent transitions.
+    // accent transitions. On a cold start the first accent update can arrive
+    // before the island (or at least its arc brush) exists; create the brush
+    // here and push it onto the live Path so the arc can never be left with a
+    // null stroke waiting for a later refresh.
     if (g_compactArcAccentBrush) {
         g_compactArcAccentBrush.Color(color);
+    } else if (g_compactArcPath) {
+        mediax::SolidColorBrush arcBrush = Brush(color);
+        g_compactArcAccentBrush = arcBrush;
+        g_compactArcPath.Stroke(arcBrush);
+        ApplyCompactArcToggleLayout();
     }
     if (g_popupXamlPlaybackAccentBrush) {
         g_popupXamlPlaybackAccentBrush.Color(color);
@@ -11462,19 +11484,33 @@ void SetCompactTextEdgeFadeOpacity(double opacity) {
     }
 }
 
+// ===== Compact text track-change animation =====
+// Crossfade + small vertical settle. The old title/artist pair fades out over
+// ~120 ms while drifting up 2 DIP; the new pair (already carrying the new text)
+// fades in over ~180 ms while settling down from +2 DIP to its final spot.
+// Nothing moves horizontally, so a clipped/ellipsized TextBlock is never slid
+// through the clip edge (that was the old animation's flash).
+constexpr double kCompactTextFadeOutMs = 120.0;
+constexpr double kCompactTextFadeInMs = 180.0;
+constexpr double kCompactTextSettleDip = 2.0;
+
 void ResetCompactTextAnimationVisuals() {
     try {
         if (g_compactTitleTranslate) {
             g_compactTitleTranslate.X(0.0);
+            g_compactTitleTranslate.Y(0.0);
         }
         if (g_compactArtistTranslate) {
             g_compactArtistTranslate.X(0.0);
+            g_compactArtistTranslate.Y(0.0);
         }
         if (g_compactOutgoingTitleTranslate) {
             g_compactOutgoingTitleTranslate.X(0.0);
+            g_compactOutgoingTitleTranslate.Y(0.0);
         }
         if (g_compactOutgoingArtistTranslate) {
             g_compactOutgoingArtistTranslate.X(0.0);
+            g_compactOutgoingArtistTranslate.Y(0.0);
         }
         if (g_compactTitleText) {
             g_compactTitleText.Opacity(1.0);
@@ -11495,7 +11531,8 @@ void ResetCompactTextAnimationVisuals() {
             g_compactAlbumArtFade.Opacity(0.0);
             g_compactAlbumArtFade.Source(nullptr);
         }
-        g_compactTextEdgeFadeActive = false;
+        g_compactTextAnimatingText = false;
+        g_compactTextAnimatingArt = false;
         SetCompactTextEdgeFadeOpacity(0.0);
     } catch (...) {
     }
@@ -11610,64 +11647,54 @@ void OnCompactTextRendering(winrt::Windows::Foundation::IInspectable const&,
         }
         g_lastCompactTextFrameTime = now;
         dtSec = Clamp(dtSec, 0.0, 0.05);
+        g_compactTextElapsedMs += dtSec * 1000.0;
 
-        // Keep the transition perceptible without making a track change look
-        // late after the new metadata and cover have already arrived.
-        g_compactTextProgress =
-            Clamp(g_compactTextProgress + dtSec * 8.0, 0.0, 1.0);
-        constexpr double kTextSlideOffset = 21.0;
-        RefreshCompactTextHostClip(false);
+        if (g_compactTextAnimatingText) {
+            double fadeOut = PopupTextMotionEase(Clamp(
+                g_compactTextElapsedMs / kCompactTextFadeOutMs, 0.0, 1.0));
+            double fadeIn = PopupTextMotionEase(
+                Clamp(g_compactTextElapsedMs / kCompactTextFadeInMs, 0.0, 1.0));
+            double settle = kCompactTextSettleDip * (1.0 - fadeIn);
 
-        double titleIn = PopupTextMotionEase(
-            Clamp((g_compactTextProgress - 0.02) / 0.92, 0.0, 1.0));
-        double artistIn = PopupTextMotionEase(
-            Clamp((g_compactTextProgress - 0.28) / 0.70, 0.0, 1.0));
-        double titleOut = PopupTextMotionEase(
-            Clamp((g_compactTextProgress + 0.02) / 0.84, 0.0, 1.0));
-        double artistOut = PopupTextMotionEase(
-            Clamp((g_compactTextProgress - 0.12) / 0.80, 0.0, 1.0));
-        double artIn =
-            PopupTextMotionEase(Clamp(g_compactTextProgress / 0.96, 0.0, 1.0));
-        if (g_compactTextEdgeFadeActive) {
-            double edgeFadeIn = PopupTextMotionEase(
-                Clamp((g_compactTextProgress - 0.08) / 0.20, 0.0, 1.0));
-            double edgeFadeOut =
-                1.0 - PopupTextMotionEase(Clamp(
-                          (g_compactTextProgress - 0.78) / 0.18, 0.0, 1.0));
-            SetCompactTextEdgeFadeOpacity(edgeFadeIn * edgeFadeOut);
-        }
+            // New pair: fades in while settling down to its final baseline.
+            g_compactTitleTranslate.X(0.0);
+            g_compactArtistTranslate.X(0.0);
+            g_compactTitleTranslate.Y(settle);
+            g_compactArtistTranslate.Y(settle);
+            g_compactTitleText.Opacity(fadeIn);
+            g_compactArtistText.Opacity(fadeIn);
 
-        // An artwork-only refresh shares this render loop, but it must never
-        // move or fade the title/artist. Otherwise frequently refreshed browser
-        // thumbnails keep translating the text through its clip and expose the
-        // outgoing TextBlock's ellipsis even though the full title fits.
-        if (g_compactTextEdgeFadeActive) {
-            // Reversed direction: new compact text now enters from the right.
-            g_compactTitleTranslate.X(kTextSlideOffset * (1.0 - titleIn));
-            g_compactArtistTranslate.X(kTextSlideOffset * (1.0 - artistIn));
-            g_compactTitleText.Opacity(titleIn);
-            g_compactArtistText.Opacity(artistIn);
-
+            // Old pair: fades out while drifting up. Vertical only, so the old
+            // TextBlock's ellipsis never travels through the clip edge.
             if (g_compactOutgoingTitleText && g_compactOutgoingTitleTranslate) {
-                // Old compact text exits to the left.
-                g_compactOutgoingTitleTranslate.X(-kTextSlideOffset * titleOut);
-                g_compactOutgoingTitleText.Opacity(1.0 - titleOut);
+                g_compactOutgoingTitleTranslate.X(0.0);
+                g_compactOutgoingTitleTranslate.Y(-kCompactTextSettleDip *
+                                                  fadeOut);
+                g_compactOutgoingTitleText.Opacity(1.0 - fadeOut);
             }
             if (g_compactOutgoingArtistText &&
                 g_compactOutgoingArtistTranslate) {
-                g_compactOutgoingArtistTranslate.X(-kTextSlideOffset *
-                                                   artistOut);
-                g_compactOutgoingArtistText.Opacity(1.0 - artistOut);
+                g_compactOutgoingArtistTranslate.X(0.0);
+                g_compactOutgoingArtistTranslate.Y(-kCompactTextSettleDip *
+                                                   fadeOut);
+                g_compactOutgoingArtistText.Opacity(1.0 - fadeOut);
             }
         }
-        if (g_compactAlbumArtImage) {
-            g_compactAlbumArtImage.Opacity(artIn);
-        }
-        if (g_compactAlbumArtFade) {
-            g_compactAlbumArtFade.Opacity(1.0 - artIn);
+
+        // Artwork keeps its existing simple crossfade; the text loop only drives
+        // it when a transition was started for the artwork.
+        if (g_compactTextAnimatingArt) {
+            double artIn = PopupTextMotionEase(
+                Clamp(g_compactTextElapsedMs / kCompactTextFadeInMs, 0.0, 1.0));
+            if (g_compactAlbumArtImage) {
+                g_compactAlbumArtImage.Opacity(artIn);
+            }
+            if (g_compactAlbumArtFade) {
+                g_compactAlbumArtFade.Opacity(1.0 - artIn);
+            }
         }
 
-        if (g_compactTextProgress >= 1.0) {
+        if (g_compactTextElapsedMs >= kCompactTextFadeInMs) {
             ResetCompactTextAnimationVisuals();
             StopCompactTextRenderLoop();
         }
@@ -11690,9 +11717,21 @@ void StartCompactTrackTransition(std::wstring const& oldTitle,
         return;
     }
 
-    constexpr double kTextSlideOffset = 22.0;
-    g_compactTextProgress = 0.0;
+    g_compactTextElapsedMs = 0.0;
     g_lastCompactTextFrameTime = std::chrono::steady_clock::now();
+    g_compactTextAnimatingText = animateText;
+    g_compactTextAnimatingArt = animateArt;
+
+    // Vertical-only animation from here on; clear any horizontal offset a
+    // previous (older) animation might have left behind.
+    if (g_compactTitleTranslate)
+        g_compactTitleTranslate.X(0.0);
+    if (g_compactArtistTranslate)
+        g_compactArtistTranslate.X(0.0);
+    if (g_compactOutgoingTitleTranslate)
+        g_compactOutgoingTitleTranslate.X(0.0);
+    if (g_compactOutgoingArtistTranslate)
+        g_compactOutgoingArtistTranslate.X(0.0);
 
     if (animateText) {
         if (g_compactOutgoingTitleText) {
@@ -11704,23 +11743,21 @@ void StartCompactTrackTransition(std::wstring const& oldTitle,
             g_compactOutgoingArtistText.Opacity(1.0);
         }
         if (g_compactOutgoingTitleTranslate) {
-            g_compactOutgoingTitleTranslate.X(0.0);
+            g_compactOutgoingTitleTranslate.Y(0.0);
         }
         if (g_compactOutgoingArtistTranslate) {
-            g_compactOutgoingArtistTranslate.X(0.0);
+            g_compactOutgoingArtistTranslate.Y(0.0);
         }
-        // Reversed direction: new compact text starts on the right.
-        g_compactTitleTranslate.X(kTextSlideOffset);
-        g_compactArtistTranslate.X(kTextSlideOffset);
+        // New pair starts 2 DIP low and fades in; no horizontal movement.
+        g_compactTitleTranslate.Y(kCompactTextSettleDip);
+        g_compactArtistTranslate.Y(kCompactTextSettleDip);
         g_compactTitleText.Opacity(0.0);
         g_compactArtistText.Opacity(0.0);
-        g_compactTextEdgeFadeActive = true;
-        SetCompactTextEdgeFadeOpacity(0.0);
     } else {
         if (g_compactTitleTranslate)
-            g_compactTitleTranslate.X(0.0);
+            g_compactTitleTranslate.Y(0.0);
         if (g_compactArtistTranslate)
-            g_compactArtistTranslate.X(0.0);
+            g_compactArtistTranslate.Y(0.0);
         if (g_compactTitleText)
             g_compactTitleText.Opacity(1.0);
         if (g_compactArtistText)
@@ -11729,8 +11766,6 @@ void StartCompactTrackTransition(std::wstring const& oldTitle,
             g_compactOutgoingTitleText.Opacity(0.0);
         if (g_compactOutgoingArtistText)
             g_compactOutgoingArtistText.Opacity(0.0);
-        g_compactTextEdgeFadeActive = false;
-        SetCompactTextEdgeFadeOpacity(0.0);
     }
 
     if (animateArt) {
@@ -16940,6 +16975,15 @@ void ApplyCompactArcToggleLayout() {
     }
 
     try {
+        // Never leave the Path without a visible stroke. The arc brush is
+        // normally created in BuildIslandGrid, but the cold-start accent update
+        // can race the island build; create a fallback from the current
+        // equalizer accent here so the Path can never stay stroke-less.
+        if (!g_compactArcAccentBrush) {
+            g_compactArcAccentBrush = Brush(g_compactPlaybackAccentDisplayed);
+        }
+        g_compactArcPath.Stroke(g_compactArcAccentBrush);
+
         auto spec = CurrentCompactVisualSpec();
         double stroke = spec.arcToggleStroke;
         double radius = CompactArcRadius(spec);
@@ -16952,11 +16996,35 @@ void ApplyCompactArcToggleLayout() {
         double center = overlaySize * 0.5;
         double centerX = spec.artInset + spec.artSize * 0.5;
         double centerY = spec.height * 0.5;
+        double left = centerX - overlaySize * 0.5;
+        double top = centerY - overlaySize * 0.5;
+
+        auto accent = g_compactPlaybackAccentDisplayed;
+        if (accent.A == 0) {
+            accent = Color(0xFF, 0x4F, 0x7D, 0xE8);
+        }
+        uint32_t colorKey = (static_cast<uint32_t>(accent.A) << 24) |
+                            (static_cast<uint32_t>(accent.R) << 16) |
+                            (static_cast<uint32_t>(accent.G) << 8) |
+                            static_cast<uint32_t>(accent.B);
+
+        // This function is called again on every compact refresh (cold-start
+        // recovery and theme/accent updates). Re-applying the whole geometry
+        // eagerly would churn XAML; only rebuild when something actually moved.
+        bool geometryApplied = g_compactArcGeometryApplied;
+        bool unchanged =
+            geometryApplied &&
+            std::abs(g_compactArcAppliedOverlaySize - overlaySize) < 0.01 &&
+            std::abs(g_compactArcAppliedLeft - left) < 0.01 &&
+            std::abs(g_compactArcAppliedTop - top) < 0.01 &&
+            g_compactArcAppliedColor == colorKey;
+        if (unchanged) {
+            return;
+        }
 
         g_compactArcToggle.Width(overlaySize);
         g_compactArcToggle.Height(overlaySize);
-        g_compactArcToggle.Margin({centerX - overlaySize * 0.5,
-                                   centerY - overlaySize * 0.5, 0.0, 0.0});
+        g_compactArcToggle.Margin({left, top, 0.0, 0.0});
 
         // Keep the transparent hit area inside the pill so the extra tap
         // tolerance cannot make clicks just outside the island expand it.
@@ -16967,13 +17035,6 @@ void ApplyCompactArcToggleLayout() {
                       static_cast<float>(spec.height)});
         g_compactArcToggle.Clip(hitClip);
 
-        // The arc must use exactly the compact equalizer accent: share one
-        // solid brush with the bars and keep its colour synced in
-        // ApplyCompactPlaybackAccentColor.
-        if (g_compactArcAccentBrush) {
-            g_compactArcAccentBrush.Color(g_compactPlaybackAccentDisplayed);
-            g_compactArcPath.Stroke(g_compactArcAccentBrush);
-        }
         g_compactArcPath.Width(overlaySize);
         g_compactArcPath.Height(overlaySize);
         g_compactArcPath.StrokeThickness(stroke);
@@ -16982,7 +17043,24 @@ void ApplyCompactArcToggleLayout() {
         g_compactArcPath.StrokeLineJoin(mediax::PenLineJoin::Round);
         g_compactArcPath.Data(MakeCompactArcGeometry(
             center, center, radius, kCompactArcStartDeg, kCompactArcSweepDeg));
+
+        g_compactArcGeometryApplied = true;
+        g_compactArcAppliedOverlaySize = overlaySize;
+        g_compactArcAppliedLeft = left;
+        g_compactArcAppliedTop = top;
+        g_compactArcAppliedColor = colorKey;
+        if (!geometryApplied) {
+            Wh_Log(
+                L"Island: compact arc ready overlay=%d radius=%d stroke=%d "
+                L"color=%08X",
+                static_cast<int>(std::lround(overlaySize * 100.0)),
+                static_cast<int>(std::lround(radius * 100.0)),
+                static_cast<int>(std::lround(stroke * 100.0)),
+                static_cast<unsigned>(colorKey));
+        }
     } catch (...) {
+        g_compactArcGeometryApplied = false;
+        Wh_Log(L"Island: compact arc layout failed");
     }
 }
 
@@ -17134,6 +17212,11 @@ void EnsureCompactIslandInteractive() {
         }
         g_playerGrid.Opacity(1.0);
         g_playerGrid.IsHitTestVisible(true);
+        // Re-apply the arc on every compact refresh. If the first paint raced
+        // the accent brush / layout pass on a cold start, this is the cheap
+        // recovery point that guarantees the arc comes back (it skips the
+        // geometry rebuild when nothing changed).
+        ApplyCompactArcToggleLayout();
         if (g_compactArtSpinEnabled) {
             StartCompactCoverSpinLoop();
         }
@@ -17304,6 +17387,39 @@ void MediaThreadProc() {
         }
     };
 
+    // Cold-start injection must not wait for the media snapshot. The taskbar
+    // XAML root / injection target may not exist yet when the early mod hooks
+    // fire, so re-attempt the (cheap) injection from here until the island is
+    // in the tree: quickly for the first ~3 s, then on a 1 s tick.
+    auto attemptIslandInjection = [] {
+        if (!IsModActive() || g_islandInjected.load()) {
+            return;
+        }
+        HWND hwnd = g_taskbarWnd;
+        if (!hwnd || !IsWindow(hwnd)) {
+            hwnd = FindCurrentProcessTaskbarWnd();
+        }
+        if (!hwnd) {
+            return;
+        }
+        RunFromWindowThread(
+            hwnd,
+            [](void* param) {
+                if (!IsModActive() || g_playerGrid) {
+                    return;
+                }
+                g_taskbarWnd = reinterpret_cast<HWND>(param);
+                InjectIslandGrid();
+            },
+            reinterpret_cast<void*>(hwnd));
+    };
+    auto startupInjectionStart = std::chrono::steady_clock::now();
+    auto lastInjectionAttempt = std::chrono::steady_clock::now();
+    // Inject the idle/placeholder island before acquiring the GSMTC manager:
+    // RequestMediaManagerWithTimeout can block for up to 3 s and must never
+    // delay the widget's first paint.
+    attemptIslandInjection();
+
     try {
         manager = RequestMediaManagerWithTimeout(std::chrono::seconds(3));
         if (manager) {
@@ -17325,6 +17441,23 @@ void MediaThreadProc() {
     g_mediaRefreshRequested = true;
 
     while (g_mediaThreadRunning) {
+        // Fast cold-start injection retry, independent of the media snapshot.
+        if (!g_islandInjected.load() && IsModActive()) {
+            auto injectNow = std::chrono::steady_clock::now();
+            auto sinceStartMs =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    injectNow - startupInjectionStart)
+                    .count();
+            auto injectInterval = sinceStartMs < 3000
+                                      ? std::chrono::milliseconds(130)
+                                      : std::chrono::milliseconds(1000);
+            if (lastInjectionAttempt.time_since_epoch().count() == 0 ||
+                injectNow - lastInjectionAttempt >= injectInterval) {
+                lastInjectionAttempt = injectNow;
+                attemptIslandInjection();
+            }
+        }
+
         double neteaseSeekRatio = g_neteaseSeekRatioRequested.exchange(-1.0);
         if (neteaseSeekRatio >= 0.0) {
             if (TrySeekNeteaseCloudMusic(neteaseSeekRatio)) {
@@ -17414,7 +17547,14 @@ void MediaThreadProc() {
         }
 
         std::unique_lock lock(g_mediaCommandMutex);
-        g_mediaCommandCv.wait_for(lock, fallbackPollInterval, [] {
+        // While the island is still missing, wake up on the injection cadence
+        // instead of sleeping for the (potentially 30 s) media fallback poll.
+        auto waitInterval = fallbackPollInterval;
+        if (!g_islandInjected.load() && IsModActive()) {
+            waitInterval =
+                std::min(waitInterval, std::chrono::milliseconds(100));
+        }
+        g_mediaCommandCv.wait_for(lock, waitInterval, [] {
             return !g_mediaThreadRunning || !g_mediaCommands.empty() ||
                    g_neteaseFavoriteToggleRequested.load() ||
                    g_neteaseSeekRatioRequested.load() >= 0.0 ||
@@ -19000,6 +19140,18 @@ void RemoveIslandGrid() {
     StopCompactCoverSpinLoop();
     DestroyExpandedPopup();
 
+    g_islandInjected = false;
+    // Reset the applied-geometry signature so the rebuilt island lays the arc
+    // out (and logs) from scratch.
+    g_compactArcGeometryApplied = false;
+    g_compactArcAppliedOverlaySize = -1.0;
+    g_compactArcAppliedLeft = 1e9;
+    g_compactArcAppliedTop = 1e9;
+    g_compactArcAppliedColor = 0;
+    g_compactTextElapsedMs = 0.0;
+    g_compactTextAnimatingText = false;
+    g_compactTextAnimatingArt = false;
+
     if (!g_injectionParent || !g_playerGrid) {
         g_playerGrid = nullptr;
         g_injectionParent = nullptr;
@@ -19036,7 +19188,6 @@ void RemoveIslandGrid() {
         g_compactPlaybackAccentDisplayed = g_compactPlaybackAccentFrom;
         g_compactPlaybackAccentTransitionActive = false;
         g_compactPlaybackAccentTransitionStart = {};
-        g_compactTextEdgeFadeActive = false;
         g_compactTextInitialized = false;
         g_compactLastTitle.clear();
         g_compactLastArtist.clear();
@@ -19122,7 +19273,6 @@ void RemoveIslandGrid() {
     g_compactPlaybackAccentDisplayed = g_compactPlaybackAccentFrom;
     g_compactPlaybackAccentTransitionActive = false;
     g_compactPlaybackAccentTransitionStart = {};
-    g_compactTextEdgeFadeActive = false;
     g_compactTextInitialized = false;
     g_compactLastTitle.clear();
     g_compactLastArtist.clear();
@@ -19217,11 +19367,17 @@ bool InjectIslandGrid() {
         UpdatePlayerContents();
         target.grid.UpdateLayout();
         RefreshCompactTextHostClip(false);
+        // Lay the arc out once more against the now-laid-out taskbar tree: a
+        // cold start can inject while the XAML root is still settling, and this
+        // pass makes sure the overlay size/clip/stroke are applied to the live
+        // element.
+        ApplyCompactArcToggleLayout();
         // A rebuild (settings/theme change) keeps the user's spin choice and
         // phase: the new art transforms start at g_compactArtSpinAngle.
         if (g_compactArtSpinEnabled) {
             StartCompactCoverSpinLoop();
         }
+        g_islandInjected = true;
         Wh_Log(L"Island: injected successfully");
         return true;
     } catch (...) {
