@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.17
+// @version         3.1.18
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -10574,16 +10574,17 @@ void UpdatePopupXamlVisuals() {
         lerpRect(progressSource, targetProgress, controlsProgress);
     // Keep a clearly visible colored seed almost all the way to the compact
     // endpoint. Only hand it to the five bars after it has actually arrived.
-    // Progress-bar split transition (user request): during the collapse the
-    // expanded progress bar divides into two accent halves - the left half
-    // flies into the compact equalizer bar area, the right half flies into the
-    // 77-degree arc stroke - and they merge back into one bar on expand. Pure
-    // layout-transform + opacity interpolation, no geometric morphing.
+    // Progress-bar split transition, implemented INSIDE the existing spring
+    // morph (there is no extra decorative layer): the progress bar's own two
+    // halves are the animated elements. LEFT half -> the real 77-degree arc on
+    // the cover's right side; RIGHT half -> the compact equalizer bars. On
+    // expand the arc/bars merge back into the single bar. Endpoint continuity:
+    // each half lerps to the exact layout rect the real element uses (same
+    // bounding box/centre/colour) and visibility is swapped to the real element
+    // in the SAME frame at the endpoints (no crossfade slop, no pop).
     double splitT = Clamp(1.0 - morphProgress, 0.0, 1.0);
-    double splitMove = SmootherStep(splitT);
-    double splitPieceOpacity =
-        SmootherStep(Clamp(splitT / 0.10, 0.0, 1.0)) *
-        (1.0 - SmootherStep(Clamp((splitT - 0.55) / 0.30, 0.0, 1.0)));
+    bool splitActive = splitT > 0.015 && splitT < 0.985;
+    double splitPieceOpacity = splitActive ? 1.0 : 0.0;
     if (g_popupXamlSplitA && g_popupXamlSplitB) {
         constexpr double kPi = 3.14159265358979323846;
         double barLeft = static_cast<double>(targetProgress.left);
@@ -10592,65 +10593,77 @@ void UpdatePopupXamlVisuals() {
         double barHeight =
             std::max(3.0, static_cast<double>(targetProgress.bottom) - barTop);
         double barMid = (barLeft + barRight) * 0.5;
-        double eqCx =
-            (sourceIndicatorRect.left + sourceIndicatorRect.right) * 0.5;
-        double eqCy =
-            (sourceIndicatorRect.top + sourceIndicatorRect.bottom) * 0.5;
-        double eqBarWidth = std::max(1.6, compactSpec.playbackBarWidth);
-        double eqBarHeight =
-            std::max(4.0, compactSpec.playbackIndicatorHeight * 0.9);
+
+        // Right half target: the real compact equalizer indicator rect.
+        double eqLeft = sourceIndicatorRect.left;
+        double eqRight = sourceIndicatorRect.right;
+        double eqTop = sourceIndicatorRect.top;
+        double eqBottom = sourceIndicatorRect.bottom;
+
+        // Left half target: the exact bounding box of the real 77-degree arc
+        // (same centre/radius/stroke the arc path below uses).
         double arcStroke = compactSpec.arcToggleStroke;
         double arcRadius = compactSpec.artSize * 0.5 +
                            compactSpec.arcToggleCoverGap + arcStroke * 0.5;
         double artCx = (sourceArtRect.left + sourceArtRect.right) * 0.5;
         double artCy = (sourceArtRect.top + sourceArtRect.bottom) * 0.5;
-        double arcChord =
-            2.0 * arcRadius * std::sin(0.5 * kCompactArcSweepDeg * kPi / 180.0);
+        double arcHalfSweep = 0.5 * kCompactArcSweepDeg * kPi / 180.0;
+        double arcMinX =
+            artCx + arcRadius * std::cos(arcHalfSweep) - arcStroke * 0.5;
+        double arcMaxX = artCx + arcRadius + arcStroke * 0.5;
+        double arcHalfHeight =
+            arcRadius * std::sin(arcHalfSweep) + arcStroke * 0.5;
 
-        double aLeft = LerpDouble(barLeft, eqCx - eqBarWidth * 0.5, splitMove);
-        double aRight = LerpDouble(barMid, eqCx + eqBarWidth * 0.5, splitMove);
-        double aTop = LerpDouble(barTop, eqCy - eqBarHeight * 0.5, splitMove);
+        // Two-phase (L-shaped) paths keep both halves off a long diagonal
+        // across the artwork/title: slide horizontally first, then rise.
+        double moveX = SmootherStep(Clamp(splitT / 0.55, 0.0, 1.0));
+        double moveY = SmootherStep(Clamp((splitT - 0.30) / 0.70, 0.0, 1.0));
+        double grow = SmootherStep(splitT);
+
+        // LEFT half of the bar becomes the arc (bbox/centre/colour exact).
+        double aLeft = LerpDouble(barLeft, arcMinX, moveX);
+        double aRight = LerpDouble(barMid, arcMaxX, moveX);
+        double aTop = LerpDouble(barTop, artCy - arcHalfHeight, moveY);
+        double aHeight = LerpDouble(barHeight, arcHalfHeight * 2.0, grow);
         g_popupXamlSplitA.Width(std::max(1.0, aRight - aLeft));
-        g_popupXamlSplitA.Height(
-            std::max(2.0, LerpDouble(barHeight, eqBarHeight, splitMove)));
+        g_popupXamlSplitA.Height(std::max(2.0, aHeight));
+        double radiusA = std::min(kPopupG2ProgressCornerRadius,
+                                  std::max(1.0, aRight - aLeft) * 0.5);
+        g_popupXamlSplitA.CornerRadius({radiusA, radiusA, radiusA, radiusA});
         controls::Canvas::SetLeft(g_popupXamlSplitA, aLeft);
         controls::Canvas::SetTop(g_popupXamlSplitA, aTop);
         g_popupXamlSplitA.Opacity(splitPieceOpacity);
-        g_popupXamlSplitA.Visibility(splitPieceOpacity > 0.002
-                                         ? Visibility::Visible
-                                         : Visibility::Collapsed);
+        g_popupXamlSplitA.Visibility(splitActive ? Visibility::Visible
+                                                 : Visibility::Collapsed);
 
-        double arcTargetLeft = artCx + arcRadius - arcStroke * 0.5;
-        double bLeft = LerpDouble(barMid, arcTargetLeft, splitMove);
-        double bRight =
-            LerpDouble(barRight, arcTargetLeft + arcStroke, splitMove);
-        double bHeight = LerpDouble(barHeight, arcChord, splitMove);
-        double bTop = LerpDouble(barTop, artCy - bHeight * 0.5, splitMove);
+        // RIGHT half of the bar becomes the equalizer indicator area.
+        double bLeft = LerpDouble(barMid, eqLeft, moveX);
+        double bRight = LerpDouble(barRight, eqRight, moveX);
+        double bTop = LerpDouble(barTop, eqTop, moveY);
+        double bHeight = LerpDouble(barHeight, eqBottom - eqTop, grow);
         g_popupXamlSplitB.Width(std::max(1.0, bRight - bLeft));
         g_popupXamlSplitB.Height(std::max(2.0, bHeight));
+        double radiusB = std::min(kPopupG2ProgressCornerRadius,
+                                  std::max(1.0, bRight - bLeft) * 0.5);
+        g_popupXamlSplitB.CornerRadius({radiusB, radiusB, radiusB, radiusB});
         controls::Canvas::SetLeft(g_popupXamlSplitB, bLeft);
         controls::Canvas::SetTop(g_popupXamlSplitB, bTop);
         g_popupXamlSplitB.Opacity(splitPieceOpacity);
-        g_popupXamlSplitB.Visibility(splitPieceOpacity > 0.002
-                                         ? Visibility::Visible
-                                         : Visibility::Collapsed);
-        double splitRadius = std::min(
-            kPopupG2ProgressCornerRadius,
-            std::min(std::max(1.0, aRight - aLeft), std::max(2.0, bHeight)) *
-                0.5);
-        g_popupXamlSplitA.CornerRadius(
-            {splitRadius, splitRadius, splitRadius, splitRadius});
-        g_popupXamlSplitB.CornerRadius(
-            {splitRadius, splitRadius, splitRadius, splitRadius});
+        g_popupXamlSplitB.Visibility(splitActive ? Visibility::Visible
+                                                 : Visibility::Collapsed);
         if (g_popupXamlSplitBRotate) {
-            // A small tilt while travelling makes the piece feel like it curves
-            // into the arc; zero at both endpoints.
-            g_popupXamlSplitBRotate.Angle(90.0 * std::sin(kPi * splitMove) *
-                                          0.6);
+            // No diagonal slash: the arc half is represented by its exact
+            // bounding box, so the pieces stay upright the whole way.
+            g_popupXamlSplitBRotate.Angle(0.0);
         }
         if (g_popupXamlPlaybackAccentBrush) {
             g_popupXamlSplitA.Background(g_popupXamlPlaybackAccentBrush);
             g_popupXamlSplitB.Background(g_popupXamlPlaybackAccentBrush);
+        }
+        // Hide the real compact elements while their split halves are on screen
+        // and reveal them in the same frame the pieces land (endpoint swap).
+        if (g_popupXamlPlaybackIndicator) {
+            g_popupXamlPlaybackIndicator.Opacity(splitActive ? 0.0 : 1.0);
         }
     }
     double progressMorphOpacity = controlsOpacity;
