@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.6
+// @version         3.1.7
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -855,7 +855,7 @@ struct RuntimeLayout {
     // edge. Only the gap outside the cover and the stroke scale with the
     // island; the cover itself never moves or resizes for the arc.
     double arcToggleCoverGap = 3.0;
-    double arcToggleStroke = 3.7;
+    double arcToggleStroke = 4.0;
     double textMarginX = 8.0;
     double titleFontSize = 12.0;
     double artistFontSize = 10.0;
@@ -16852,8 +16852,8 @@ void StartHoverRenderLoop(double targetScale) {
 // the arc never draws over it. The arc lives in its own transparent hit grid;
 // only ring-band taps are consumed, so taps on the cover itself still open the
 // expanded player. Spinning the art is a RenderTransform only, no layout work.
-constexpr double kCompactArcStartDeg = -45.0;
-constexpr double kCompactArcSweepDeg = 90.0;
+constexpr double kCompactArcStartDeg = -43.5;
+constexpr double kCompactArcSweepDeg = 87.0;
 
 mediax::PathGeometry MakeCompactArcGeometry(double centerX,
                                             double centerY,
@@ -17766,15 +17766,15 @@ void UpdateRuntimeLayout(HWND hwnd,
     // edge, so it never touches the cover size. The user picked a 3 DIP gap
     // and a thick 3.7 DIP stroke; both scale with the island.
     g_layout.arcToggleCoverGap = Clamp(3.0 * scale, 1.5, 4.5);
-    g_layout.arcToggleStroke = Clamp(3.7 * scale, 2.4, 5.0);
+    g_layout.arcToggleStroke = Clamp(4.0 * scale, 2.6, 5.4);
     // The text must start just right of the thicker arc instead of after the
     // bare cover: the arc's outer edge is at artInset + artSize +
     // coverGap + stroke, so the text margin needs coverGap + stroke plus a
     // small breathing gap. At H=40/scale 1 this is 3.0 + 3.7 + 1.8 = 8.5 DIP,
     // so the text block starts at 4 + 32 + 8.5 = 44.5 DIP (arc outer x 42.7).
-    g_layout.textMarginX = g_layout.arcToggleCoverGap +
-                           g_layout.arcToggleStroke +
-                           Clamp(1.8 * scale, 1.2, 2.4);
+    // Fixed text start (per user request): 50 DIP at the default H=40, so the
+    // text block begins 7 DIP clear of the thicker 4 DIP arc (outer x 43 DIP).
+    g_layout.textMarginX = Clamp(14.0 * scale, 9.0, 21.0);
     g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
     g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 13.5);
     g_layout.progressWidth = Clamp(74.0 * scale, 42.0, 110.0);
