@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.10
+// @version         3.1.12
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1480,15 +1480,6 @@ Grid g_compactArcToggle = nullptr;
 shapes::Path g_compactArcPath = nullptr;
 mediax::SolidColorBrush g_compactArcAccentBrush = nullptr;
 std::chrono::steady_clock::time_point g_compactArcLastDoubleTap{};
-// Signature of the arc geometry currently applied to the Path. Used to skip
-// redundant layout churn on the every-refresh re-apply path while still
-// recreating the geometry whenever the spec, position or accent colour moves.
-bool g_compactArcGeometryApplied = false;
-bool g_compactArcForceApply = false;
-double g_compactArcAppliedOverlaySize = -1.0;
-double g_compactArcAppliedLeft = 1e9;
-double g_compactArcAppliedTop = 1e9;
-uint32_t g_compactArcAppliedColor = 0;
 mediax::RotateTransform g_compactArtSpinImage = nullptr;
 mediax::RotateTransform g_compactArtSpinFade = nullptr;
 winrt::event_token g_compactArtSpinRenderingToken{};
@@ -11120,7 +11111,6 @@ void StopHoverRenderLoop();
 void StopCompactTextRenderLoop();
 void StopCompactProgressRenderLoop();
 void StopCompactPlaybackIndicatorRenderLoop();
-void ApplyCompactArcToggleLayout();
 bool ShowPopupToggleHitWindow();
 void HidePopupToggleHitWindow();
 void DestroyPopupToggleHitWindow();
@@ -11244,17 +11234,9 @@ void ApplyCompactPlaybackAccentColor(winrt::Windows::UI::Color color) {
         g_compactPlaybackAccentBrush.Color(color);
     }
     // The cover arc toggle shares the equalizer accent, including its animated
-    // accent transitions. On a cold start the first accent update can arrive
-    // before the island (or at least its arc brush) exists; create the brush
-    // here and push it onto the live Path so the arc can never be left with a
-    // null stroke waiting for a later refresh.
+    // accent transitions.
     if (g_compactArcAccentBrush) {
         g_compactArcAccentBrush.Color(color);
-    } else if (g_compactArcPath) {
-        mediax::SolidColorBrush arcBrush = Brush(color);
-        g_compactArcAccentBrush = arcBrush;
-        g_compactArcPath.Stroke(arcBrush);
-        ApplyCompactArcToggleLayout();
     }
     if (g_popupXamlPlaybackAccentBrush) {
         g_popupXamlPlaybackAccentBrush.Color(color);
@@ -12571,8 +12553,6 @@ void FinishCloseExpandedPopup(HWND hwnd) {
             // visible flash, so only restore interaction here.
             g_playerGrid.Opacity(1.0);
             g_playerGrid.IsHitTestVisible(true);
-            g_compactArcForceApply = true;
-            ApplyCompactArcToggleLayout();
             if (g_compactArtSpinEnabled) {
                 StartCompactCoverSpinLoop();
             }
@@ -16889,11 +16869,12 @@ void StartHoverRenderLoop(double targetScale) {
 
 // ===== Compact arc spin toggle =====
 // A short accent-coloured arc hugging the right side of the circular cover.
-// It is concentric with the cover but only sweeps 90 degrees on the right
-// (y-down angles -45..+45), so the artwork keeps its exact size/position and
-// the arc never draws over it. The arc lives in its own transparent hit grid;
-// only ring-band taps are consumed, so taps on the cover itself still open the
-// expanded player. Spinning the art is a RenderTransform only, no layout work.
+// It is concentric with the cover but only sweeps 77 degrees on the right
+// (y-down angles -38.5..+38.5), so the artwork keeps its exact size/position
+// and the arc never draws over it. The arc lives in its own transparent hit
+// grid; only ring-band taps are consumed, so taps on the cover itself still
+// open the expanded player. Spinning the art is a RenderTransform only, no
+// layout work.
 constexpr double kCompactArcStartDeg = -38.5;
 constexpr double kCompactArcSweepDeg = 77.0;
 
@@ -16918,7 +16899,7 @@ mediax::PathGeometry MakeCompactArcGeometry(double centerX,
     segment.Point(pointAt(startDeg + sweepDeg));
     segment.Size({static_cast<float>(radius), static_cast<float>(radius)});
     // Angles increase clockwise on screen (y grows downward), so a positive
-    // sweep maps to a clockwise arc; 90 degrees is never the large arc.
+    // sweep maps to a clockwise arc; 77 degrees is never the large arc.
     segment.SweepDirection(sweepDeg >= 0.0
                                ? mediax::SweepDirection::Clockwise
                                : mediax::SweepDirection::Counterclockwise);
@@ -16938,7 +16919,7 @@ double CompactArcRadius(CompactVisualSpec const& spec) {
 }
 
 // Hit test in the overlay's local DIP space: the point must be inside the
-// short right-side arc band (distance tolerance plus the -45..+45 wedge).
+// short right-side arc band (distance tolerance plus the -38.5..+38.5 wedge).
 bool CompactArcRingHitTest(winrt::Windows::Foundation::Point const& point) {
     if (!g_compactArcToggle) {
         return false;
@@ -16978,21 +16959,6 @@ void ApplyCompactArcToggleLayout() {
     }
 
     try {
-        // Never leave the Path without a visible stroke. The arc brush is
-        // normally created in BuildIslandGrid, but the cold-start accent update
-        // can race the island build; create a fallback from the current
-        // equalizer accent here so the Path can never stay stroke-less.
-        if (!g_compactArcAccentBrush) {
-            g_compactArcAccentBrush = Brush(g_compactPlaybackAccentDisplayed);
-        }
-        g_compactArcPath.Stroke(g_compactArcAccentBrush);
-
-        // The taskbar wrapper may have been left transparent or the arc may
-        // have been covered by the closing popup card; always restore the
-        // toggle's own visibility when the layout is (re)applied.
-        g_compactArcToggle.Visibility(Visibility::Visible);
-        g_compactArcToggle.Opacity(1.0);
-
         auto spec = CurrentCompactVisualSpec();
         double stroke = spec.arcToggleStroke;
         double radius = CompactArcRadius(spec);
@@ -17005,37 +16971,11 @@ void ApplyCompactArcToggleLayout() {
         double center = overlaySize * 0.5;
         double centerX = spec.artInset + spec.artSize * 0.5;
         double centerY = spec.height * 0.5;
-        double left = centerX - overlaySize * 0.5;
-        double top = centerY - overlaySize * 0.5;
-
-        auto accent = g_compactPlaybackAccentDisplayed;
-        if (accent.A == 0) {
-            accent = Color(0xFF, 0x4F, 0x7D, 0xE8);
-        }
-        uint32_t colorKey = (static_cast<uint32_t>(accent.A) << 24) |
-                            (static_cast<uint32_t>(accent.R) << 16) |
-                            (static_cast<uint32_t>(accent.G) << 8) |
-                            static_cast<uint32_t>(accent.B);
-
-        // This function is called again on every compact refresh (cold-start
-        // recovery and theme/accent updates). Re-applying the whole geometry
-        // eagerly would churn XAML; only rebuild when something actually moved.
-        bool geometryApplied = g_compactArcGeometryApplied;
-        bool forceApply = g_compactArcForceApply;
-        g_compactArcForceApply = false;
-        bool unchanged =
-            !forceApply && geometryApplied &&
-            std::abs(g_compactArcAppliedOverlaySize - overlaySize) < 0.01 &&
-            std::abs(g_compactArcAppliedLeft - left) < 0.01 &&
-            std::abs(g_compactArcAppliedTop - top) < 0.01 &&
-            g_compactArcAppliedColor == colorKey;
-        if (unchanged) {
-            return;
-        }
 
         g_compactArcToggle.Width(overlaySize);
         g_compactArcToggle.Height(overlaySize);
-        g_compactArcToggle.Margin({left, top, 0.0, 0.0});
+        g_compactArcToggle.Margin({centerX - overlaySize * 0.5,
+                                   centerY - overlaySize * 0.5, 0.0, 0.0});
 
         // Keep the transparent hit area inside the pill so the extra tap
         // tolerance cannot make clicks just outside the island expand it.
@@ -17046,6 +16986,13 @@ void ApplyCompactArcToggleLayout() {
                       static_cast<float>(spec.height)});
         g_compactArcToggle.Clip(hitClip);
 
+        // The arc must use exactly the compact equalizer accent: share one
+        // solid brush with the bars and keep its colour synced in
+        // ApplyCompactPlaybackAccentColor.
+        if (g_compactArcAccentBrush) {
+            g_compactArcAccentBrush.Color(g_compactPlaybackAccentDisplayed);
+            g_compactArcPath.Stroke(g_compactArcAccentBrush);
+        }
         g_compactArcPath.Width(overlaySize);
         g_compactArcPath.Height(overlaySize);
         g_compactArcPath.StrokeThickness(stroke);
@@ -17054,24 +17001,7 @@ void ApplyCompactArcToggleLayout() {
         g_compactArcPath.StrokeLineJoin(mediax::PenLineJoin::Round);
         g_compactArcPath.Data(MakeCompactArcGeometry(
             center, center, radius, kCompactArcStartDeg, kCompactArcSweepDeg));
-
-        g_compactArcGeometryApplied = true;
-        g_compactArcAppliedOverlaySize = overlaySize;
-        g_compactArcAppliedLeft = left;
-        g_compactArcAppliedTop = top;
-        g_compactArcAppliedColor = colorKey;
-        if (!geometryApplied) {
-            Wh_Log(
-                L"Island: compact arc ready overlay=%d radius=%d stroke=%d "
-                L"color=%08X",
-                static_cast<int>(std::lround(overlaySize * 100.0)),
-                static_cast<int>(std::lround(radius * 100.0)),
-                static_cast<int>(std::lround(stroke * 100.0)),
-                static_cast<unsigned>(colorKey));
-        }
     } catch (...) {
-        g_compactArcGeometryApplied = false;
-        Wh_Log(L"Island: compact arc layout failed");
     }
 }
 
@@ -17223,11 +17153,6 @@ void EnsureCompactIslandInteractive() {
         }
         g_playerGrid.Opacity(1.0);
         g_playerGrid.IsHitTestVisible(true);
-        // Re-apply the arc on every compact refresh. If the first paint raced
-        // the accent brush / layout pass on a cold start, this is the cheap
-        // recovery point that guarantees the arc comes back (it skips the
-        // geometry rebuild when nothing changed).
-        ApplyCompactArcToggleLayout();
         if (g_compactArtSpinEnabled) {
             StartCompactCoverSpinLoop();
         }
@@ -17918,17 +17843,13 @@ void UpdateRuntimeLayout(HWND hwnd,
     // add a half-overscan offset to the cover position.
     g_layout.artColumnWidth = g_layout.artSize;
     // The arc spin toggle is concentric with the cover and hugs its right
-    // edge, so it never touches the cover size. The user picked a 3 DIP gap
-    // and a thick 3.7 DIP stroke; both scale with the island.
+    // edge, so it never touches the cover size. Current user values: 2.7 DIP
+    // cover gap and a thick 4.5 DIP stroke; both scale with the island.
     g_layout.arcToggleCoverGap = Clamp(2.7 * scale, 1.4, 4.0);
     g_layout.arcToggleStroke = Clamp(4.5 * scale, 2.8, 6.0);
-    // The text must start just right of the thicker arc instead of after the
-    // bare cover: the arc's outer edge is at artInset + artSize +
-    // coverGap + stroke, so the text margin needs coverGap + stroke plus a
-    // small breathing gap. At H=40/scale 1 this is 3.0 + 3.7 + 1.8 = 8.5 DIP,
-    // so the text block starts at 4 + 32 + 8.5 = 44.5 DIP (arc outer x 42.7).
     // Fixed text start (per user request): 50 DIP at the default H=40, so the
-    // text block begins 7 DIP clear of the thicker 4 DIP arc (outer x 43 DIP).
+    // text block begins well clear of the arc's outer edge
+    // (artInset + artSize + gap + stroke = 4 + 32 + 2.7 + 4.5 = 43.2 DIP).
     g_layout.textMarginX = Clamp(14.0 * scale, 9.0, 21.0);
     g_layout.textRightMargin = Clamp(4.0 * scale, 2.0, 6.0);
     g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
@@ -19152,13 +19073,6 @@ void RemoveIslandGrid() {
     DestroyExpandedPopup();
 
     g_islandInjected = false;
-    // Reset the applied-geometry signature so the rebuilt island lays the arc
-    // out (and logs) from scratch.
-    g_compactArcGeometryApplied = false;
-    g_compactArcAppliedOverlaySize = -1.0;
-    g_compactArcAppliedLeft = 1e9;
-    g_compactArcAppliedTop = 1e9;
-    g_compactArcAppliedColor = 0;
     g_compactTextElapsedMs = 0.0;
     g_compactTextAnimatingText = false;
     g_compactTextAnimatingArt = false;
@@ -19378,11 +19292,6 @@ bool InjectIslandGrid() {
         UpdatePlayerContents();
         target.grid.UpdateLayout();
         RefreshCompactTextHostClip(false);
-        // Lay the arc out once more against the now-laid-out taskbar tree: a
-        // cold start can inject while the XAML root is still settling, and this
-        // pass makes sure the overlay size/clip/stroke are applied to the live
-        // element.
-        ApplyCompactArcToggleLayout();
         // A rebuild (settings/theme change) keeps the user's spin choice and
         // phase: the new art transforms start at g_compactArtSpinAngle.
         if (g_compactArtSpinEnabled) {
