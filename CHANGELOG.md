@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.2
+
+- Compact layout: balanced cover-to-text and text-to-equalizer spacing. The
+  text margin now scales as `Clamp(5.5 * scale, 3, 8)` DIP instead of
+  `Clamp(4 * scale, 2, 6)`, widening the cover-to-text gap by 1.5 DIP and
+  narrowing the text column by 3 DIP, so the text sits evenly between the
+  circular cover and the right-anchored equalizer.
+
 ## 3.1.1
 
 - The compact artwork circle is now concentric with the pill's left rounded end

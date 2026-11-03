@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.1
+// @version         3.1.2
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -17487,9 +17487,11 @@ void UpdateRuntimeLayout(HWND hwnd,
     // inside the clipped art host, not in the grid column, so the column cannot
     // add a half-overscan offset to the cover position.
     g_layout.artColumnWidth = g_layout.artSize;
-    // Slightly wider text area so normal artist names display in full
-    // (the ellipsis remains only as a fallback for very long names).
-    g_layout.textMarginX = Clamp(4.0 * scale, 2.0, 6.0);
+    // Balanced compact spacing: this margin is the gap between the circular
+    // cover and the title/artist column (and the text column's right inset), so
+    // cover -> text, text -> equalizer and equalizer -> pill edge read as an
+    // even set of gaps instead of a tight cover gap plus a loose equalizer gap.
+    g_layout.textMarginX = Clamp(5.5 * scale, 3.0, 8.0);
     g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
     g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 13.5);
     g_layout.progressWidth = Clamp(74.0 * scale, 42.0, 110.0);
