@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.1.4
+
+- Compact cover spin toggle: a thin semicircular arc bracket (a rounded ")"
+  drawn from a clipped stroked ellipse) now sits to the right of the circular
+  cover. Tapping it starts a slow vinyl-style rotation of the album art;
+  tapping it again freezes the cover at its current angle. The artwork and its
+  cross-fade rotate together inside the fixed circular clip (RenderTransform
+  only, no layout work), the rotation survives media changes, and the tap is
+  handled so it never opens the expanded player.
+- Compact layout: the arc toggle gets its own 14 DIP grid column (2 DIP gap +
+  12 DIP arc) between the cover and the text, so the text column starts about
+  55.5 DIP from the pill's left edge (cover inset 4 + cover 32, 2 DIP gap,
+  12 DIP arc, 5.5 DIP text margin). The round caps and themed 0.55-opacity
+  stroke scale with the island height; the right side keeps the 7 DIP content
+  padding and 7 DIP equalizer inset, and the compact text clip/edge-fade
+  fallbacks account for the new column.
+- In-mod README (English and Chinese) documents the arc spin toggle.
+
 ## 3.1.3
 
 - Compact layout: the right content padding (7 DIP) and the equalizer leading

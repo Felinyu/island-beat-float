@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.3
+// @version         3.1.4
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -41,6 +41,11 @@ expanded panel morphs back into the compact island when it closes.
 - **Circular compact cover** - the collapsed artwork is clipped to a circle
   whose diameter matches the island's inner height, so its curvature lines up
   with the pill's rounded ends; the expanded cover stays a rounded square.
+- **Compact arc spin toggle** - a thin semicircular bracket next to the cover
+  starts and stops a slow vinyl-style rotation of the cover. The artwork and
+  its cross-fade rotate together inside the fixed circular clip, the text
+  column sits to the right of the bracket, and clicking the bracket never
+  opens the expanded player.
 - **Idle state** - an optional default cover image, title and artist are shown
   before a media session starts (or while nothing is playing).
 - **Accent colour** - the compact equalizer bars, expanded playback indicator
@@ -100,7 +105,8 @@ Island Beat Float 把当前媒体会话放进 Windows 11 任务栏，变成一�
 
 主要功能：7 种任务栏位置；展开面板的液态玻璃/亚克力/纯色/类 Mica 材质与专辑
 渐变；封面自适应调色板与专辑色氛围；低分辨率视频封面可改用网格渐变/火焰封面；
-折叠态封面为与胶囊曲率一致的圆形，展开态保持圆角方形；无媒体时可显示自定义默认
+折叠态封面为与胶囊曲率一致的圆形，展开态保持圆角方形；折叠态封面右侧的弧形
+开关可切换封面像唱片一样缓慢旋转（再次点击停止）；无媒体时可显示自定义默认
 封面、歌名与歌手；均衡器与进度条高光可跟随封面取色或使用自定义强调色；岛屿高度
 支持 28-72 DIP 调节；跟随任务栏位置与展开方向；悬停与展开动画可调速（含慢动作
 预览）；支持网易云音乐和哔哩哔哩集成；多显示器任务栏适配。
@@ -844,6 +850,13 @@ struct RuntimeLayout {
     // (H - D) / 2 puts the cover centre on the left cap centre (H/2, H/2).
     double artInset = 4.0;
     double artColumnWidth = 30.0;
+    // Compact arc spin toggle between the cover and the text (a thin
+    // right-half ring, ")" shaped). The gap is the DIP space between the art
+    // column and the arc box; the grid column is gap + width wide.
+    double arcToggleGap = 2.0;
+    double arcToggleWidth = 12.0;
+    double arcToggleHeight = 20.0;
+    double arcToggleStroke = 1.8;
     double textMarginX = 8.0;
     double titleFontSize = 12.0;
     double artistFontSize = 10.0;
@@ -872,6 +885,10 @@ struct CompactVisualSpec {
     double artImageSize;
     double artCornerRadius;
     double artColumnWidth;
+    double arcToggleGap;
+    double arcToggleWidth;
+    double arcToggleHeight;
+    double arcToggleStroke;
     double textMarginX;
     double titleFontSize;
     double artistFontSize;
@@ -898,6 +915,10 @@ CompactVisualSpec CompactVisualSpecFrom(RuntimeLayout const& layout) {
         layout.artImageSize,
         layout.artCornerRadius,
         layout.artColumnWidth,
+        layout.arcToggleGap,
+        layout.arcToggleWidth,
+        layout.arcToggleHeight,
+        layout.arcToggleStroke,
         layout.textMarginX,
         layout.titleFontSize,
         layout.artistFontSize,
@@ -1453,6 +1474,18 @@ TranslateTransform g_compactOutgoingTitleTranslate = nullptr;
 TranslateTransform g_compactOutgoingArtistTranslate = nullptr;
 Image g_compactAlbumArtImage = nullptr;
 Image g_compactAlbumArtFade = nullptr;
+Grid g_compactArcToggle = nullptr;
+Grid g_compactArcClip = nullptr;
+shapes::Ellipse g_compactArcRing = nullptr;
+shapes::Ellipse g_compactArcCapTop = nullptr;
+shapes::Ellipse g_compactArcCapBottom = nullptr;
+mediax::RotateTransform g_compactArtSpinImage = nullptr;
+mediax::RotateTransform g_compactArtSpinFade = nullptr;
+winrt::event_token g_compactArtSpinRenderingToken{};
+bool g_compactArtSpinRenderingHooked = false;
+bool g_compactArtSpinEnabled = false;
+double g_compactArtSpinAngle = 0.0;
+std::chrono::steady_clock::time_point g_lastCompactArtSpinFrameTime{};
 ProgressBar g_compactProgress = nullptr;
 winrt::event_token g_compactProgressRenderingToken{};
 bool g_compactProgressRenderingHooked = false;
@@ -11468,11 +11501,13 @@ void ResetCompactTextAnimationVisuals() {
 
 double CompactTextClipWidthFallback() {
     // The content row starts at artInset on the left and the right content
-    // margin on the right; subtract the circle column, the text margins and a
-    // small allowance for the auto-sized playback indicator column.
+    // margin on the right; subtract the circle column, the arc spin toggle
+    // column (gap + arc), the text margins and a small allowance for the
+    // auto-sized playback indicator column.
     double width = g_layout.compactWidth -
                    (g_layout.artInset + g_layout.contentMarginX +
-                    g_layout.artColumnWidth + g_layout.textMarginX * 2.0 + 4.0);
+                    g_layout.artColumnWidth + g_layout.arcToggleGap +
+                    g_layout.arcToggleWidth + g_layout.textMarginX * 2.0 + 4.0);
     return std::max(1.0, width);
 }
 
@@ -11722,6 +11757,91 @@ void SetCompactIslandSuppressed(bool suppressed);
 void StartPopupXamlRenderLoop();
 void StopHoverRenderLoop();
 void ApplyExpandedState();
+
+// ===== Compact cover vinyl spin =====
+// The arc toggle starts and stops a slow rotation of the compact album art.
+// Only RenderTransform is animated, so layout never re-runs: the circular clip
+// host stays fixed and the clipped image plus its cross-fade rotate under it.
+void ApplyCompactCoverSpinAngle() {
+    try {
+        if (g_compactArtSpinImage) {
+            g_compactArtSpinImage.Angle(g_compactArtSpinAngle);
+        }
+        if (g_compactArtSpinFade) {
+            g_compactArtSpinFade.Angle(g_compactArtSpinAngle);
+        }
+    } catch (...) {
+    }
+}
+
+void StopCompactCoverSpinLoop() {
+    if (!g_compactArtSpinRenderingHooked) {
+        return;
+    }
+    try {
+        mediax::CompositionTarget::Rendering(g_compactArtSpinRenderingToken);
+    } catch (...) {
+    }
+    g_compactArtSpinRenderingHooked = false;
+    g_lastCompactArtSpinFrameTime = {};
+}
+
+void OnCompactCoverSpinRendering(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::Foundation::IInspectable const&) {
+    try {
+        // Mirror the other compact loops: the island can be torn down, hidden
+        // behind the expanded popup or unloaded while the spin is running.
+        if (!g_playerGrid || !g_compactArtSpinImage || !g_compactArtSpinFade ||
+            g_expanded || g_unloading) {
+            StopCompactCoverSpinLoop();
+            return;
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        double dtSec = 1.0 / 60.0;
+        if (g_lastCompactArtSpinFrameTime.time_since_epoch().count() != 0) {
+            dtSec = std::chrono::duration_cast<std::chrono::microseconds>(
+                        now - g_lastCompactArtSpinFrameTime)
+                        .count() /
+                    1000000.0;
+        }
+        g_lastCompactArtSpinFrameTime = now;
+        dtSec = Clamp(dtSec, 0.0, 0.1);
+
+        // About 4 s per revolution at any refresh rate.
+        g_compactArtSpinAngle += dtSec * 90.0;
+        while (g_compactArtSpinAngle >= 360.0) {
+            g_compactArtSpinAngle -= 360.0;
+        }
+        ApplyCompactCoverSpinAngle();
+    } catch (...) {
+        StopCompactCoverSpinLoop();
+    }
+}
+
+void StartCompactCoverSpinLoop() {
+    if (!g_compactArtSpinImage || !g_compactArtSpinFade ||
+        g_compactArtSpinRenderingHooked || g_expanded || g_unloading) {
+        return;
+    }
+    g_lastCompactArtSpinFrameTime = {};
+    g_compactArtSpinRenderingToken =
+        mediax::CompositionTarget::Rendering(OnCompactCoverSpinRendering);
+    g_compactArtSpinRenderingHooked = true;
+}
+
+void ToggleCompactCoverSpin() {
+    g_compactArtSpinEnabled = !g_compactArtSpinEnabled;
+    if (g_compactArtSpinEnabled) {
+        StartCompactCoverSpinLoop();
+    } else {
+        StopCompactCoverSpinLoop();
+    }
+    // Freeze the cover at its current angle when stopping; the next toggle
+    // resumes from exactly that phase.
+    ApplyCompactCoverSpinAngle();
+}
 
 // ===== Popup progress, seek and close state machine =====
 bool IsAnimatedTaskbarPopupVisible() {
@@ -12358,6 +12478,7 @@ void PrepareCompactIslandForPopupMorph() {
     StopCompactTextRenderLoop();
     StopCompactProgressRenderLoop();
     StopCompactPlaybackIndicatorRenderLoop();
+    StopCompactCoverSpinLoop();
     ResetCompactTextAnimationVisuals();
     try {
         // The taskbar-owned popup is the rendered component for the complete
@@ -12401,6 +12522,9 @@ void FinishCloseExpandedPopup(HWND hwnd) {
             // visible flash, so only restore interaction here.
             g_playerGrid.Opacity(1.0);
             g_playerGrid.IsHitTestVisible(true);
+            if (g_compactArtSpinEnabled) {
+                StartCompactCoverSpinLoop();
+            }
         }
     } catch (...) {
         Wh_Log(L"Island: failed to restore compact island after closing popup");
@@ -16712,6 +16836,82 @@ void StartHoverRenderLoop(double targetScale) {
     }
 }
 
+// ===== Compact arc spin toggle =====
+// A thin right-half ring ("]" bracket) built from a stroked ellipse: the
+// ellipse is one arc-height wide and its left half is clipped away, which
+// leaves a clean semicircle whose stroke ends sit on the vertical diameter.
+// Two tiny filled ellipses provide round caps and a slightly larger transparent
+// grid wraps everything as a comfortable tap target. Only a RenderTransform
+// spins the cover, so the arc and the island layout are never re-flowed.
+double CompactArcToggleHitWidth(double arcWidth) {
+    return arcWidth + 4.0;
+}
+
+double CompactArcToggleHitHeight(double arcHeight) {
+    return arcHeight + 6.0;
+}
+
+mediax::Brush CompactArcStrokeBrush() {
+    // Follow the compact title foreground so the bracket matches the themed
+    // text colour in both light and dark mode.
+    return Brush(PopupPrimaryTextColor());
+}
+
+void ApplyCompactArcToggleLayout() {
+    if (!g_compactArcToggle || !g_compactArcClip || !g_compactArcRing) {
+        return;
+    }
+
+    try {
+        auto spec = CurrentCompactVisualSpec();
+        double arcWidth = spec.arcToggleWidth;
+        double arcHeight = spec.arcToggleHeight;
+        double stroke = spec.arcToggleStroke;
+        double hitWidth = CompactArcToggleHitWidth(arcWidth);
+        double hitHeight = CompactArcToggleHitHeight(arcHeight);
+
+        g_compactArcToggle.Width(hitWidth);
+        g_compactArcToggle.Height(hitHeight);
+        // Centre the hit target on the arc column: the 12 DIP column starts at
+        // artInset + artColumnWidth + arcToggleGap from the pill's left edge.
+        g_compactArcToggle.Margin({spec.artInset + spec.artColumnWidth +
+                                       spec.arcToggleGap -
+                                       (hitWidth - arcWidth) * 0.5,
+                                   0.0, 0.0, 0.0});
+
+        g_compactArcClip.Width(arcWidth);
+        g_compactArcClip.Height(arcHeight);
+        g_compactArcRing.Width(arcHeight);
+        g_compactArcRing.Height(arcHeight);
+        g_compactArcRing.Margin({-arcHeight * 0.5, 0.0, 0.0, 0.0});
+        g_compactArcRing.StrokeThickness(stroke);
+        g_compactArcRing.Stroke(CompactArcStrokeBrush());
+
+        if (g_compactArcCapTop) {
+            g_compactArcCapTop.Width(stroke);
+            g_compactArcCapTop.Height(stroke);
+            g_compactArcCapTop.Margin({-stroke * 0.5, -stroke * 0.5, 0.0, 0.0});
+            g_compactArcCapTop.Fill(CompactArcStrokeBrush());
+        }
+        if (g_compactArcCapBottom) {
+            g_compactArcCapBottom.Width(stroke);
+            g_compactArcCapBottom.Height(stroke);
+            g_compactArcCapBottom.Margin(
+                {-stroke * 0.5, 0.0, 0.0, -stroke * 0.5});
+            g_compactArcCapBottom.Fill(CompactArcStrokeBrush());
+        }
+
+        // Clip the ring's left half; the vertical range is extended by half a
+        // stroke so the round caps are not sheared off.
+        mediax::RectangleGeometry clip;
+        clip.Rect({0.0f, static_cast<float>(-stroke * 0.5),
+                   static_cast<float>(arcWidth),
+                   static_cast<float>(arcHeight + stroke)});
+        g_compactArcClip.Clip(clip);
+    } catch (...) {
+    }
+}
+
 void ApplyExpandedState() {
     if (!g_playerGrid) {
         return;
@@ -16741,8 +16941,14 @@ void ApplyExpandedState() {
                 content.ColumnDefinitions().GetAt(0).Width(
                     {spec.artColumnWidth, GridUnitType::Pixel});
             }
+            if (content.ColumnDefinitions().Size() > 1) {
+                content.ColumnDefinitions().GetAt(1).Width(
+                    {spec.arcToggleGap + spec.arcToggleWidth,
+                     GridUnitType::Pixel});
+            }
         }
     }
+    ApplyCompactArcToggleLayout();
 
     if (auto details = FindChildByName(g_playerGrid, L"Island_Details")) {
         details.Visibility(Visibility::Collapsed);
@@ -16859,9 +17065,13 @@ void EnsureCompactIslandInteractive() {
         }
         g_playerGrid.Opacity(1.0);
         g_playerGrid.IsHitTestVisible(true);
+        if (g_compactArtSpinEnabled) {
+            StartCompactCoverSpinLoop();
+        }
     } catch (...) {
     }
 }
+
 void RepairExpandedPopupStateIfHidden() {
     // While resting as the compact island, the popup is intentionally hidden
     // together with the taskbar; SyncRestingPopupWithTaskbarVisibility owns
@@ -17487,10 +17697,18 @@ void UpdateRuntimeLayout(HWND hwnd,
     // inside the clipped art host, not in the grid column, so the column cannot
     // add a half-overscan offset to the cover position.
     g_layout.artColumnWidth = g_layout.artSize;
-    // Balanced compact spacing: this margin is the gap between the circular
-    // cover and the title/artist column (and the text column's right inset), so
-    // cover -> text, text -> equalizer and equalizer -> pill edge read as an
-    // even set of gaps instead of a tight cover gap plus a loose equalizer gap.
+    // The arc spin toggle sits between the cover and the text column. Its gap,
+    // box and stroke scale with the island so the bracket never crowds the
+    // cover at small heights and stays proportionate at large ones.
+    g_layout.arcToggleGap = Clamp(2.0 * scale, 1.0, 3.0);
+    g_layout.arcToggleWidth = Clamp(12.0 * scale, 9.0, 16.0);
+    g_layout.arcToggleHeight = Clamp(20.0 * scale, 14.0, 26.0);
+    g_layout.arcToggleStroke = Clamp(1.8 * scale, 1.2, 2.4);
+    // Balanced compact spacing: this margin is the gap between the arc toggle
+    // and the title/artist column (and the text column's right inset), so
+    // cover -> arc -> text, text -> equalizer and equalizer -> pill edge stay
+    // an even set of gaps instead of a tight cover gap plus a loose
+    // equalizer gap.
     g_layout.textMarginX = Clamp(5.5 * scale, 3.0, 8.0);
     g_layout.titleFontSize = Clamp(12.0 * scale, 10.0, 15.5);
     g_layout.artistFontSize = Clamp(10.0 * scale, 8.5, 13.5);
@@ -17555,11 +17773,18 @@ Grid BuildIslandGrid() {
 
     ColumnDefinition artCol;
     artCol.Width({spec.artColumnWidth, GridUnitType::Pixel});
+    // Reserved lane for the arc spin toggle between the cover and the text:
+    // the visual arc sits after arcToggleGap, so the text column starts at
+    // artInset + artColumnWidth + gap + width + textMarginX.
+    ColumnDefinition arcCol;
+    arcCol.Width(
+        {spec.arcToggleGap + spec.arcToggleWidth, GridUnitType::Pixel});
     ColumnDefinition textCol;
     textCol.Width({1, GridUnitType::Star});
     ColumnDefinition controlsCol;
     controlsCol.Width({1, GridUnitType::Auto});
     content.ColumnDefinitions().Append(artCol);
+    content.ColumnDefinitions().Append(arcCol);
     content.ColumnDefinitions().Append(textCol);
     content.ColumnDefinitions().Append(controlsCol);
 
@@ -17615,6 +17840,12 @@ Grid BuildIslandGrid() {
     artFade.Stretch(mediax::Stretch::UniformToFill);
     artFade.IsHitTestVisible(false);
     artFade.Opacity(0.0);
+    // The cover and its cross-fade share one rotation phase, so a media change
+    // fades between two identically oriented covers and leaves no ghost.
+    mediax::RotateTransform artSpinFade;
+    artSpinFade.Angle(g_compactArtSpinAngle);
+    artFade.RenderTransformOrigin({0.5, 0.5});
+    artFade.RenderTransform(artSpinFade);
     artHost.Children().Append(artFade);
 
     Image artImage;
@@ -17625,6 +17856,10 @@ Grid BuildIslandGrid() {
     artImage.Stretch(mediax::Stretch::UniformToFill);
     artImage.IsHitTestVisible(false);
     artImage.Opacity(1.0);
+    mediax::RotateTransform artSpinImage;
+    artSpinImage.Angle(g_compactArtSpinAngle);
+    artImage.RenderTransformOrigin({0.5, 0.5});
+    artImage.RenderTransform(artSpinImage);
     artHost.Children().Append(artImage);
 
     Border artStroke;
@@ -17635,6 +17870,8 @@ Grid BuildIslandGrid() {
     art.Child(artShell);
     g_compactAlbumArtImage = artImage;
     g_compactAlbumArtFade = artFade;
+    g_compactArtSpinImage = artSpinImage;
+    g_compactArtSpinFade = artSpinFade;
 
     controls::Grid::SetColumn(art, 0);
     content.Children().Append(art);
@@ -17643,7 +17880,7 @@ Grid BuildIslandGrid() {
     textHost.Name(L"Island_TextHost");
     textHost.VerticalAlignment(VerticalAlignment::Center);
     textHost.Margin({spec.textMarginX, 0, spec.textMarginX, 0});
-    controls::Grid::SetColumn(textHost, 1);
+    controls::Grid::SetColumn(textHost, 2);
 
     StackPanel outgoingTextStack;
     outgoingTextStack.Orientation(controls::Orientation::Vertical);
@@ -17738,7 +17975,7 @@ Grid BuildIslandGrid() {
     playbackIndicator.VerticalAlignment(VerticalAlignment::Center);
     playbackIndicator.IsHitTestVisible(false);
     playbackIndicator.Opacity(1.0);
-    controls::Grid::SetColumn(playbackIndicator, 2);
+    controls::Grid::SetColumn(playbackIndicator, 3);
 
     StackPanel playbackBars;
     playbackBars.Name(L"Island_PlaybackBars");
@@ -17785,7 +18022,7 @@ Grid BuildIslandGrid() {
     details.Visibility(Visibility::Collapsed);
     details.IsHitTestVisible(false);
     details.Opacity(0.0);
-    controls::Grid::SetColumn(details, 2);
+    controls::Grid::SetColumn(details, 3);
 
     details.Children().Append(MakeMediaButton(L"Island_Prev", L"\uEB9E", [] {
         RunMediaTransportCommand(MediaTransportCommand::Previous);
@@ -17812,6 +18049,73 @@ Grid BuildIslandGrid() {
 
     wrapper.Children().Append(background);
     wrapper.Children().Append(content);
+
+    // --- Compact arc spin toggle ---
+    // Sits in the reserved arc column between the cover and the text. It is a
+    // sibling of the content grid (that grid is hit-test invisible) and its
+    // transparent hit container overlaps the lane by a couple of DIP, so it is
+    // easy to tap without moving any layout.
+    Grid arcToggle;
+    arcToggle.Name(L"Island_ArcToggle");
+    arcToggle.HorizontalAlignment(HorizontalAlignment::Left);
+    arcToggle.VerticalAlignment(VerticalAlignment::Center);
+    arcToggle.Background(Brush(Color(0x01, 0x00, 0x00, 0x00)));
+    arcToggle.IsHitTestVisible(true);
+    controls::Canvas::SetZIndex(arcToggle, 20);
+
+    Grid arcClip;
+    arcClip.Name(L"Island_ArcClip");
+    arcClip.HorizontalAlignment(HorizontalAlignment::Center);
+    arcClip.VerticalAlignment(VerticalAlignment::Center);
+    arcClip.IsHitTestVisible(false);
+
+    shapes::Ellipse arcRing;
+    arcRing.Name(L"Island_ArcRing");
+    arcRing.HorizontalAlignment(HorizontalAlignment::Left);
+    arcRing.VerticalAlignment(VerticalAlignment::Top);
+    arcRing.Fill(Brush(Color(0x00, 0x00, 0x00, 0x00)));
+    arcRing.Opacity(0.55);
+    arcRing.IsHitTestVisible(false);
+
+    shapes::Ellipse arcCapTop;
+    arcCapTop.Name(L"Island_ArcCapTop");
+    arcCapTop.HorizontalAlignment(HorizontalAlignment::Left);
+    arcCapTop.VerticalAlignment(VerticalAlignment::Top);
+    arcCapTop.Fill(Brush(Color(0x00, 0x00, 0x00, 0x00)));
+    arcCapTop.Opacity(0.55);
+    arcCapTop.IsHitTestVisible(false);
+
+    shapes::Ellipse arcCapBottom;
+    arcCapBottom.Name(L"Island_ArcCapBottom");
+    arcCapBottom.HorizontalAlignment(HorizontalAlignment::Left);
+    arcCapBottom.VerticalAlignment(VerticalAlignment::Bottom);
+    arcCapBottom.Fill(Brush(Color(0x00, 0x00, 0x00, 0x00)));
+    arcCapBottom.Opacity(0.55);
+    arcCapBottom.IsHitTestVisible(false);
+
+    arcClip.Children().Append(arcRing);
+    arcClip.Children().Append(arcCapTop);
+    arcClip.Children().Append(arcCapBottom);
+    arcToggle.Children().Append(arcClip);
+
+    g_compactArcToggle = arcToggle;
+    g_compactArcClip = arcClip;
+    g_compactArcRing = arcRing;
+    g_compactArcCapTop = arcCapTop;
+    g_compactArcCapBottom = arcCapBottom;
+    ApplyCompactArcToggleLayout();
+
+    arcToggle.PointerPressed(
+        [](auto const&, input::PointerRoutedEventArgs const& e) {
+            // Never let the arc tap bubble into the island's expand handler.
+            e.Handled(true);
+        });
+    arcToggle.Tapped([](auto const&, input::TappedRoutedEventArgs const& e) {
+        e.Handled(true);
+        ToggleCompactCoverSpin();
+    });
+
+    wrapper.Children().Append(arcToggle);
 
     wrapper.PointerEntered([hoverScale](auto const&, auto const&) {
         g_islandScale = hoverScale;
@@ -18615,6 +18919,7 @@ void RemoveIslandGrid() {
     StopCompactTextRenderLoop();
     StopCompactProgressRenderLoop();
     StopCompactPlaybackIndicatorRenderLoop();
+    StopCompactCoverSpinLoop();
     DestroyExpandedPopup();
 
     if (!g_injectionParent || !g_playerGrid) {
@@ -18635,6 +18940,13 @@ void RemoveIslandGrid() {
         g_compactOutgoingArtistTranslate = nullptr;
         g_compactAlbumArtImage = nullptr;
         g_compactAlbumArtFade = nullptr;
+        g_compactArcToggle = nullptr;
+        g_compactArcClip = nullptr;
+        g_compactArcRing = nullptr;
+        g_compactArcCapTop = nullptr;
+        g_compactArcCapBottom = nullptr;
+        g_compactArtSpinImage = nullptr;
+        g_compactArtSpinFade = nullptr;
         g_compactProgress = nullptr;
         g_compactPlaybackIndicator = nullptr;
         g_compactPlaybackBars.clear();
@@ -18716,6 +19028,13 @@ void RemoveIslandGrid() {
     g_compactOutgoingArtistTranslate = nullptr;
     g_compactAlbumArtImage = nullptr;
     g_compactAlbumArtFade = nullptr;
+    g_compactArcToggle = nullptr;
+    g_compactArcClip = nullptr;
+    g_compactArcRing = nullptr;
+    g_compactArcCapTop = nullptr;
+    g_compactArcCapBottom = nullptr;
+    g_compactArtSpinImage = nullptr;
+    g_compactArtSpinFade = nullptr;
     g_compactProgress = nullptr;
     g_compactPlaybackIndicator = nullptr;
     g_compactPlaybackBars.clear();
@@ -18824,6 +19143,11 @@ bool InjectIslandGrid() {
         UpdatePlayerContents();
         target.grid.UpdateLayout();
         RefreshCompactTextHostClip(false);
+        // A rebuild (settings/theme change) keeps the user's spin choice and
+        // phase: the new art transforms start at g_compactArtSpinAngle.
+        if (g_compactArtSpinEnabled) {
+            StartCompactCoverSpinLoop();
+        }
         Wh_Log(L"Island: injected successfully");
         return true;
     } catch (...) {
