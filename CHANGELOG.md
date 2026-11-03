@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.1.5
+
+- Compact arc spin toggle redesigned per feedback: the bracket column is gone
+  (text returns to starting right after the cover) and the toggle is now a
+  thicker 120-degree accent-coloured arc hugging the right edge of the circular
+  cover, concentric with it and never overlapping the artwork; spin is slowed to
+  ~33 deg/s, and double-tapping the arc stops the spin and snaps the cover back
+  upright.
+
 ## 3.1.4
 
 - Compact cover spin toggle: a thin semicircular arc bracket (a rounded ")"
