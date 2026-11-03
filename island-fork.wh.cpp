@@ -144,6 +144,7 @@ play/pause, and next controls.
 - Main:
   - Position: "tray_left"
     $name: Taskbar position
+    $description: Where to insert the island on the taskbar.
     $options:
     - "tray_left": "Tray - far left"
     - "tray_right": "Tray - far right"
@@ -152,21 +153,34 @@ play/pause, and next controls.
     - "taskbar_left_edge": "Taskbar - left overlay"
     - "taskbar_center_edge": "Taskbar - center overlay"
     - "taskbar_right_edge": "Taskbar - right overlay"
+  - HideWhenNoMedia: false
+    $name: Hide the island when no media is playing
+  - Height: 40
+    $name: Island height (DIP)
+    $description: Height of the compact island on the taskbar.
   - CompactWidth: 169
-    $name: Compact width
+    $name: Island width (DIP)
+    $description: Width of the compact island; ignored when "Auto size to taskbar" adapts it to tall taskbars.
   - AutoSizeToTaskbar: true
     $name: Auto size to taskbar
+    $description: Widen the island automatically on tall taskbars so artist names are not truncated.
+  - MarginLeft: 4
+    $name: Left margin (DIP)
+  - MarginRight: 4
+    $name: Right margin (DIP)
   - ExpandedWidth: 360
-    $name: Expanded overlay width
+    $name: Expanded panel width (DIP)
+    $description: Width of the expanded player panel.
   - Compact: false
     $name: Compact expanded layout
     $description: Use a single compact card with the cover beside the song and artist information.
   - PopupSpacing: 20
-    $name: Expanded outer spacing
+    $name: Expanded outer spacing (DIP)
+    $description: Gap between the expanded panel and the taskbar.
   - PopupCardGap: 8
-    $name: Expanded cover-to-controls gap
+    $name: Expanded cover-to-controls gap (DIP)
   - PopupShadowDepth: 58
-    $name: Expanded shadow depth
+    $name: Expanded shadow depth (DIP)
   - PopupShadowOpacity: 70
     $name: Expanded shadow opacity (%)
   - PopupButtonStyle: "fluent_bold"
@@ -174,36 +188,9 @@ play/pause, and next controls.
     $options:
     - "minimal_transport": "Minimal transport"
     - "fluent_bold": "Fluent bold"
-  - PopupBackdropCoverEffect: "dark_only"
-    $name: Expanded background album wash
-    $description: Liquid Glass keeps this enabled in light mode for readability.
-    $options:
-    - "off": "Off"
-    - "dark_only": "Dark mode only"
-    - "on": "Always on"
-  - ArtworkAbstractMode: "browser_original"
-    $name: Low-res video artwork mode
-    $options:
-    - "browser_original": "Browser thumbnail"
-    - "mesh_gradient": "Mesh gradient"
-    - "energy_flame": "Flame"
-  - Height: 40
-    $name: Component height
-  - MarginLeft: 4
-    $name: Left margin
-  - MarginRight: 4
-    $name: Right margin
-  - HideWhenNoMedia: false
-    $name: Hide when no media
-  - HoverScale: 106
-    $name: Hover scale (%)
-  - HoverLerpSpeed: 28
-    $name: Hover smoothing
-  - AnimationSpeed: 100
-    $name: Expanded animation speed (%)
-    $description: 100 is normal speed. Use lower values such as 25 for slow-motion animation preview.
   - Material: "liquid_glass"
     $name: Background material
+    $description: Material used for the compact island and the expanded panel.
     $options:
     - "mica_like": "Mica-like content layer"
     - "solid": "Solid"
@@ -215,30 +202,52 @@ play/pause, and next controls.
   - LiquidGlassCornerRadius: 46
     $name: Liquid glass expanded corner radius
     $description: The compact endpoint is automatically limited to a capsule.
+  - PopupBackdropCoverEffect: "dark_only"
+    $name: Expanded album wash
+    $description: Draw the album cover colours behind the expanded panel. Liquid Glass keeps its gradient wash enabled in light mode for readability.
+    $options:
+    - "off": "Off"
+    - "dark_only": "Dark mode only"
+    - "on": "Always on"
+  - ArtworkAbstractMode: "browser_original"
+    $name: Low-res video artwork mode
+    $description: What to show when a browser session only provides a low-resolution thumbnail.
+    $options:
+    - "browser_original": "Browser thumbnail"
+    - "mesh_gradient": "Mesh gradient"
+    - "energy_flame": "Flame"
+  - HoverScale: 106
+    $name: Hover scale (%)
+    $description: Size of the island while the pointer is over it (100 = no scaling).
+  - HoverLerpSpeed: 28
+    $name: Hover smoothing
+    $description: Higher values make the hover animation snappier.
+  - AnimationSpeed: 100
+    $name: Animation speed (%)
+    $description: Speed of the expanded-panel animation; 100 is normal, lower values are slow-motion (useful for previewing the animation).
+  - AllowScreenCapture: false
+    $name: Allow screen capture of the expanded panel
+    $description: When off, the expanded panel is excluded from screen capture and screenshots. Uses a capturable static blurred backdrop for Acrylic and Liquid Glass, avoiding self-capture feedback.
   - LiquidGlassFrost: 12
     $name: Liquid glass frost strength
-    $description: Gaussian blur strength from 0 to 24.
+    $description: Gaussian blur strength of the liquid glass backdrop, from 0 to 24 (experimental).
   - LiquidGlassRefraction: 6
     $name: Liquid glass refraction strength
-    $description: Edge displacement strength from 0 to 100.
+    $description: Edge displacement strength from 0 to 100. Only affects the experimental GPU lens-warp path, which is currently disabled.
   - LiquidGlassRoundness: 4
     $name: Liquid glass corner roundness
-    $description: 2 is a normal rounded rectangle; 4 is the continuous Apple-like squircle used by LiquidGlassKit.
+    $description: 2 is a normal rounded rectangle, 4 is the continuous Apple-like squircle. Only affects the experimental GPU lens-warp path, which is currently disabled.
   - BackdropInitialFrameSkip: 0
-    $name: Backdrop initial frame skip
-    $description: Number of WGC frames to skip before replacing the fallback frame.
+    $name: Acrylic backdrop initial frame skip
+    $description: Number of WGC frames to skip before replacing the fallback frame (Acrylic material only).
   - BackdropFallbackBlurPasses: 5
-    $name: Backdrop fallback blur passes
-    $description: Blur strength for the animation-period fallback frame.
+    $name: Acrylic backdrop fallback blur passes
+    $description: Blur strength for the animation-period fallback frame (Acrylic material only).
   - BackdropFallbackCaptureScale: 2
-    $name: Backdrop fallback capture scale
-    $description: Lower values sample more pixels; higher values are faster but softer.
-  - AllowScreenCapture: false
-    $name: Allow screen capture of expanded popup
-    $description: Uses a capturable static blurred backdrop for Acrylic and Liquid glass, avoiding self-capture feedback.
+    $name: Acrylic backdrop fallback capture scale
+    $description: Lower values sample more pixels; higher values are faster but softer (Acrylic material only).
 */
 // ==/WindhawkModSettings==
-
 
 // ===== Includes =====
 #include <windows.h>
@@ -254,7 +263,6 @@ play/pause, and next controls.
 #include <endpointvolume.h>
 #include <audiopolicy.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-
 
 #include <inspectable.h>
 #include <d3d11.h>
@@ -356,7 +364,6 @@ extern "C" HRESULT __stdcall CreateDirect3D11DeviceFromDXGIDevice(
 #include <thread>
 #include <vector>
 
-
 // ===== Compatibility shims =====
 #ifndef WS_EX_NOREDIRECTIONBITMAP
 #define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
@@ -412,7 +419,6 @@ inline constexpr winrt::guid winrt::impl::guid_v<
     winrt::impl::abi_t<winrt::Windows::Foundation::IPropertyValue>>{
     winrt::impl::guid_v<winrt::Windows::Foundation::IPropertyValue>};
 
-
 // ===== WinRT type aliases =====
 namespace xaml = winrt::Windows::UI::Xaml;
 namespace composition = winrt::Windows::UI::Composition;
@@ -432,7 +438,6 @@ namespace json = winrt::Windows::Data::Json;
 namespace capture = winrt::Windows::Graphics::Capture;
 namespace directx = winrt::Windows::Graphics::DirectX;
 namespace direct3d11 = winrt::Windows::Graphics::DirectX::Direct3D11;
-
 
 using xaml::FrameworkElement;
 using xaml::GridLength;
@@ -456,10 +461,8 @@ using mediax::TransformGroup;
 using mediax::TranslateTransform;
 using mediax::VisualTreeHelper;
 
-
 // ===== Implementation (anonymous namespace) =====
 namespace {
-
 
 // ===== Backdrop blur effects (D2D / WinRT) =====
 enum class ImmediateGaussianOptimization : uint32_t {
@@ -755,7 +758,6 @@ class ImmediateBackdropBlurBrush
     winrt::Windows::UI::Color tint_{};
 };
 
-
 // ===== Core types =====
 struct Settings {
     std::wstring position = L"tray_left";
@@ -780,8 +782,8 @@ struct Settings {
     std::wstring material = L"liquid_glass";
     bool liquidGlassGradient = false;
     int liquidGlassCornerRadius = 46;
-    int liquidGlassFrost = 18;
-    int liquidGlassRefraction = 0;
+    int liquidGlassFrost = 12;
+    int liquidGlassRefraction = 6;
     int liquidGlassRoundness = 4;
     int backdropInitialFrameSkip = 0;
     int backdropFallbackBlurPasses = 5;
@@ -906,7 +908,6 @@ using CSecondaryTray__Unhide_t = void(WINAPI*)(void* pThis,
 using WindowThreadProc = void (*)(void*);
 using MediaCommand =
     std::function<void(gsm::GlobalSystemMediaTransportControlsSession const&)>;
-
 
 // ===== Global state =====
 Settings g_settings;
@@ -1128,7 +1129,6 @@ void ClearPopupBackdropOverlayHandoffCache() {
     g_popupBackdropOverlayCleanPixelsValid = false;
 }
 
-
 std::mutex g_popupOverlayWgcMutex;
 std::atomic<bool> g_popupOverlayWgcRendering{false};
 struct PopupOverlayWgcRenderParameters {
@@ -1205,7 +1205,6 @@ std::chrono::steady_clock::time_point g_popupOverlayWgcDiagnosticStartTime{};
 std::chrono::steady_clock::time_point g_popupOverlayWgcLastRenderTime{};
 std::chrono::steady_clock::time_point g_popupOverlayWgcLastResizeTime{};
 double g_popupOverlayWgcFrameIntervalMs = 1000.0 / 60.0;
-
 
 hosting::DesktopWindowXamlSource g_popupXamlSource = nullptr;
 // Scheme 2 keeps the independent animation surface alive at the compact
@@ -1663,7 +1662,6 @@ bool IsLiquidGlassMaterial() {
     return g_settings.material == L"liquid_glass";
 }
 
-
 winrt::Windows::UI::Color IslandBackgroundColor() {
     bool dark = IsDarkModeApprox();
     if (g_settings.material == L"mica_like") {
@@ -1688,7 +1686,6 @@ winrt::Windows::UI::Color IslandBackgroundColor() {
     return dark ? Color(0xE8, 0x20, 0x20, 0x24)
                 : Color(0xE8, 0xF4, 0xF4, 0xF6);
 }
-
 
 mediax::Brush LiquidGlassRimHighlightBrush() {
     // A single neutral hairline defines the glass boundary. It is neither a
@@ -1835,7 +1832,6 @@ std::wstring GetStringSetting(const wchar_t* key, const wchar_t* fallback) {
     return value && *value ? value : fallback;
 }
 
-
 // ===== Settings =====
 constexpr int kSettingsMigrationVersion = 1;
 constexpr wchar_t kMigrateMicaLikeMaterialValue[] =
@@ -1931,7 +1927,6 @@ Settings ReadSettings() {
         Wh_GetIntSetting(L"Main.AllowScreenCapture") != 0;
     return settings;
 }
-
 
 // ===== Taskbar host utilities =====
 HWND FindCurrentProcessTaskbarWnd() {
@@ -2135,8 +2130,6 @@ InjectionTarget ResolveInjectionTarget(FrameworkElement const& root) {
     return {};
 }
 
-
-
 // ===== Media state model =====
 std::wstring MediaIdentityKey(MediaState const& state) {
     if (!state.hasSession) {
@@ -2200,7 +2193,6 @@ bool LooksLikeBrowserMediaSource(std::wstring const& source) {
            lower.find(L"yandex") != std::wstring::npos ||
            lower.find(L"safari") != std::wstring::npos;
 }
-
 
 std::wstring MediaTrackKey(MediaState const& state) {
     if (!state.hasSession) {
@@ -2422,7 +2414,6 @@ RequestMediaManagerWithTimeout(std::chrono::milliseconds timeout) {
         return nullptr;
     }
 }
-
 
 // ===== NetEase Cloud Music - local data =====
 std::wstring NeteaseDataRootPath() {
@@ -3016,7 +3007,6 @@ bool TryReadNeteaseTrackMetadata(std::wstring const& windowTitle,
     return found;
 }
 
-
 // ===== NetEase Cloud Music - remote artwork =====
 std::wstring NormalizeRemoteUrl(std::wstring url) {
     if (url.rfind(L"http://", 0) == 0) {
@@ -3367,7 +3357,6 @@ bool ClickResolvedScreenPointForWindow(
     }
     return succeeded;
 }
-
 
 // ===== Process snapshot cache =====
 // One process-table snapshot is reused across window enumeration and the media
@@ -3779,7 +3768,6 @@ bool TryFavoriteBilibili() {
     return succeeded;
 }
 
-
 // ===== NetEase Cloud Music - UI automation =====
 bool IsNeteaseCloudMusicProcessId(DWORD processId) {
     if (!processId) {
@@ -4139,10 +4127,8 @@ enum class MediaTransportCommand {
 };
 
 void ApplyOptimisticPlaybackToggle();
-void ApplyOptimisticFavoriteToggle();
 void SetCompactPlaybackIndicatorState(bool playing);
 void ResetMediaProgressUiForTrackNavigation();
-
 
 bool TrySeekNeteaseCloudMusic(double ratio) {
     auto window = FindNeteaseCloudMusicWindow();
@@ -4250,7 +4236,6 @@ bool TrySeekNeteaseCloudMusic(double ratio) {
            succeeded, foregroundAccepted, ratio, renderWidget);
     return succeeded;
 }
-
 
 bool TryToggleNeteaseFavorite() {
     auto window = FindNeteaseCloudMusicWindow();
@@ -4474,7 +4459,6 @@ bool TryReadNeteaseCloudMusicState(MediaState* state, bool requireActive) {
     return true;
 }
 
-
 // ===== Media source classification =====
 bool IsNeteaseCloudMusicSource(std::wstring const& sourceAppUserModelId) {
     return _wcsicmp(sourceAppUserModelId.c_str(), L"cloudmusic.exe") == 0;
@@ -4562,7 +4546,6 @@ gsm::GlobalSystemMediaTransportControlsSession CurrentSessionFromManager(
     }
     return CurrentSession();
 }
-
 
 // ===== Media refresh and commands =====
 void RefreshMediaState(
@@ -4706,7 +4689,6 @@ void SeekToMediaPosition(double ratio) {
         }
     });
 }
-
 
 // ===== Artwork pipeline =====
 uint64_t ThumbnailHash(std::vector<uint8_t> const& bytes) {
@@ -6191,7 +6173,6 @@ winrt::Windows::UI::Color ExtractAlbumAccentColor(std::vector<uint8_t> const& by
                  static_cast<BYTE>(Clamp(static_cast<int>(std::lround(b)), 0, 255)));
 }
 
-
 // ===== Popup design system =====
 winrt::Windows::UI::Color LerpColor(winrt::Windows::UI::Color const& from,
                                   winrt::Windows::UI::Color const& to,
@@ -6426,7 +6407,6 @@ constexpr UINT kTaskbarLayoutMonitorIntervalMs = 600;
 constexpr int kPopupBackdropOverlayRefreshMs = 90;
 constexpr int kPopupBackdropOverlayMaxCaptureSize = 320;
 
-
 double SmootherStep(double value) {
     value = Clamp(value, 0.0, 1.0);
     return value * value * value * (value * (value * 6.0 - 15.0) + 10.0);
@@ -6553,7 +6533,6 @@ double PopupClosingShellOpacity(double progress) {
     // which produced a visible flash whenever an animation was interrupted.
     return 1.0;
 }
-
 
 double PopupClosingTextOpacity(double progress) {
     // Title and artist belong to both compact and expanded layouts. Keep them
@@ -6761,7 +6740,6 @@ int PopupCompactFinalHeight() {
     return kPopupCompactCardHeight + kPopupHostShadowMargin * 2;
 }
 
-
 winrt::Windows::UI::Color PopupControlCardColor() {
     bool dark = IsDarkModeApprox();
     if (IsLiquidGlassMaterial()) {
@@ -6792,7 +6770,6 @@ winrt::Windows::UI::Color PopupSecondaryTextColor() {
     return dark ? Color(0xC8, 0xFF, 0xFF, 0xFF)
                 : Color(0xC8, 0x00, 0x00, 0x00);
 }
-
 
 // ===== Transport routing =====
 void NoteMediaNavigationDirection(int direction) {
@@ -6883,7 +6860,6 @@ void RunMediaTransportCommand(MediaTransportCommand command) {
         }
     });
 }
-
 
 // ===== Popup text foregrounds =====
 mediax::Brush PopupTextForegroundBrush(winrt::Windows::UI::Color color,
@@ -7022,7 +6998,6 @@ void SetPopupTextEdgeFadeOpacity(double opacity) {
     }
 }
 
-
 // ===== Popup material brushes =====
 mediax::Brush PopupBackdropCardTintBrush() {
     bool dark = IsDarkModeApprox();
@@ -7092,7 +7067,6 @@ mediax::Brush PopupBackdropCardTintBrush() {
                        0xFF, 0xFF, 0xFF));
 }
 
-
 mediax::Brush PopupSurfaceStrokeBrush() {
     if (UseOverlayPopupBackdropMaterial()) {
         if (IsLiquidGlassMaterial()) {
@@ -7156,7 +7130,6 @@ void EnsurePopupLiquidGlassBlur(Border const& surface, bool wantBlur) {
         g_popupBackdropBlurActive = false;
     }
 }
-
 
 // ===== Popup geometry and animation state =====
 mediax::Brush PopupShadowBrush() {
@@ -7349,7 +7322,6 @@ void InterruptPopupAnimationFromOriginalArea() {
         BeginCloseExpandedPopup();
     }
 }
-
 
 // ===== Popup window plumbing =====
 LRESULT CALLBACK PopupXamlChildSubclassProc(HWND hwnd,
@@ -7774,7 +7746,6 @@ void PaintExpandedPopup(HWND hwnd, HDC dc) {
     DeleteObject(titleFont);
 }
 
-
 // ===== Popup controls and theming =====
 bool PopupButtonStyleIs(std::wstring_view style) {
     return std::wstring_view(g_settings.popupButtonStyle) == style;
@@ -7807,7 +7778,6 @@ winrt::hstring PopupTransportGlyph(Border const& surface,
                    : winrt::hstring(L"\uE768");
 }
 
-
 void UpdatePopupTransportButtonGlyph(Border const& surface,
                                      bool playing,
                                      bool favorite) {
@@ -7817,7 +7787,6 @@ void UpdatePopupTransportButtonGlyph(Border const& surface,
         text.Text(PopupTransportGlyph(surface, playing, favorite));
     }
 }
-
 
 void ApplyOptimisticPlaybackToggle() {
     struct PlaybackUiState {
@@ -7868,72 +7837,6 @@ void ApplyOptimisticPlaybackToggle() {
                 }
                 SetCompactPlaybackIndicatorState(state.playing);
             }
-            if (g_popupXamlControls) {
-                for (auto const& child :
-                     g_popupXamlControls.Children()) {
-                    if (auto surface = child.try_as<Border>()) {
-                        UpdatePopupTransportButtonGlyph(
-                            surface, state.playing, state.favorite);
-                    }
-                }
-            }
-        },
-        &uiState);
-}
-
-void ApplyOptimisticFavoriteToggle() {
-    struct FavoriteUiState {
-        bool playing;
-        bool favorite;
-    } uiState{};
-    std::wstring trackKey;
-    bool isNetease = false;
-    bool isBilibili = false;
-
-    {
-        std::lock_guard lock(g_mediaMutex);
-        isNetease =
-            IsNeteaseCloudMusicSource(g_media.sourceAppUserModelId);
-        isBilibili = IsBilibiliSource(g_media.sourceAppUserModelId);
-        if (!g_media.hasSession || (!isNetease && !isBilibili)) {
-            return;
-        }
-        g_media.canFavorite = true;
-        g_media.isFavorite = !g_media.isFavorite;
-        g_mediaStateTimestamp = std::chrono::steady_clock::now();
-        uiState.playing = g_media.isPlaying;
-        uiState.favorite = g_media.isFavorite;
-        trackKey =
-            g_media.mediaId.empty() ? g_media.title : g_media.mediaId;
-    }
-
-    if (isNetease) {
-        std::lock_guard optimisticLock(g_neteaseFavoriteOptimisticMutex);
-        g_neteaseFavoriteOptimisticPending = true;
-        g_neteaseFavoriteOptimisticValue = uiState.favorite;
-        g_neteaseFavoriteOptimisticTrackKey = trackKey;
-        g_neteaseFavoriteOptimisticUntil =
-            std::chrono::steady_clock::now() + std::chrono::seconds(3);
-    } else {
-        std::lock_guard favoriteLock(g_bilibiliFavoriteStateMutex);
-        g_bilibiliFavoriteTrackId = trackKey;
-        g_bilibiliFavoriteValue = uiState.favorite;
-    }
-
-    HWND hwnd = g_taskbarWnd && IsWindow(g_taskbarWnd)
-                    ? g_taskbarWnd
-                    : FindCurrentProcessTaskbarWnd();
-    if (!hwnd) {
-        return;
-    }
-    RunFromWindowThread(
-        hwnd,
-        [](void* param) {
-            if (!IsModActive()) {
-                return;
-            }
-            auto const& state =
-                *reinterpret_cast<FavoriteUiState const*>(param);
             if (g_popupXamlControls) {
                 for (auto const& child :
                      g_popupXamlControls.Children()) {
@@ -8558,7 +8461,6 @@ void ResetPopupXamlElementState() {
         g_popupXamlThemeShadowDepth = -1;
         g_popupXamlThemeShadowOpacity = -1;
 }
-
 
 // ===== Popup XAML host =====
 bool InitializePopupXamlHost(HWND hwnd) {
@@ -9200,7 +9102,6 @@ bool InitializePopupXamlHost(HWND hwnd) {
         return false;
     }
 }
-
 
 // ===== Popup visual update =====
 double PopupDpiScale(HWND hwnd);
@@ -10242,7 +10143,6 @@ bool TaskbarPopupOpensDown(RECT const& taskbarRect,
     return taskbarCenter <= monitorCenter;
 }
 
-
 void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
     auto compactSpec = CurrentCompactVisualSpec();
     if (!GetElementScreenRect(g_playerGrid, g_popupSourceRect)) {
@@ -10350,7 +10250,6 @@ void CapturePopupSourceGeometry(bool refreshSourceOnly = false) {
             right,
             centerY - indicatorHeight / 2 + indicatorHeight};
     }
-
 
     if (refreshSourceOnly) {
         return;
@@ -10496,7 +10395,6 @@ bool SetExpandedPopupCaptureExclusion(bool exclude);
 void ClearPopupBackdropOverlayHandoffCache();
 bool ClearPopupBackdropOverlayLayeredSurface(HWND hwnd);
 
-
 // ===== Popup positioning =====
 void PositionExpandedPopup() {
     if (!g_expandedPopup || !g_taskbarWnd) {
@@ -10564,7 +10462,6 @@ void StopCompactPlaybackIndicatorRenderLoop();
 bool ShowPopupToggleHitWindow();
 void HidePopupToggleHitWindow();
 void DestroyPopupToggleHitWindow();
-
 
 // ===== Compact island render loops =====
 bool UpdateCompactProgressFromSnapshot() {
@@ -11186,7 +11083,6 @@ void SetCompactIslandSuppressed(bool suppressed);
 void StartPopupXamlRenderLoop();
 void StopHoverRenderLoop();
 void ApplyExpandedState();
-
 
 // ===== Popup progress, seek and close state machine =====
 bool IsAnimatedTaskbarPopupVisible() {
@@ -11907,7 +11803,6 @@ void FinishCloseExpandedPopup(HWND hwnd) {
 void KeepPopupOnTop();
 void AnchorIslandAboveTaskbar();
 
-
 // ===== Taskbar tracking and z-order =====
 void RestExpandedPopupAsCompact() {
     // The final collapsed frame is now the compact island itself. Keep every
@@ -11982,7 +11877,6 @@ bool IsTaskbarCurrentlyAutoHidden() {
     }
     return visible <= PopupDipToPx(3.0, g_taskbarWnd);
 }
-
 
 bool TaskbarFullyShown() {
     if (!g_taskbarWnd || !IsWindow(g_taskbarWnd)) {
@@ -12199,7 +12093,6 @@ void KeepPopupOnTop() {
                          SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
     }
 }
-
 
 LRESULT CALLBACK TaskbarVisibilitySubclassProc(
     HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
@@ -12454,7 +12347,6 @@ void SyncRestingPopupWithTaskbarVisibility() {
     g_taskbarFullyShownSince = std::chrono::steady_clock::now();
     g_taskbarShowReanchorStage = 1;
 }
-
 
 // ===== Popup render loop and window procedure =====
 void OnPopupXamlRendering(winrt::Windows::Foundation::IInspectable const&,
@@ -12801,7 +12693,6 @@ LRESULT CALLBACK ExpandedPopupWndProc(HWND hwnd, UINT message, WPARAM wParam, LP
     }
 }
 
-
 // ===== WGC liquid-glass backdrop =====
 HINSTANCE ModInstance() {
     static HINSTANCE instance = [] {
@@ -12819,7 +12710,6 @@ HINSTANCE ModInstance() {
 }
 
 BYTE PopupRoundedRectAlpha(int x, int y, int width, int height, int radius);
-
 
 bool CreatePopupOverlayWgcCaptureItemForMonitor(HMONITOR monitor,
                                                 capture::GraphicsCaptureItem& item) {
@@ -13164,7 +13054,6 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
         }
     }
 
-
     D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
         D2D1_BITMAP_OPTIONS_NONE,
         D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -13183,7 +13072,6 @@ bool EnsurePopupOverlayWgcLensDisplacementMap(int width, int height, int radius)
         ClearPopupOverlayWgcLensDisplacementMap();
         return false;
     }
-
 
     g_popupOverlayWgcLensDisplacementMap = std::move(map);
     g_popupOverlayWgcLensMapWidth = width;
@@ -13228,7 +13116,6 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
     if (!EnsurePopupOverlayWgcLensDisplacementMap(width, height, radius)) {
         return true;
     }
-
 
     if (!g_popupOverlayWgcDisplacementEffect) {
         HRESULT createHr = context->CreateEffect(
@@ -13297,7 +13184,6 @@ bool DrawLiquidGlassGpuLensWarp(ID2D1DeviceContext* context,
                                       g_popupOverlayWgcRimBrush.get(),
                                       1.25f);
     }
-
 
     return true;
 }
@@ -13726,7 +13612,6 @@ double PopupOverlayWgcFrameIntervalMsForMonitor(HMONITOR monitor) {
     // drivers that report unusually high transient values.
     return Clamp(1000.0 / refreshHz, 1000.0 / 360.0, 1000.0 / 50.0);
 }
-
 
 bool PopupOverlayWgcBorderlessAccessAllowed() {
     return g_popupOverlayWgcBorderlessAccessState.load(
@@ -14691,7 +14576,6 @@ BYTE PopupRoundedRectAlpha(int x, int y, int width, int height, int radius) {
         static_cast<double>(kSamplesPerAxis * kSamplesPerAxis)));
 }
 
-
 // ===== CPU backdrop fallback and overlay windows =====
 void BoxBlurPbgraPixels(std::vector<BYTE>& pixels, int width, int height, int passes) {
     if (width <= 1 || height <= 1 || pixels.size() < static_cast<size_t>(width) * height * 4) {
@@ -14773,7 +14657,6 @@ bool SetExpandedPopupCaptureExclusion(bool exclude) {
     changed = SetPopupWindowCaptureExclusion(g_popupXamlChild, exclude) || changed;
     return changed;
 }
-
 
 bool ClearPopupBackdropOverlayLayeredSurface(HWND hwnd) {
     if (!hwnd) {
@@ -15211,7 +15094,6 @@ bool EnsurePopupBackdropOverlayWindow() {
     return true;
 }
 
-
 void HidePopupBackdropOverlayWindowVisualOnly() {
     if (g_popupBackdropOverlay) {
         // This is a visual park, not a teardown. Recreating WGC/D3D and changing
@@ -15263,7 +15145,6 @@ void DestroyPopupBackdropOverlayWindow() {
         g_popupBackdropOverlay = nullptr;
     }
 }
-
 
 bool CalculatePopupBackdropOverlayRect(RECT& overlayRect, int& cornerRadiusPx) {
     if (!g_expandedPopup) {
@@ -15706,7 +15587,6 @@ void UpdatePopupBackdropOverlayWindow() {
     }
 }
 
-
 // ===== Popup hit window and lifecycle =====
 LRESULT CALLBACK PopupToggleHitWindowWndProc(HWND hwnd,
                                              UINT message,
@@ -16146,7 +16026,6 @@ void DestroyExpandedPopup() {
 
 void UpdatePlayerContents();
 
-
 // ===== Hover and expanded state =====
 void StopHoverRenderLoop() {
     if (g_hoverRenderingHooked) {
@@ -16415,7 +16294,6 @@ void StartExpandRenderLoop(bool expanded) {
 }
 
 bool InjectIslandGrid();
-
 
 // ===== Media thread =====
 void MediaThreadProc() {
@@ -16715,7 +16593,6 @@ void StopMediaThread() {
     g_mediaCommands.clear();
     StopRemoteBytesThread();
 }
-
 
 // ===== Compact island UI construction =====
 TextBlock MakeTextBlock(const wchar_t* name, double fontSize, bool semibold) {
@@ -17307,7 +17184,6 @@ Grid BuildIslandGrid() {
     return wrapper;
 }
 
-
 // ===== Taskbar layout monitor =====
 void StopTaskbarLayoutMonitor() {
     if (g_taskbarLayoutTimerWindow) {
@@ -17409,7 +17285,6 @@ void StartTaskbarLayoutMonitor(FrameworkElement const& root,
     }
     g_taskbarLayoutTimerWindow = hwnd;
 }
-
 
 // ===== Player contents update =====
 void UpdatePlayerContents() {
@@ -17937,7 +17812,6 @@ void UpdatePlayerContents() {
     }
 }
 
-
 // ===== Compact island grid injection =====
 void RemoveIslandGrid() {
     UnsubclassTaskbarVisibilityWindows();
@@ -18158,7 +18032,6 @@ bool InjectIslandGrid() {
     }
 }
 
-
 // ===== Settings application and shell callbacks =====
 void ApplyPendingSettings() {
     std::optional<Settings> settings;
@@ -18229,7 +18102,6 @@ void OnTaskbarShellShowing() {
     // 8 ms resting sync shows the island only once the taskbar is actually
     // back on-screen, with live coordinates that match the native island.
 }
-
 
 // ===== Hooks =====
 void WINAPI TrayUI__Hide_Hook(void* pThis) {
@@ -18321,7 +18193,6 @@ bool HookTaskbarSymbols() {
 }
 
 } // namespace
-
 
 // ===== Mod lifecycle =====
 BOOL Wh_ModInit() {
