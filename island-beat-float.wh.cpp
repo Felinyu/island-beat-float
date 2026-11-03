@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.16
+// @version         3.1.17
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1393,6 +1393,11 @@ ProgressBar g_popupXamlProgress = nullptr;
 ScaleTransform g_popupXamlProgressScale = nullptr;
 Border g_popupXamlProgressTrack = nullptr;
 Border g_popupXamlProgressFill = nullptr;
+// Split-transition pieces: the expanded progress bar visually divides into two
+// accent halves that fly into the compact equalizer and the 77-degree arc.
+Border g_popupXamlSplitA = nullptr;
+Border g_popupXamlSplitB = nullptr;
+mediax::RotateTransform g_popupXamlSplitBRotate = nullptr;
 Border g_popupXamlProgressHitTarget = nullptr;
 controls::Canvas g_popupXamlProgressGlowMask = nullptr;
 mediax::RectangleGeometry g_popupXamlProgressGlowClip = nullptr;
@@ -9275,6 +9280,9 @@ void ResetPopupXamlElementState() {
     g_popupXamlProgressScale = nullptr;
     g_popupXamlProgressTrack = nullptr;
     g_popupXamlProgressFill = nullptr;
+    g_popupXamlSplitA = nullptr;
+    g_popupXamlSplitB = nullptr;
+    g_popupXamlSplitBRotate = nullptr;
     g_popupXamlProgressHitTarget = nullptr;
     g_popupXamlProgressGlowMask = nullptr;
     g_popupXamlProgressGlowClip = nullptr;
@@ -9618,6 +9626,30 @@ bool InitializePopupXamlHost(HWND hwnd) {
         progressFill.IsHitTestVisible(false);
         canvas.Children().Append(progressFill);
 
+        // The expanded progress bar splits into these two accent pieces during
+        // the collapse (one flies into the compact equalizer, one into the arc)
+        // and they merge back on expand. Both are driven purely by layout
+        // transforms in UpdatePopupXamlVisuals.
+        Border splitA;
+        splitA.IsHitTestVisible(false);
+        splitA.Opacity(0.0);
+        splitA.Visibility(Visibility::Collapsed);
+        splitA.CornerRadius(
+            {kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius,
+             kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius});
+        canvas.Children().Append(splitA);
+        Border splitB;
+        splitB.IsHitTestVisible(false);
+        splitB.Opacity(0.0);
+        splitB.Visibility(Visibility::Collapsed);
+        splitB.CornerRadius(
+            {kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius,
+             kPopupG2ProgressCornerRadius, kPopupG2ProgressCornerRadius});
+        mediax::RotateTransform splitBRotate;
+        splitB.RenderTransformOrigin({0.5, 0.5});
+        splitB.RenderTransform(splitBRotate);
+        canvas.Children().Append(splitB);
+
         ProgressBar progress;
         progress.Height(6);
         progress.Minimum(0);
@@ -9958,6 +9990,9 @@ bool InitializePopupXamlHost(HWND hwnd) {
         g_popupXamlProgressScale = progressScale;
         g_popupXamlProgressTrack = progressTrack;
         g_popupXamlProgressFill = progressFill;
+        g_popupXamlSplitA = splitA;
+        g_popupXamlSplitB = splitB;
+        g_popupXamlSplitBRotate = splitBRotate;
         g_popupXamlProgressHitTarget = progressHitTarget;
         g_popupXamlProgressGlowMask = progressGlowMask;
         g_popupXamlProgressGlowClip = progressGlowClip;
@@ -10539,6 +10574,85 @@ void UpdatePopupXamlVisuals() {
         lerpRect(progressSource, targetProgress, controlsProgress);
     // Keep a clearly visible colored seed almost all the way to the compact
     // endpoint. Only hand it to the five bars after it has actually arrived.
+    // Progress-bar split transition (user request): during the collapse the
+    // expanded progress bar divides into two accent halves - the left half
+    // flies into the compact equalizer bar area, the right half flies into the
+    // 77-degree arc stroke - and they merge back into one bar on expand. Pure
+    // layout-transform + opacity interpolation, no geometric morphing.
+    double splitT = Clamp(1.0 - morphProgress, 0.0, 1.0);
+    double splitMove = SmootherStep(splitT);
+    double splitPieceOpacity =
+        SmootherStep(Clamp(splitT / 0.10, 0.0, 1.0)) *
+        (1.0 - SmootherStep(Clamp((splitT - 0.55) / 0.30, 0.0, 1.0)));
+    if (g_popupXamlSplitA && g_popupXamlSplitB) {
+        constexpr double kPi = 3.14159265358979323846;
+        double barLeft = static_cast<double>(targetProgress.left);
+        double barRight = static_cast<double>(targetProgress.right);
+        double barTop = static_cast<double>(targetProgress.top);
+        double barHeight =
+            std::max(3.0, static_cast<double>(targetProgress.bottom) - barTop);
+        double barMid = (barLeft + barRight) * 0.5;
+        double eqCx =
+            (sourceIndicatorRect.left + sourceIndicatorRect.right) * 0.5;
+        double eqCy =
+            (sourceIndicatorRect.top + sourceIndicatorRect.bottom) * 0.5;
+        double eqBarWidth = std::max(1.6, compactSpec.playbackBarWidth);
+        double eqBarHeight =
+            std::max(4.0, compactSpec.playbackIndicatorHeight * 0.9);
+        double arcStroke = compactSpec.arcToggleStroke;
+        double arcRadius = compactSpec.artSize * 0.5 +
+                           compactSpec.arcToggleCoverGap + arcStroke * 0.5;
+        double artCx = (sourceArtRect.left + sourceArtRect.right) * 0.5;
+        double artCy = (sourceArtRect.top + sourceArtRect.bottom) * 0.5;
+        double arcChord =
+            2.0 * arcRadius * std::sin(0.5 * kCompactArcSweepDeg * kPi / 180.0);
+
+        double aLeft = LerpDouble(barLeft, eqCx - eqBarWidth * 0.5, splitMove);
+        double aRight = LerpDouble(barMid, eqCx + eqBarWidth * 0.5, splitMove);
+        double aTop = LerpDouble(barTop, eqCy - eqBarHeight * 0.5, splitMove);
+        g_popupXamlSplitA.Width(std::max(1.0, aRight - aLeft));
+        g_popupXamlSplitA.Height(
+            std::max(2.0, LerpDouble(barHeight, eqBarHeight, splitMove)));
+        controls::Canvas::SetLeft(g_popupXamlSplitA, aLeft);
+        controls::Canvas::SetTop(g_popupXamlSplitA, aTop);
+        g_popupXamlSplitA.Opacity(splitPieceOpacity);
+        g_popupXamlSplitA.Visibility(splitPieceOpacity > 0.002
+                                         ? Visibility::Visible
+                                         : Visibility::Collapsed);
+
+        double arcTargetLeft = artCx + arcRadius - arcStroke * 0.5;
+        double bLeft = LerpDouble(barMid, arcTargetLeft, splitMove);
+        double bRight =
+            LerpDouble(barRight, arcTargetLeft + arcStroke, splitMove);
+        double bHeight = LerpDouble(barHeight, arcChord, splitMove);
+        double bTop = LerpDouble(barTop, artCy - bHeight * 0.5, splitMove);
+        g_popupXamlSplitB.Width(std::max(1.0, bRight - bLeft));
+        g_popupXamlSplitB.Height(std::max(2.0, bHeight));
+        controls::Canvas::SetLeft(g_popupXamlSplitB, bLeft);
+        controls::Canvas::SetTop(g_popupXamlSplitB, bTop);
+        g_popupXamlSplitB.Opacity(splitPieceOpacity);
+        g_popupXamlSplitB.Visibility(splitPieceOpacity > 0.002
+                                         ? Visibility::Visible
+                                         : Visibility::Collapsed);
+        double splitRadius = std::min(
+            kPopupG2ProgressCornerRadius,
+            std::min(std::max(1.0, aRight - aLeft), std::max(2.0, bHeight)) *
+                0.5);
+        g_popupXamlSplitA.CornerRadius(
+            {splitRadius, splitRadius, splitRadius, splitRadius});
+        g_popupXamlSplitB.CornerRadius(
+            {splitRadius, splitRadius, splitRadius, splitRadius});
+        if (g_popupXamlSplitBRotate) {
+            // A small tilt while travelling makes the piece feel like it curves
+            // into the arc; zero at both endpoints.
+            g_popupXamlSplitBRotate.Angle(90.0 * std::sin(kPi * splitMove) *
+                                          0.6);
+        }
+        if (g_popupXamlPlaybackAccentBrush) {
+            g_popupXamlSplitA.Background(g_popupXamlPlaybackAccentBrush);
+            g_popupXamlSplitB.Background(g_popupXamlPlaybackAccentBrush);
+        }
+    }
     double progressMorphOpacity = controlsOpacity;
     double progressTrackOpacity = controlsOpacity;
     double progressRatio = 0.0;
@@ -10582,7 +10696,8 @@ void UpdatePopupXamlVisuals() {
         g_popupXamlProgressTrack.Visibility(progressMorphOpacity > 0.002
                                                 ? Visibility::Visible
                                                 : Visibility::Collapsed);
-        g_popupXamlProgressTrack.Opacity(progressTrackOpacity);
+        g_popupXamlProgressTrack.Opacity(progressTrackOpacity *
+                                         (1.0 - splitPieceOpacity));
         g_popupXamlProgressTrack.Width(progressWidth);
         g_popupXamlProgressTrack.Height(std::max(4.0, progressHeight));
         double radius = kPopupG2ProgressCornerRadius;
@@ -10615,7 +10730,8 @@ void UpdatePopupXamlVisuals() {
         g_popupXamlProgressFill.Visibility(fillOpacity > 0.002 && hasAnyProgress
                                                ? Visibility::Visible
                                                : Visibility::Collapsed);
-        g_popupXamlProgressFill.Opacity(fillOpacity);
+        g_popupXamlProgressFill.Opacity(fillOpacity *
+                                        (1.0 - splitPieceOpacity));
         g_popupXamlProgressFill.Width(fillWidth);
         g_popupXamlProgressFill.Height(progressThickness);
         double fillRadius = kPopupG2ProgressCornerRadius;
@@ -17187,6 +17303,9 @@ void DestroyExpandedPopup() {
     g_popupXamlProgressScale = nullptr;
     g_popupXamlProgressTrack = nullptr;
     g_popupXamlProgressFill = nullptr;
+    g_popupXamlSplitA = nullptr;
+    g_popupXamlSplitB = nullptr;
+    g_popupXamlSplitBRotate = nullptr;
     g_popupXamlProgressHitTarget = nullptr;
     g_popupXamlProgressGlowMask = nullptr;
     g_popupXamlProgressGlowClip = nullptr;
