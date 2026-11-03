@@ -3,9 +3,11 @@
 
 The mockups live in ``preview/preview.html`` (one self-contained page, three
 artboards selected with ``?view=compact|expanded|hero``).  Each artboard is
-rendered at 2x device scale with Microsoft Edge headless into a padded
-viewport, cropped back to the artboard rectangle, given subtly rounded
-corners and written to ``screenshots/``.
+built at 1 CSS px per DIP and rendered at 2x device scale with Microsoft Edge
+headless into a padded viewport, cropped back to the artboard rectangle, given
+subtly rounded corners and written to ``screenshots/``.  The resulting pixels
+are therefore 2x the real UI and line up 1:1 with the 2x captures in
+``preview/reference/`` (see ``preview/compare.py``).
 
 Usage (from anywhere):
     python preview/build.py
@@ -15,6 +17,7 @@ Requires Microsoft Edge and Pillow; everything else is in the repo.
 
 from __future__ import annotations
 
+import math
 import os
 import shutil
 import subprocess
@@ -31,14 +34,14 @@ EDGE_CANDIDATES = (
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
     r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
 )
-DSF = 2          # --force-device-scale-factor
-MARGIN = 40      # CSS px of stage-coloured padding around each artboard
+DSF = 2          # --force-device-scale-factor: every CSS px is 2 device px
+MARGIN = 40      # CSS px of background around each artboard (artboard anchored at 40,40)
 
 # name, css width, css height, crop corner radius (CSS px), output width (px)
 VIEWS = (
-    ("compact", 385, 100, 16, None),
-    ("expanded", 400, 725, 20, None),
-    ("hero", 1280, 700, 20, 1600),
+    ("compact", 192.5, 55, 12, None),    # -> 385 x 110 px (pill 308 x 80 px)
+    ("expanded", 360, 640, 20, None),    # -> 720 x 1280 px (card 648 x 1156 px)
+    ("hero", 1152, 630, 20, 1600),       # -> 2304 x 1260 px downscaled to 1600 x 875
 )
 
 
@@ -52,10 +55,10 @@ def find_edge() -> str:
     sys.exit("Microsoft Edge not found; install Edge or edit EDGE_CANDIDATES.")
 
 
-def render(edge: str, profile: str, view: str, css_w: int, css_h: int, dump: str) -> None:
+def render(edge: str, profile: str, view: str, css_w: float, css_h: float, dump: str) -> None:
     """Screenshot one artboard at 2x into *dump*."""
-    win_w = css_w + 2 * MARGIN
-    win_h = css_h + 2 * MARGIN
+    win_w = int(math.ceil(css_w)) + 2 * MARGIN
+    win_h = int(math.ceil(css_h)) + 2 * MARGIN
     url = "file:///" + PAGE.replace("\\", "/") + "?view=" + view
     cmd = [
         edge,
@@ -108,20 +111,24 @@ def main() -> None:
     try:
         for name, css_w, css_h, radius, out_w in VIEWS:
             dump = os.path.join(work, name + "-raw.png")
+            win_w = int(math.ceil(css_w)) + 2 * MARGIN
+            win_h = int(math.ceil(css_h)) + 2 * MARGIN
             print(f"[render] {name}: {css_w}x{css_h} css -> Edge window "
-                  f"{css_w + 2 * MARGIN}x{css_h + 2 * MARGIN} @{DSF}x")
+                  f"{win_w}x{win_h} @{DSF}x")
             render(edge, profile, name, css_w, css_h, dump)
 
+            dev_w = round(css_w * DSF)
+            dev_h = round(css_h * DSF)
             with Image.open(dump) as raw:
                 raw = raw.convert("RGBA")
-                expected = ((css_w + 2 * MARGIN) * DSF, (css_h + 2 * MARGIN) * DSF)
+                expected = (win_w * DSF, win_h * DSF)
                 if raw.size != expected:
                     sys.exit(f"{name}: expected {expected} raw pixels, got {raw.size}")
                 box = (
                     MARGIN * DSF,
                     MARGIN * DSF,
-                    (MARGIN + css_w) * DSF,
-                    (MARGIN + css_h) * DSF,
+                    MARGIN * DSF + dev_w,
+                    MARGIN * DSF + dev_h,
                 )
                 img = raw.crop(box)
 
