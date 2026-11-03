@@ -3,7 +3,7 @@
 // @name            Island Beat Float
 // @description     Dynamic Island style floating music controller for Windows: a compact taskbar island that shows the current track, and expands into a full media player.
 // @description:zh-CN 动态岛风格的 Windows 悬浮音乐控制器：任务栏小岛实时显示当前歌曲与封面，点击展开完整播放器。
-// @version         3.1.13
+// @version         3.1.14
 // @author          Felinyu
 // @github          https://github.com/Felinyu
 // @license         MIT
@@ -1327,6 +1327,13 @@ ScaleTransform g_popupXamlArtScale = nullptr;
 TranslateTransform g_popupXamlArtTranslate = nullptr;
 Image g_popupXamlArtFade = nullptr;
 Image g_popupXamlArt = nullptr;
+mediax::RotateTransform g_popupXamlArtSpin = nullptr;
+mediax::RotateTransform g_popupXamlArtFadeSpin = nullptr;
+// Compact-endpoint arc toggle: the resting popup IS the compact island (no
+// cross-surface handoff on close), so the popup needs the same arc as the
+// cold-start taskbar island.
+shapes::Path g_popupXamlArcPath = nullptr;
+std::chrono::steady_clock::time_point g_popupArcLastRingTap{};
 FrameworkElement g_popupXamlTitleHost = nullptr;
 FrameworkElement g_popupXamlArtistHost = nullptr;
 FrameworkElement g_popupXamlPlaybackIndicator = nullptr;
@@ -7829,6 +7836,9 @@ void KeepPopupOnTop();
 
 void BeginCloseExpandedPopup();
 void ResumeOpenExpandedPopup();
+// Defined with the compact-island arc: returns true when the screen point is
+// inside the compact-endpoint arc band (popup resting state tap routing).
+bool PopupCompactArcHitTest(POINT screenPoint);
 
 bool PopupPointIsInsideOriginalToggleArea(POINT screenPoint) {
     RECT sourceHitRect = g_popupSourceRect;
@@ -8979,6 +8989,10 @@ void ResetPopupXamlElementState() {
     g_popupXamlArtTranslate = nullptr;
     g_popupXamlArtFade = nullptr;
     g_popupXamlArt = nullptr;
+    g_popupXamlArtSpin = nullptr;
+    g_popupXamlArtFadeSpin = nullptr;
+    g_popupXamlArcPath = nullptr;
+    g_popupArcLastRingTap = {};
     g_popupXamlTitleHost = nullptr;
     g_popupXamlArtistHost = nullptr;
     g_popupXamlPlaybackIndicator = nullptr;
@@ -9177,10 +9191,35 @@ bool InitializePopupXamlHost(HWND hwnd) {
         Image art;
         art.Stretch(mediax::Stretch::UniformToFill);
         art.Opacity(1.0);
+        // Vinyl spin for the popup's compact endpoint. The island and the
+        // popup share one spin phase/angle; the popup applies it only while it
+        // is visually at the compact endpoint (see UpdatePopupXamlVisuals).
+        mediax::RotateTransform artFadeSpin;
+        artFadeSpin.Angle(0.0);
+        artFade.RenderTransformOrigin({0.5, 0.5});
+        artFade.RenderTransform(artFadeSpin);
+        mediax::RotateTransform artSpin;
+        artSpin.Angle(0.0);
+        art.RenderTransformOrigin({0.5, 0.5});
+        art.RenderTransform(artSpin);
         artHost.Children().Append(artFade);
         artHost.Children().Append(art);
         artFrame.Child(artHost);
         canvas.Children().Append(artFrame);
+
+        // Compact-endpoint arc toggle. It is drawn exactly like the taskbar
+        // island's arc (same 77 deg / gap / stroke / accent, just outside the
+        // circular cover) and only visible while the popup rests at the compact
+        // endpoint, so the resting visual matches cold start (and no cross-
+        // surface handoff is needed, which is what caused the collapse flash).
+        shapes::Path popupCompactArc;
+        popupCompactArc.Visibility(Visibility::Collapsed);
+        popupCompactArc.Opacity(0.0);
+        popupCompactArc.IsHitTestVisible(false);
+        popupCompactArc.StrokeStartLineCap(mediax::PenLineCap::Round);
+        popupCompactArc.StrokeEndLineCap(mediax::PenLineCap::Round);
+        popupCompactArc.StrokeLineJoin(mediax::PenLineJoin::Round);
+        canvas.Children().Append(popupCompactArc);
 
         auto makePopupTextFade = [](bool leftEdge) {
             Border fade;
@@ -9642,6 +9681,9 @@ bool InitializePopupXamlHost(HWND hwnd) {
         g_popupXamlArtFrame = artFrame;
         g_popupXamlArtFade = artFade;
         g_popupXamlArt = art;
+        g_popupXamlArtSpin = artSpin;
+        g_popupXamlArtFadeSpin = artFadeSpin;
+        g_popupXamlArcPath = popupCompactArc;
         g_popupXamlTitleHost = titleHost;
         g_popupXamlArtistHost = artistHost;
         g_popupXamlPlaybackIndicator = popupPlaybackIndicator;
@@ -9705,6 +9747,19 @@ bool InitializePopupXamlHost(HWND hwnd) {
 // ===== Popup visual update =====
 double PopupDpiScale(HWND hwnd);
 int PopupDipToPx(double value, HWND hwnd);
+
+// Defined in the compact-island arc section; also used to draw the arc on the
+// popup's compact endpoint (the popup is the resting compact surface).
+mediax::PathGeometry MakeCompactArcGeometry(double centerX,
+                                            double centerY,
+                                            double radius,
+                                            double startDeg,
+                                            double sweepDeg);
+
+// Compact arc toggle angles (y-down, centred on east). Shared by the taskbar
+// island arc and the popup's compact-endpoint arc.
+constexpr double kCompactArcStartDeg = -38.5;
+constexpr double kCompactArcSweepDeg = 77.0;
 
 DipRect PopupScreenRectToLocalDip(RECT const& rect,
                                   RECT const& popupScreenPx,
@@ -9991,6 +10046,51 @@ void UpdatePopupXamlVisuals() {
     g_popupXamlArtFrame.Opacity(1.0);
     ApplyLayoutRect(g_popupXamlArtFrame, g_popupXamlArtScale,
                     g_popupXamlArtTranslate, artScreen, popupScreen);
+
+    // Compact endpoint extras. The popup is the resting compact surface (no
+    // handoff on close), so it must render exactly what the cold-start taskbar
+    // island renders: the 77-degree accent arc right of the circular cover and
+    // the same vinyl spin orientation. Both fade in during the last stretch of
+    // the collapse (and fade out first when opening) so the morph itself looks
+    // unchanged.
+    double compactEndpointReveal =
+        1.0 - SmootherStep(Clamp((morphProgress - 0.02) / 0.20, 0.0, 1.0));
+    if (g_popupXamlArcPath) {
+        double arcStroke = compactSpec.arcToggleStroke;
+        double arcRadius = compactSpec.artSize * 0.5 +
+                           compactSpec.arcToggleCoverGap + arcStroke * 0.5;
+        double arcOverlaySize =
+            std::max(compactSpec.artSize + arcStroke * 2.0 + 8.0,
+                     2.0 * (arcRadius + arcStroke * 0.5 + 4.0));
+        double arcCenterX = (artScreen.left + artScreen.right) * 0.5;
+        double arcCenterY = (artScreen.top + artScreen.bottom) * 0.5;
+        g_popupXamlArcPath.Width(arcOverlaySize);
+        g_popupXamlArcPath.Height(arcOverlaySize);
+        g_popupXamlArcPath.StrokeThickness(arcStroke);
+        if (g_popupXamlPlaybackAccentBrush) {
+            g_popupXamlArcPath.Stroke(g_popupXamlPlaybackAccentBrush);
+        }
+        g_popupXamlArcPath.Data(MakeCompactArcGeometry(
+            arcOverlaySize * 0.5, arcOverlaySize * 0.5, arcRadius,
+            kCompactArcStartDeg, kCompactArcSweepDeg));
+        controls::Canvas::SetLeft(
+            g_popupXamlArcPath,
+            arcCenterX - arcOverlaySize * 0.5 - popupScreen.left);
+        controls::Canvas::SetTop(
+            g_popupXamlArcPath,
+            arcCenterY - arcOverlaySize * 0.5 - popupScreen.top);
+        g_popupXamlArcPath.Opacity(compactEndpointReveal);
+        g_popupXamlArcPath.Visibility(compactEndpointReveal > 0.002
+                                          ? Visibility::Visible
+                                          : Visibility::Collapsed);
+    }
+    if (g_popupXamlArtSpin) {
+        g_popupXamlArtSpin.Angle(g_compactArtSpinAngle * compactEndpointReveal);
+    }
+    if (g_popupXamlArtFadeSpin) {
+        g_popupXamlArtFadeSpin.Angle(g_compactArtSpinAngle *
+                                     compactEndpointReveal);
+    }
 
     DipRect cardScreen{
         LerpDouble(sourceRect.left, targetCard.left, progress),
@@ -11790,6 +11890,19 @@ void ApplyCompactCoverSpinAngle() {
         if (g_compactArtSpinFade) {
             g_compactArtSpinFade.Angle(g_compactArtSpinAngle);
         }
+        // The popup is the resting compact surface, so its compact endpoint
+        // shares the same spin phase. Ramp the angle to zero as the popup morphs
+        // towards the expanded layout so the expanded cover is never rotated.
+        double popupSpinFactor =
+            1.0 -
+            SmootherStep(Clamp((PopupProgress() - 0.02) / 0.20, 0.0, 1.0));
+        if (g_popupXamlArtSpin) {
+            g_popupXamlArtSpin.Angle(g_compactArtSpinAngle * popupSpinFactor);
+        }
+        if (g_popupXamlArtFadeSpin) {
+            g_popupXamlArtFadeSpin.Angle(g_compactArtSpinAngle *
+                                         popupSpinFactor);
+        }
     } catch (...) {
     }
 }
@@ -11811,9 +11924,12 @@ void OnCompactCoverSpinRendering(
     winrt::Windows::Foundation::IInspectable const&) {
     try {
         // Mirror the other compact loops: the island can be torn down, hidden
-        // behind the expanded popup or unloaded while the spin is running.
+        // behind the expanded popup or unloaded while the spin is running. The
+        // popup's resting compact endpoint is also a valid place to spin (the
+        // same RenderTransform is applied to both surfaces), so keep running
+        // while it rests.
         if (!g_playerGrid || !g_compactArtSpinImage || !g_compactArtSpinFade ||
-            g_expanded || g_unloading) {
+            (g_expanded && !g_popupRestingCompact) || g_unloading) {
             StopCompactCoverSpinLoop();
             return;
         }
@@ -11843,7 +11959,8 @@ void OnCompactCoverSpinRendering(
 
 void StartCompactCoverSpinLoop() {
     if (!g_compactArtSpinImage || !g_compactArtSpinFade ||
-        g_compactArtSpinRenderingHooked || g_expanded || g_unloading) {
+        g_compactArtSpinRenderingHooked ||
+        (g_expanded && !g_popupRestingCompact) || g_unloading) {
         return;
     }
     g_lastCompactArtSpinFrameTime = {};
@@ -12439,6 +12556,11 @@ void ResumeOpenExpandedPopup() {
     g_popupRestingCompact = false;
     g_popupRestingHiddenWithTaskbar = false;
     g_popupRidingTaskbarUp = false;
+    g_popupArcLastRingTap = {};
+    // The expanded cover must never keep the compact vinyl rotation; stop the
+    // popup/island spin loop now and let UpdatePopupXamlVisuals ramp the angle
+    // back to zero with the rest of the morph.
+    StopCompactCoverSpinLoop();
     StopPopupPlaybackIndicatorRenderLoop();
     ClearPopupCompactWindowRegions();
     g_popupLifecycleState = PopupLifecycleState::Opening;
@@ -12617,33 +12739,55 @@ void AnchorIslandAboveTaskbar();
 
 // ===== Taskbar tracking and z-order =====
 void RestExpandedPopupAsCompact() {
-    // The close morph has settled exactly on the compact island geometry. Hand
-    // the resting state back to the REAL taskbar island instead of keeping the
-    // popup's own compact endpoint on screen: that popup endpoint renders the
-    // compact contents itself and has no arc toggle (it also styles the
-    // equalizer slightly differently), which is precisely why the arc vanished
-    // after open -> close while the cold-start island showed it fine.
-    //
-    // FinishCloseExpandedPopup is the existing "popup is done, restore the
-    // island" teardown: it parks/hides the popup window and its click catcher,
-    // resets the popup lifecycle to Closed and raises the island (opacity 1).
-    // Then SetCompactIslandSuppressed(false) restores the compact island's
-    // complete visual state - compact layout (including the arc toggle layout
-    // through ApplyExpandedState), progress/equalizer render loops, and the
-    // spin loop through EnsureCompactIslandInteractive - so the resting surface
-    // is the same one cold start renders. BeginCloseExpandedPopup already laid
-    // the island out at the final morph geometry, so the swap is seamless.
-    FinishCloseExpandedPopup(g_expandedPopup);
-    g_popupMediaTransitionActive = false;
-    g_popupPendingContentRefresh = false;
-    SetCompactIslandSuppressed(false);
-    try {
-        if (g_playerGrid) {
-            g_playerGrid.Opacity(1.0);
+    // The final collapsed frame is now the compact island itself. Keep every
+    // object that is already on screen: same HWND, glass swap-chain, artwork,
+    // text and corner clip. There is deliberately no cross-surface handoff at
+    // the end of a close: swapping to the taskbar island for one frame is what
+    // used to flash. The popup's compact endpoint now renders the same arc
+    // toggle as the cold-start island (UpdatePopupXamlVisuals), so keeping this
+    // surface resting preserves the arc AND the flash-free handoff.
+    StopPopupXamlRenderLoop();
+    g_popupAnimationProgress = 0.0;
+    g_popupAnimationTarget = 0.0;
+    g_popupAnimationVelocity = 0.0;
+    g_popupClosing = false;
+    g_popupRestingCompact = true;
+    g_popupRestingHiddenWithTaskbar = false;
+    g_popupRidingTaskbarUp = false;
+    g_pendingPopupDeltaX = 0;
+    g_pendingPopupDeltaY = 0;
+    g_popupTransparentParkPending = false;
+    g_popupOutsideClickArmed = false;
+    if (g_playerGrid) {
+        try {
+            // Keep only the original in-taskbar hit target alive. A tiny alpha
+            // keeps XAML hit testing active without drawing a second island.
+            g_playerGrid.Opacity(0.001);
             g_playerGrid.IsHitTestVisible(true);
+        } catch (...) {
         }
-    } catch (...) {
     }
+    if (g_expandedPopup) {
+        SetPopupWindowClickThrough(g_expandedPopup, true);
+        SetPopupWindowClickThrough(g_popupXamlChild, true);
+        // Keep a high-frequency binding timer in addition to composition
+        // rendering so auto-hide movement is followed even while media is
+        // paused and the rest of the animation loop is idle.
+        SetTimer(g_expandedPopup, kPopupTimerId, 8, nullptr);
+    }
+    ApplyPopupCompactWindowRegions();
+    StartPopupPlaybackIndicatorRenderLoop();
+    // The resting popup is the compact island, so the vinyl spin must keep
+    // running for the popup's compact-endpoint artwork as well.
+    if (g_compactArtSpinEnabled) {
+        StartCompactCoverSpinLoop();
+    }
+    // Preserve the original compact island's dedicated hit target. This is
+    // the interaction model from the first interruptible build: every press
+    // in the same physical region reverses the existing spring, with no state
+    // reset and no dependency on where the animated surface currently is.
+    ShowPopupToggleHitWindow();
+    AnchorIslandAboveTaskbar();
 }
 
 bool IsTaskbarCurrentlyAutoHidden() {
@@ -16382,6 +16526,26 @@ LRESULT CALLBACK PopupToggleHitWindowWndProc(HWND hwnd,
             // release used to reverse the animation immediately and made a
             // normal click look like a required long press.
             if (g_popupRestingCompact) {
+                // The resting popup renders the compact island including its
+                // arc toggle, so ring taps must toggle the vinyl spin (and a
+                // double tap stops + resets it) instead of expanding the
+                // player. Anything outside the ring band still expands.
+                POINT screenPoint{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                ClientToScreen(hwnd, &screenPoint);
+                if (PopupCompactArcHitTest(screenPoint)) {
+                    auto now = std::chrono::steady_clock::now();
+                    if (g_popupArcLastRingTap.time_since_epoch().count() != 0 &&
+                        now - g_popupArcLastRingTap <
+                            std::chrono::milliseconds(300)) {
+                        g_popupArcLastRingTap = {};
+                        ResetCompactCoverSpin();
+                    } else {
+                        g_popupArcLastRingTap = now;
+                        ToggleCompactCoverSpin();
+                    }
+                    return 0;
+                }
+                g_popupArcLastRingTap = {};
                 ResumeOpenExpandedPopup();
             } else if (g_expanded && g_popupClosing) {
                 ResumeOpenExpandedPopup();
@@ -16709,6 +16873,10 @@ void DestroyExpandedPopup() {
     g_popupXamlArtTranslate = nullptr;
     g_popupXamlArtFade = nullptr;
     g_popupXamlArt = nullptr;
+    g_popupXamlArtSpin = nullptr;
+    g_popupXamlArtFadeSpin = nullptr;
+    g_popupXamlArcPath = nullptr;
+    g_popupArcLastRingTap = {};
     g_popupXamlTitleHost = nullptr;
     g_popupXamlArtistHost = nullptr;
     g_popupXamlPlaybackIndicator = nullptr;
@@ -16861,9 +17029,8 @@ void StartHoverRenderLoop(double targetScale) {
 // and the arc never draws over it. The arc lives in its own transparent hit
 // grid; only ring-band taps are consumed, so taps on the cover itself still
 // open the expanded player. Spinning the art is a RenderTransform only, no
-// layout work.
-constexpr double kCompactArcStartDeg = -38.5;
-constexpr double kCompactArcSweepDeg = 77.0;
+// layout work. The angle constants live above the popup code because the
+// popup's compact endpoint draws the same arc.
 
 mediax::PathGeometry MakeCompactArcGeometry(double centerX,
                                             double centerY,
@@ -16931,6 +17098,40 @@ bool CompactArcRingHitTest(winrt::Windows::Foundation::Point const& point) {
     double radius = CompactArcRadius(spec);
     double tolerance = spec.arcToggleStroke * 0.5 + 4.0;
     if (std::abs(distance - radius) > tolerance) {
+        return false;
+    }
+
+    constexpr double kPi = 3.14159265358979323846;
+    double angleDeg = std::atan2(dy, dx) * 180.0 / kPi;
+    return angleDeg >= kCompactArcStartDeg &&
+           angleDeg <= kCompactArcStartDeg + kCompactArcSweepDeg;
+}
+
+// Same ring-band test for the popup's compact endpoint, in physical screen
+// pixels (the resting popup is a separate HWND, so the hit catcher works in
+// screen space). Used by the popup toggle hit window to tell a ring tap (spin
+// toggle/reset) from a normal compact-tap (re-open the player).
+bool PopupCompactArcHitTest(POINT screenPoint) {
+    if (!g_popupRestingCompact || IsRectEmpty(&g_popupSourceArtRect)) {
+        return false;
+    }
+
+    auto spec = CurrentCompactVisualSpec();
+    double centerX = (static_cast<double>(g_popupSourceArtRect.left) +
+                      static_cast<double>(g_popupSourceArtRect.right)) *
+                     0.5;
+    double centerY = (static_cast<double>(g_popupSourceArtRect.top) +
+                      static_cast<double>(g_popupSourceArtRect.bottom)) *
+                     0.5;
+    double radiusPx = PopupDipToPx(spec.artSize * 0.5 + spec.arcToggleCoverGap +
+                                       spec.arcToggleStroke * 0.5,
+                                   g_expandedPopup);
+    double tolerancePx =
+        PopupDipToPx(spec.arcToggleStroke * 0.5 + 4.0, g_expandedPopup);
+    double dx = static_cast<double>(screenPoint.x) - centerX;
+    double dy = static_cast<double>(screenPoint.y) - centerY;
+    double distance = std::sqrt(dx * dx + dy * dy);
+    if (std::abs(distance - radiusPx) > tolerancePx) {
         return false;
     }
 
